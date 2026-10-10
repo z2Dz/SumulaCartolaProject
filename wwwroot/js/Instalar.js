@@ -52,3 +52,22 @@ export async function instalar() {
     if (escolha.outcome === 'accepted') localStorage.setItem('app-instalado', '1');
     return escolha.outcome;
 }
+
+let aoInstalarHandler = null;
+
+/** Avisa o Blazor quando o app é instalado por qualquer caminho (inclusive pelo menu do navegador). */
+export function observarInstalacao(ref) {
+    pararObservacao();
+    aoInstalarHandler = () => {
+        localStorage.setItem('app-instalado', '1');
+        window.__instalarEvento = null;
+        ref.invokeMethodAsync('AoInstalado');
+    };
+    window.addEventListener('appinstalled', aoInstalarHandler, { once: true });
+}
+
+export function pararObservacao() {
+    if (!aoInstalarHandler) return;
+    window.removeEventListener('appinstalled', aoInstalarHandler);
+    aoInstalarHandler = null;
+}

@@ -102,9 +102,20 @@
 </style>
 
 @code {
+    /// <summary>Avisa o layout quando o app pode (ou deixa de poder) ser instalado, para mostrar o botão do menu.</summary>
+    [Parameter] public EventCallback<bool> DisponivelMudou { get; set; }
+
     private IJSObjectReference? modulo;
     private bool visivel;
     private bool ios;
+    private DotNetObjectReference<InstalarApp>? referencia;
+
+    /// <summary>Abre o convite de instalação sob demanda (botão do menu).</summary>
+    public void Abrir()
+    {
+        visivel = true;
+        StateHasChanged();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -115,15 +126,20 @@
             modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/instalar.js");
 
             if (await modulo.InvokeAsync<bool>("jaInstalado")) return;
-            if (await modulo.InvokeAsync<bool>("adiadoRecente")) return;
 
-            // Quem ainda não viu o tutorial vê primeiro o tutorial; o convite de instalação vem na próxima visita.
-            if (await JS.InvokeAsync<string?>("localStorage.getItem", "tutorial-visto") != "1") return;
+            referencia = DotNetObjectReference.Create(this);
+            await modulo.InvokeVoidAsync("observarInstalacao", referencia);
 
             ios = await modulo.InvokeAsync<bool>("ehIos");
 
-            // No Android, só mostra se o navegador liberou a instalação (espera até 4 s).
+            // No Android, só dá para instalar se o navegador liberou a instalação (espera até 4 s).
             if (!ios && !await modulo.InvokeAsync<bool>("podeInstalar", 4000)) return;
+
+            await DisponivelMudou.InvokeAsync(true);
+
+            // Convite automático: respeita o adiamento e só aparece depois do tutorial.
+            if (await modulo.InvokeAsync<bool>("adiadoRecente")) return;
+            if (await JS.InvokeAsync<string?>("localStorage.getItem", "tutorial-visto") != "1") return;
 
             visivel = true;
             StateHasChanged();
@@ -141,7 +157,19 @@
         {
             var resultado = await modulo.InvokeAsync<string>("instalar");
             if (resultado == "dismissed") await modulo.InvokeVoidAsync("adiar");
+
+            // O navegador só aceita um pedido de instalação por carregamento da página.
+            if (!ios) await DisponivelMudou.InvokeAsync(false);
         }
+    }
+
+    /// <summary>Chamado pelo navegador quando o app é instalado, por qualquer caminho.</summary>
+    [JSInvokable]
+    public async Task AoInstalado()
+    {
+        visivel = false;
+        StateHasChanged();
+        await DisponivelMudou.InvokeAsync(false);
     }
 
     private async Task Depois()
@@ -154,7 +182,9 @@
     {
         if (modulo is not null)
         {
+            try { await modulo.InvokeVoidAsync("pararObservacao"); } catch { }
             try { await modulo.DisposeAsync(); } catch { }
         }
+        referencia?.Dispose();
     }
 }

@@ -42,6 +42,10 @@
         </nav>
 
         <div class="lateral-rodape">
+            @if (podeInstalar)
+            {
+                <button type="button" class="lateral-sair lateral-instalar" @onclick="AbrirInstalacao"><IconeUi Nome="baixar" Tamanho="18" /> Instalar app</button>
+            }
             <button type="button" class="lateral-sair" @onclick="Sair"><IconeUi Nome="sair" Tamanho="18" /> Sair</button>
             <span class="lema">JUNTOS PELO TOPO</span>
         </div>
@@ -99,7 +103,7 @@
 </div>
 
 <TutorialInicial />
-<InstalarApp />
+<InstalarApp @ref="instalarApp" DisponivelMudou="AoMudarInstalavel" />
 
 @code {
     private int Torc => Torcidas.Cache?.Torcida ?? Torcida.Inicial;
@@ -108,6 +112,8 @@
     private bool Dourado => Torc >= Torcida.MinDourado;
 
     private bool menuAdmin;
+    private bool podeInstalar;
+    private InstalarApp? instalarApp;
     private bool EmAdmin => Nav.ToBaseRelativePath(Nav.Uri).StartsWith("admin", StringComparison.OrdinalIgnoreCase);
 
     protected override void OnInitialized()
@@ -115,6 +121,9 @@
         Torcidas.Mudou += AoMudar;
         Nav.LocationChanged += AoNavegar;
     }
+
+    private void AoMudarInstalavel(bool disponivel) => podeInstalar = disponivel;
+    private void AbrirInstalacao() => instalarApp?.Abrir();
 
     private void AlternarAdmin() => menuAdmin = !menuAdmin;
     private void FecharAdmin() => menuAdmin = false;
@@ -143,6 +152,10 @@
 <style>
     .admin-fundo, .admin-folha {
         display: none;
+    }
+
+    .lateral-rodape .lateral-instalar {
+        margin-bottom: .5rem;
     }
 
     @@media (max-width: 899px) {
