@@ -40,6 +40,31 @@ public class ServicoPerfil
             }
         }
 
+        // Cores individuais (faixa, coroa e cada elemento) vão numa função à parte (migração 05),
+        // para não depender de salvar_escudo conhecer esses campos.
+        var temCorPropria = escudo.CorFaixa is not null || escudo.CorCoroa is not null
+                            || (escudo.Simbolos?.Any(x => x.Cor is not null) ?? false);
+        try
+        {
+            await _supabase.Rpc("salvar_escudo_cores", new Dictionary<string, object>
+            {
+                ["p_cores"] = escudo.CoresParaDicionario()
+            });
+        }
+        catch (Exception ex) when (temCorPropria)
+        {
+            throw new EscudoNaoGravadoException(
+                "O escudo foi salvo, mas as cores individuais não. Rode a migração 05_escudo_cores_nome.sql no Supabase. (" + ex.Message + ")");
+        }
+        catch { /* sem cor própria e função ainda não criada: nada a gravar */ }
+
         _provedor.Atualizar();   // recarrega o perfil para o cabeçalho mostrar o novo escudo
+    }
+
+    /// <summary>Troca o nome do time do usuário logado (função salvar_nome_time, migração 05).</summary>
+    public async Task SalvarNomeTimeAsync(string nome)
+    {
+        await _supabase.Rpc("salvar_nome_time", new Dictionary<string, object> { ["p_nome"] = nome.Trim() });
+        _provedor.Atualizar();   // recarrega o perfil: cabeçalho, ranking e menu mostram o nome novo
     }
 }

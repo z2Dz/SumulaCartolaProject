@@ -47,7 +47,7 @@ else
                                             {
                                                 <button type="button" class="ed-mini @(cfg.Forma == f.Chave ? "sel" : "") @(Torcida.FormaBloqueada(f.Chave, torcidaAtual) && cfg.Forma != f.Chave ? "bloqueado" : "")"
                                                         title="@(Torcida.FormaBloqueada(f.Chave, torcidaAtual) ? f.Nome + " (libera com " + Torcida.Fmt(Torcida.MinEscudo) + " torcedores)" : f.Nome)" aria-label="@f.Nome"
-                                                        disabled="@(Torcida.FormaBloqueada(f.Chave, torcidaAtual) && cfg.Forma != f.Chave)" @onclick="() => cfg.Forma = f.Chave">
+                                                        disabled="@(Torcida.FormaBloqueada(f.Chave, torcidaAtual) && cfg.Forma != f.Chave)" @onclick="() => EscolherForma(f.Chave)">
                                                     <Escudo Config="@ComForma(f.Chave)" Tamanho="44" />
                                                 </button>
                                             }
@@ -68,8 +68,28 @@ else
                                             <label><input type="color" @bind="cfg.Cor1" @bind:event="oninput" /> Fundo</label>
                                             <label><input type="color" @bind="cfg.Cor2" @bind:event="oninput" /> Faixas</label>
                                             <label><input type="color" @bind="cfg.CorBorda" @bind:event="oninput" /> Contorno</label>
-                                            <label><input type="color" @bind="cfg.CorSimbolo" @bind:event="oninput" /> Elementos</label>
+                                            <label><input type="color" @bind="cfg.CorSimbolo" @bind:event="oninput" /> Elementos (padrão)</label>
+                                            @if (cfg.TemFaixaInferior)
+                                            {
+                                                <label><input type="color" @bind="CorFaixaEd" @bind:event="oninput" /> Faixa inferior</label>
+                                            }
+                                            @if (cfg.TemCoroa)
+                                            {
+                                                <label><input type="color" @bind="CorCoroaEd" @bind:event="oninput" /> Coroa</label>
+                                            }
                                         </div>
+                                        @if (cfg.Simbolos!.Count > 0)
+                                        {
+                                            <div class="ed-grupo">Cada elemento</div>
+                                            <div class="cores">
+                                                @for (var k = 0; k < cfg.Simbolos.Count; k++)
+                                                {
+                                                    var idxEl = k;
+                                                    var el = cfg.Simbolos[k];
+                                                    <label><input type="color" value="@(el.Cor ?? cfg.CorSimbolo)" @oninput="e => AoCorElemento(idxEl, e)" /> @NomeDe(el.Chave)</label>
+                                                }
+                                            </div>
+                                        }
                                         break;
 
                                     case "elementos":
@@ -100,6 +120,20 @@ else
                                             <button type="button" class="botao-sec largo" @onclick="AdicionarTexto">Adicionar texto ao escudo</button>
                                         }
 
+                                        break;
+
+                                    case "nome":
+                                        <p class="ed-dica">Nome do time no ranking, no cabeçalho e para os amigos. Salva junto com o escudo.</p>
+                                        <label class="ed-campo">
+                                            Nome do time
+                                            <input value="@nomeEditado" @oninput="AoMudarNome" maxlength="@MaxNome"
+                                                   autocomplete="off" spellcheck="false" />
+                                        </label>
+                                        @if (NomeMudou)
+                                        {
+                                            <small class="ed-dica">Era: @nomeTime</small>
+                                        }
+                                        <p class="ed-dica">A sigla do escudo é separada (em Elementos &gt; Texto).</p>
                                         break;
 
                                     case "detalhes":
@@ -169,13 +203,23 @@ else
                     @if (camada == "simbolo" && Atual is not null)
                     {
                         <div class="ed-painel ed-ajustes">
-                            <label>Tamanho: @Atual.Tamanho%
+                            <label>
+                                Tamanho: @Atual.Tamanho%
                                 <input type="range" min="@EscudoConfig.TamanhoMin" max="@EscudoConfig.TamanhoMax" step="1"
-                                       @bind="Atual.Tamanho" @bind:event="oninput" /></label>
-                            <label>Horizontal
-                                <input type="range" min="8" max="92" step="1" @bind="Atual.X" @bind:event="oninput" /></label>
-                            <label>Vertical
-                                <input type="range" min="8" max="112" step="1" @bind="Atual.Y" @bind:event="oninput" /></label>
+                                       @bind="Atual.Tamanho" @bind:event="oninput" />
+                            </label>
+                            <label>
+                                Horizontal
+                                <input type="range" min="8" max="92" step="1" @bind="Atual.X" @bind:event="oninput" />
+                            </label>
+                            <label>
+                                Vertical
+                                <input type="range" min="8" max="112" step="1" @bind="Atual.Y" @bind:event="oninput" />
+                            </label>
+                            @if (cfg.Simbolos!.Count > 1)
+                            {
+                                <button type="button" class="botao-sec" @onclick="AplicarCorATodos">Usar esta cor em todos os elementos</button>
+                            }
                         </div>
                     }
                 </div>
@@ -200,6 +244,23 @@ else
                                     @onclick="() => Remover(idx)" @onclick:stopPropagation="true">
                                 <IconeUi Nome="x" Tamanho="18" />
                             </button>
+                        </div>
+                    }
+
+                    @if (cfg.TemCoroa)
+                    {
+                        <div class="ed-camada @(camada == "coroa" ? "sel" : "")" role="button" tabindex="0" @onclick="@(() => camada = "coroa")">
+                            <span class="ed-thumb"><IconeSimbolo Chave="coroa_real" Tamanho="28" /></span>
+                            <span class="ed-nome">Coroa</span>
+                            <span class="ed-icone" aria-hidden="true" style="width:16px;height:16px;border-radius:50%;background:@(cfg.CorCoroa ?? cfg.CorSimbolo);border:1px solid rgba(255,255,255,.5)"></span>
+                        </div>
+                    }
+                    @if (cfg.TemFaixaInferior)
+                    {
+                        <div class="ed-camada @(camada == "faixa_inf" ? "sel" : "")" role="button" tabindex="0" @onclick="@(() => camada = "faixa_inf")">
+                            <span class="ed-thumb"><IconeUi Nome="faixas" Tamanho="28" /></span>
+                            <span class="ed-nome">Faixa inferior</span>
+                            <span class="ed-icone" aria-hidden="true" style="width:16px;height:16px;border-radius:50%;background:@(cfg.CorFaixa ?? cfg.CorSimbolo);border:1px solid rgba(255,255,255,.5)"></span>
                         </div>
                     }
 
@@ -275,7 +336,8 @@ else
         new("forma", "Forma", "escudo"),
         new("detalhes", "Detalhes", "detalhes"),
         new("cores", "Cores", "paleta"),
-        new("elementos", "Elementos", "estrela")
+        new("elementos", "Elementos", "estrela"),
+        new("nome", "Nome", "lapis")
     };
 
     // Elementos disponíveis (a sigla fica na seção Texto, dentro de Elementos)
@@ -291,14 +353,17 @@ else
     };
 
     private EscudoConfig? cfg;
-    private string nomeTime = "";
+    private string nomeTime = "";          // nome atual, gravado no banco
+    private string nomeEditado = "";        // o que está no campo
+    private const int MaxNome = 30;
+    private bool NomeMudou => nomeEditado.Trim() != nomeTime;
     private bool editando;
     private bool salvando;
     private string? erro;
 
     private int torcidaAtual = Torcida.Inicial;
     private string aba = "forma";
-    private string camada = "fundo";      // simbolo | contorno | faixas | fundo
+    private string camada = "fundo";      // simbolo | contorno | faixas | fundo | faixa_inf | coroa
     private int? ativo;                    // índice do símbolo selecionado
     private int zoom = 100;
 
@@ -336,6 +401,7 @@ else
         try { torcidaAtual = (Torcidas.Cache ?? await Torcidas.CarregarAsync(false)).Torcida; } catch { }
         var perfil = Provedor.Perfil;
         nomeTime = perfil?.NomeTime ?? "Meu time";
+        nomeEditado = nomeTime;
 
         if (perfil?.Escudo is not null)
         {
@@ -426,6 +492,8 @@ else
         camada = ativo is null ? "fundo" : "simbolo";
     }
 
+    private void AoMudarNome(ChangeEventArgs e) => nomeEditado = e.Value?.ToString() ?? "";
+
     private void AoMudarSigla(ChangeEventArgs e) =>
         cfg!.Sigla = EscudoConfig.LimparSigla(e.Value?.ToString());
 
@@ -441,7 +509,9 @@ else
     {
         "faixas" => cfg!.Cor2,
         "contorno" => cfg!.CorBorda,
-        "simbolo" => cfg!.CorSimbolo,
+        "simbolo" => Atual?.Cor ?? cfg!.CorSimbolo,
+        "faixa_inf" => cfg!.CorFaixa ?? cfg.CorSimbolo,
+        "coroa" => cfg!.CorCoroa ?? cfg.CorSimbolo,
         _ => cfg!.Cor1
     };
 
@@ -449,9 +519,36 @@ else
     {
         "faixas" => "Faixas",
         "contorno" => "Contorno",
-        "simbolo" => "Elementos",
+        "simbolo" => Atual is null ? "Elementos" : "Elemento: " + NomeDe(Atual.Chave),
+        "faixa_inf" => "Faixa inferior",
+        "coroa" => "Coroa",
         _ => "Fundo"
     };
+
+    // Faixa inferior e coroa começam com a cor dos elementos até o usuário escolher uma própria
+    private string CorFaixaEd { get => cfg!.CorFaixa ?? cfg.CorSimbolo; set => cfg!.CorFaixa = value; }
+    private string CorCoroaEd { get => cfg!.CorCoroa ?? cfg.CorSimbolo; set => cfg!.CorCoroa = value; }
+
+    private void AoCorElemento(int idx, ChangeEventArgs e)
+    {
+        var v = e.Value?.ToString();
+        if (v is { Length: 7 } && v[0] == '#' && cfg!.Simbolos is not null && idx >= 0 && idx < cfg.Simbolos.Count)
+            cfg.Simbolos[idx].Cor = v.ToLowerInvariant();
+    }
+
+    private void AplicarCorATodos()
+    {
+        var cor = CorAtual;
+        foreach (var x in cfg!.Simbolos!) x.Cor = cor;
+    }
+
+    private void EscolherForma(string chave)
+    {
+        cfg!.Forma = chave;
+        // se a nova forma não tem coroa/faixa, a camada selecionada deixa de existir
+        if ((camada == "coroa" && !cfg.TemCoroa) || (camada == "faixa_inf" && !cfg.TemFaixaInferior))
+            camada = "fundo";
+    }
 
     private bool IgualCor(string hex) => string.Equals(hex, CorAtual, StringComparison.OrdinalIgnoreCase);
 
@@ -461,7 +558,12 @@ else
         {
             case "faixas": cfg!.Cor2 = hex; break;
             case "contorno": cfg!.CorBorda = hex; break;
-            case "simbolo": cfg!.CorSimbolo = hex; break;
+            case "simbolo":
+                if (Atual is not null) Atual.Cor = hex;     // só o elemento selecionado
+                else cfg!.CorSimbolo = hex;
+                break;
+            case "faixa_inf": cfg!.CorFaixa = hex; break;
+            case "coroa": cfg!.CorCoroa = hex; break;
             default: cfg!.Cor1 = hex; break;
         }
     }
@@ -478,12 +580,16 @@ else
         cfg.Cor2 = p.Cor2;
         cfg.CorBorda = p.Borda;
         cfg.CorSimbolo = p.Simbolo;
+        // o conjunto pronto vale para tudo: limpa as cores individuais
+        cfg.CorFaixa = null;
+        cfg.CorCoroa = null;
+        foreach (var x in cfg.Simbolos ?? new()) x.Cor = null;
     }
 
     // ----- ações -----
     private void Sortear()
     {
-        cfg = EscudoConfig.Aleatorio(nomeTime, torcidaAtual);
+        cfg = EscudoConfig.Aleatorio(nomeEditado.Trim().Length > 0 ? nomeEditado.Trim() : nomeTime, torcidaAtual);
         ativo = 0;
         camada = "simbolo";
     }
@@ -497,11 +603,24 @@ else
             return;
         }
 
+        var novoNome = nomeEditado.Trim();
+        if (NomeMudou && (novoNome.Length < 2 || novoNome.Length > MaxNome))
+        {
+            erro = $"O nome do time precisa ter entre 2 e {MaxNome} caracteres.";
+            aba = "nome";
+            return;
+        }
+
         if (Torcida.AnimacaoBloqueada(torcidaAtual)) cfg.Animado = false;   // animação só com a torcida necessária
 
         salvando = true;
         try
         {
+            if (NomeMudou)
+            {
+                await Perfis.SalvarNomeTimeAsync(novoNome);
+                nomeTime = novoNome;
+            }
             await Perfis.SalvarEscudoAsync(cfg);
             Nav.NavigateTo("", replace: true);
         }

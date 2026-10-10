@@ -247,6 +247,8 @@
         try
         {
             (jogadores, gols) = await Servico.CarregarAsync();
+            try { pelada = await Servico.CarregarPeladaAsync(); peladaOk = true; }
+            catch { peladaOk = false; }
             anos = gols.Where(g => g.Ano.HasValue).Select(g => g.Ano!.Value).Distinct().OrderByDescending(a => a).ToList();
             if (primeiraCarga)
             {
@@ -258,6 +260,13 @@
         carregando = false;
         await CarregarResumoAsync(aba);
     }
+
+    // "Ativo" aqui significa: joga na pelada (flag joga_pelada, marcado no admin). Não é o ativo do Cartola.
+    // Se a leitura falhar, cai no flag antigo para não zerar a lista.
+    Dictionary<long, bool> pelada = new();
+    bool peladaOk;
+
+    bool JogaNaPelada(HistoricoArtilheiro j) => peladaOk ? pelada.GetValueOrDefault(j.JogadorId) : j.Ativo;
 
     // Jogos, média e cartões vêm do resumo da temporada. Se a leitura falhar, os cartões mostram "—".
     async Task CarregarResumoAsync(int ano)
@@ -332,8 +341,8 @@
                     j => j.JogadorId, g => g.Key, (j, g) => (j, g.Sum(x => x.Gols)));
 
             var q = basico.Where(x => x.G > 0);
-            if (aplicarFiltros && filtro == "ativos") q = q.Where(x => x.J.Ativo);
-            if (aplicarFiltros && filtro == "inativos") q = q.Where(x => !x.J.Ativo);
+            if (aplicarFiltros && filtro == "ativos") q = q.Where(x => JogaNaPelada(x.J));
+            if (aplicarFiltros && filtro == "inativos") q = q.Where(x => !JogaNaPelada(x.J));
             if (aplicarFiltros && !string.IsNullOrWhiteSpace(busca))
                 q = q.Where(x => x.J.Nome.Contains(busca.Trim(), StringComparison.OrdinalIgnoreCase));
 
@@ -342,7 +351,7 @@
             for (int i = 0; i < lista.Count; i++)
             {
                 int pos = i > 0 && lista[i].G == lista[i - 1].G ? res[i - 1].Posicao : i + 1;
-                res.Add(new LinhaRanking(pos, lista[i].J.JogadorId, lista[i].J.Nome, lista[i].J.Ativo, lista[i].G, null));
+                res.Add(new LinhaRanking(pos, lista[i].J.JogadorId, lista[i].J.Nome, JogaNaPelada(lista[i].J), lista[i].G, null));
             }
             return res;
         }

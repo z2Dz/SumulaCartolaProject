@@ -21,7 +21,10 @@
         </div>
     </div>
 
-    @if (msg is not null) { <p class="ha-msg @(msgErro ? "erro" : "ok")">@msg</p> }
+    @if (msg is not null)
+    {
+        <p class="ha-msg @(msgErro ? "erro" : "ok")">@msg</p>
+    }
 
     @if (carregando)
     {
@@ -44,80 +47,95 @@
                     {
                         var jj = j;
                         <li class="@(selId == jj.JogadorId ? "sel" : "")" @onclick="() => Selecionar(jj)">
-                            <span class="n">@jj.Nome @if (!jj.Ativo){<em>inativo</em>}</span>
-                            <span class="t">@(jj.Total ?? 0)</span>
-                        </li>
-                    }
-                    @if (!Filtrados.Any()) { <li class="vazio">Nenhum jogador.</li> }
-                </ul>
-            </section>
-
-            <section class="ha-col ha-ed">
-                @if (!editando)
-                {
-                    <p class="ha-vazio">Escolha um jogador na lista ou crie um novo.</p>
+                            <span class="n">@jj.Nome @if (!JogaNaPelada(jj)){
+                                <em>inativo</em>
+                            }
+                        </span>
+                        <span class="t">@(jj.Total ?? 0)</span>
+                    </li>
                 }
-                else
+                @if (!Filtrados.Any())
                 {
-                    <button class="ha-voltar" @onclick="Fechar">← Voltar à lista</button>
-                    <h2>@(selId is null ? "Novo jogador" : "Editar jogador")</h2>
+                    <li class="vazio">Nenhum jogador.</li>
+                }
+            </ul>
+        </section>
 
-                    <label>Nome (como aparece no histórico)
-                        <input type="text" @bind="nome" maxlength="60" />
-                    </label>
-                    <label>Atleta do app (opcional)
-                        <select value="@atletaSel" @onchange="AoEscolherAtleta">
-                            <option value="">— Nenhum —</option>
-                            @foreach (var a in atletas) { <option value="@a.Id">@a.Nome</option> }
-                        </select>
-                    </label>
+        <section class="ha-col ha-ed">
+            @if (!editando)
+            {
+                <p class="ha-vazio">Escolha um jogador na lista ou crie um novo.</p>
+            }
+            else
+            {
+                <button class="ha-voltar" @onclick="Fechar">← Voltar à lista</button>
+                <h2>@(selId is null ? "Novo jogador" : "Editar jogador")</h2>
 
-                    <label class="ha-check">
-                        <input type="checkbox" @bind="ativo" />
-                        <span>Ativo: ainda joga na pelada</span>
-                    </label>
-
-                    <div class="ha-anos-cab">
-                        <span>Gols por ano</span>
-                        <b>Total: @valores.Values.Sum()</b>
-                    </div>
-                    <div class="ha-anos">
-                        @foreach (var a in Anos)
+                <label>
+                    Nome (como aparece no histórico)
+                    <input type="text" @bind="nome" maxlength="60" />
+                </label>
+                <label>
+                    Atleta do app (opcional)
+                    <select value="@atletaSel" @onchange="AoEscolherAtleta">
+                        <option value="">— Nenhum —</option>
+                        @foreach (var a in atletas)
                         {
-                            var ano = a;
-                            <label><span>@ano</span><input type="number" min="0" max="999" @bind="valores[ano]" /></label>
+                            <option value="@a.Id">@a.Nome</option>
                         }
-                        <label class="outros"><span>Outros</span><input type="number" min="0" max="999" @bind="valores[0]" /></label>
-                    </div>
+                    </select>
+                </label>
 
-                    <div class="ha-rodape">
-                        <button class="ha-btn ver" @onclick="Salvar" disabled="@ocupado">@(ocupado ? "Salvando…" : "Salvar")</button>
-                        @if (selId is not null)
-                        {
-                            <button class="ha-btn perigo" @onclick="Excluir" disabled="@ocupado">Excluir</button>
-                        }
-                    </div>
+                <label class="ha-check">
+                    <input type="checkbox" @bind="jogaPelada" />
+                    <span>Joga na pelada (usado no filtro Ativos/Inativos do histórico)</span>
+                </label>
+                <label class="ha-check">
+                    <input type="checkbox" @bind="ativo" />
+                    <span>Ativo no Cartola (mercado)</span>
+                </label>
 
+                <div class="ha-anos-cab">
+                    <span>Gols por ano</span>
+                    <b>Total: @valores.Values.Sum()</b>
+                </div>
+                <div class="ha-anos">
+                    @foreach (var a in Anos)
+                    {
+                        var ano = a;
+                        <label><span>@ano</span><input type="number" min="0" max="999" @bind="valores[ano]" /></label>
+                    }
+                    <label class="outros"><span>Outros</span><input type="number" min="0" max="999" @bind="valores[0]" /></label>
+                </div>
+
+                <div class="ha-rodape">
+                    <button class="ha-btn ver" @onclick="Salvar" disabled="@ocupado">@(ocupado ? "Salvando…" : "Salvar")</button>
                     @if (selId is not null)
                     {
-                        <div class="ha-juntar">
-                            <span>Juntar com outro (soma os gols e apaga este)</span>
-                            <div>
-                                <select @bind="juntarCom">
-                                    <option value="">Escolha o jogador de destino…</option>
-                                    @foreach (var j in jogadores.Where(x => x.JogadorId != selId).OrderBy(x => x.Nome))
-                                    {
-                                        <option value="@j.JogadorId">@j.Nome (@(j.Total ?? 0))</option>
-                                    }
-                                </select>
-                                <button class="ha-btn" @onclick="Juntar" disabled="@(ocupado || string.IsNullOrEmpty(juntarCom))">Juntar</button>
-                            </div>
-                        </div>
+                        <button class="ha-btn perigo" @onclick="Excluir" disabled="@ocupado">Excluir</button>
                     }
+                </div>
+
+                @if (selId is not null)
+                {
+                    <div class="ha-juntar">
+                        <span>Juntar com outro (soma os gols e apaga este)</span>
+                        <div>
+                            <select @bind="juntarCom">
+                                <option value="">Escolha o jogador de destino…</option>
+                                @foreach (var j in jogadores.Where(x => x.JogadorId != selId).OrderBy(x => x.Nome))
+                                {
+                                    <option value="@j.JogadorId">@j.Nome (@(j.Total ?? 0))</option>
+                                }
+                            </select>
+                            <button class="ha-btn" @onclick="Juntar" disabled="@(ocupado || string.IsNullOrEmpty(juntarCom))">Juntar</button>
+                        </div>
+                    </div>
                 }
-            </section>
-        </div>
-    }
+            }
+        </section>
+    </div>
+}
 </div>
 
 @* Relatório de impressão / PDF (oculto na tela) *@
@@ -143,7 +161,9 @@
     List<HistoricoGol> gols = new();
     List<AtletaBasico> atletas = new();
     Dictionary<int, int> valores = NovoMapa();
-    bool carregando = true, ocupado, editando, msgErro, ativo;
+    bool carregando = true, ocupado, editando, msgErro, ativo, jogaPelada, peladaOk;
+    Dictionary<long, bool> pelada = new();
+    bool JogaNaPelada(HistoricoArtilheiro j) => peladaOk ? pelada.GetValueOrDefault(j.JogadorId) : j.Ativo;
     string? msg;
     string busca = "", filtro = "todos", nome = "", atletaSel = "", juntarCom = "";
     long? selId;
@@ -158,7 +178,7 @@
     }
 
     IEnumerable<HistoricoArtilheiro> Filtrados => jogadores
-        .Where(j => filtro == "todos" || (filtro == "ativos" ? j.Ativo : !j.Ativo))
+        .Where(j => filtro == "todos" || (filtro == "ativos" ? JogaNaPelada(j) : !JogaNaPelada(j)))
         .Where(j => string.IsNullOrWhiteSpace(busca) || j.Nome.Contains(busca.Trim(), StringComparison.OrdinalIgnoreCase))
         .OrderByDescending(j => j.Total ?? 0).ThenBy(j => j.Nome);
 
@@ -188,7 +208,11 @@
     async Task Recarregar()
     {
         carregando = true;
-        try { (jogadores, gols) = await Servico.CarregarAsync(); }
+        try
+        {
+            (jogadores, gols) = await Servico.CarregarAsync();
+            try { pelada = await Servico.CarregarPeladaAsync(); peladaOk = true; } catch { peladaOk = false; }
+        }
         catch (Exception ex) { Aviso("Não foi possível carregar: " + ex.Message, true); }
         carregando = false;
     }
@@ -197,12 +221,12 @@
 
     void Novo()
     {
-        selId = null; nome = ""; ativo = false; atletaSel = ""; juntarCom = ""; valores = NovoMapa(); editando = true; msg = null;
+        selId = null; nome = ""; ativo = false; jogaPelada = false; atletaSel = ""; juntarCom = ""; valores = NovoMapa(); editando = true; msg = null;
     }
 
     void Selecionar(HistoricoArtilheiro j)
     {
-        selId = j.JogadorId; nome = j.Nome; ativo = j.Ativo; atletaSel = j.AtletaId?.ToString() ?? ""; juntarCom = "";
+        selId = j.JogadorId; nome = j.Nome; ativo = j.Ativo; jogaPelada = JogaNaPelada(j); atletaSel = j.AtletaId?.ToString() ?? ""; juntarCom = "";
         valores = NovoMapa();
         foreach (var g in gols.Where(g => g.JogadorId == j.JogadorId))
             valores[g.Ano ?? 0] = valores.GetValueOrDefault(g.Ano ?? 0) + g.Gols;
@@ -212,7 +236,7 @@
     void AoEscolherAtleta(ChangeEventArgs e)
     {
         atletaSel = e.Value?.ToString() ?? "";
-        if (atletaSel != "") ativo = true;   // escolher um atleta marca ativo; o admin pode desmarcar
+        if (atletaSel != "") ativo = true;   // escolher um atleta marca ativo no Cartola; o admin pode desmarcar
     }
 
     void Fechar() { editando = false; selId = null; }
@@ -225,6 +249,7 @@
         {
             Guid? at = Guid.TryParse(atletaSel, out var g) ? g : null;
             var id = await Servico.SalvarAsync(selId, nome, at, ativo, valores);
+            await Servico.DefinirJogaPeladaAsync(id, jogaPelada);
             await Recarregar();
             var j = jogadores.FirstOrDefault(x => x.JogadorId == id);
             if (j is not null) Selecionar(j);
@@ -275,47 +300,306 @@
 }
 
 <style>
-    .ha { --ha-h: calc(100dvh - 8.5rem); max-width: 1100px; margin: 0 auto; padding: 1rem; box-sizing: border-box; height: var(--ha-h); display: flex; flex-direction: column; overflow: hidden; }
-    @@media (min-width: 900px) { .ha { --ha-h: 100dvh; } }
-    .ha h1 { margin: 0; font-size: 1.5rem; } .ha h2 { margin: .2rem 0 .8rem; font-size: 1.15rem; }
-    .ha-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: .8rem; flex-wrap: wrap; flex: none; }
-    .ha-topo p { margin: .2rem 0 .8rem; opacity: .7; }
-    .ha-acoes { display: flex; gap: .5rem; flex-wrap: wrap; }
-    .ha-btn { padding: .5rem .9rem; border-radius: 10px; border: 1px solid rgba(80,200,180,.4); background: rgba(10,25,25,.6); color: inherit; cursor: pointer; }
-    .ha-btn.ver { background: #1fa37a; border-color: #1fa37a; color: #fff; font-weight: 600; }
-    .ha-btn.perigo { border-color: #d9534f; color: #ff8a86; }
-    .ha-btn:disabled { opacity: .5; cursor: default; }
-    .ha-msg { flex: none; margin: 0 0 .6rem; padding: .5rem .8rem; border-radius: 10px; }
-    .ha-msg.ok { background: rgba(31,163,122,.2); } .ha-msg.erro { background: rgba(217,83,79,.2); color: #ffb3b0; }
-    .ha-vazio { opacity: .7; }
-    .ha-corpo { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 340px 1fr; gap: 1rem; }
-    .ha-col { min-height: 0; display: flex; flex-direction: column; background: rgba(10,25,25,.55); border: 1px solid rgba(80,200,180,.3); border-radius: 14px; padding: .8rem; }
-    .ha-ed { overflow-y: auto; scrollbar-width: none; } .ha-ed::-webkit-scrollbar { display: none; }
-    .ha-filtros { display: flex; gap: .4rem; margin-bottom: .6rem; flex: none; }
-    .ha input, .ha select { padding: .45rem .6rem; border-radius: 8px; border: 1px solid rgba(80,200,180,.35); background: rgba(5,15,15,.7); color: inherit; box-sizing: border-box; }
-    .ha-filtros input { flex: 1; min-width: 0; }
-    .ha-lista { list-style: none; margin: 0; padding: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; gap: .3rem; }
-    .ha-lista::-webkit-scrollbar { display: none; }
-    .ha-lista li { flex: none; display: flex; justify-content: space-between; gap: .5rem; padding: .5rem .7rem; border-radius: 10px; border: 1px solid rgba(80,200,180,.18); cursor: pointer; }
-    .ha-lista li.sel { border-color: #1fa37a; background: rgba(31,163,122,.18); }
-    .ha-lista li.vazio { cursor: default; opacity: .7; border: 0; }
-    .ha-lista .n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ha-lista em { font-style: normal; font-size: .68rem; margin-left: .4rem; padding: .1rem .4rem; border-radius: 999px; background: rgba(255,255,255,.12); }
-    .ha-lista .t { font-weight: 700; color: #ffd24a; }
-    .ha-ed label { display: flex; flex-direction: column; gap: .25rem; font-size: .85rem; opacity: .95; margin-bottom: .7rem; }
-    .ha-ed label.ha-check { flex-direction: row; align-items: center; gap: .6rem; font-size: .95rem; }
-    .ha-check input { width: 1.2rem; height: 1.2rem; accent-color: #1fa37a; }
-    .ha-anos-cab { display: flex; justify-content: space-between; margin: .3rem 0 .4rem; font-size: .9rem; }
-    .ha-anos { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: .5rem; }
-    .ha-anos label { margin: 0; } .ha-anos label span { font-size: .75rem; opacity: .75; } .ha-anos input { width: 100%; }
-    .ha-rodape { display: flex; gap: .5rem; margin-top: 1rem; }
-    .ha-juntar { margin-top: 1.2rem; padding-top: .8rem; border-top: 1px dashed rgba(80,200,180,.3); font-size: .85rem; }
-    .ha-juntar div { display: flex; gap: .5rem; margin-top: .4rem; } .ha-juntar select { flex: 1; min-width: 0; }
-    .ha-voltar { display: none; align-self: flex-start; margin-bottom: .6rem; background: none; border: 0; color: inherit; cursor: pointer; padding: 0; }
+    .ha {
+        --ha-h: calc(100dvh - 8.5rem);
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 1rem;
+        box-sizing: border-box;
+        height: var(--ha-h);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    @@media (min-width: 900px) {
+        .ha {
+            --ha-h: 100dvh;
+        }
+    }
+
+    .ha h1 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .ha h2 {
+        margin: .2rem 0 .8rem;
+        font-size: 1.15rem;
+    }
+
+    .ha-topo {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: .8rem;
+        flex-wrap: wrap;
+        flex: none;
+    }
+
+        .ha-topo p {
+            margin: .2rem 0 .8rem;
+            opacity: .7;
+        }
+
+    .ha-acoes {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+    }
+
+    .ha-btn {
+        padding: .5rem .9rem;
+        border-radius: 10px;
+        border: 1px solid rgba(80,200,180,.4);
+        background: rgba(10,25,25,.6);
+        color: inherit;
+        cursor: pointer;
+    }
+
+        .ha-btn.ver {
+            background: #1fa37a;
+            border-color: #1fa37a;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .ha-btn.perigo {
+            border-color: #d9534f;
+            color: #ff8a86;
+        }
+
+        .ha-btn:disabled {
+            opacity: .5;
+            cursor: default;
+        }
+
+    .ha-msg {
+        flex: none;
+        margin: 0 0 .6rem;
+        padding: .5rem .8rem;
+        border-radius: 10px;
+    }
+
+        .ha-msg.ok {
+            background: rgba(31,163,122,.2);
+        }
+
+        .ha-msg.erro {
+            background: rgba(217,83,79,.2);
+            color: #ffb3b0;
+        }
+
+    .ha-vazio {
+        opacity: .7;
+    }
+
+    .ha-corpo {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 1rem;
+    }
+
+    .ha-col {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        background: rgba(10,25,25,.55);
+        border: 1px solid rgba(80,200,180,.3);
+        border-radius: 14px;
+        padding: .8rem;
+    }
+
+    .ha-ed {
+        overflow-y: auto;
+        scrollbar-width: none;
+    }
+
+        .ha-ed::-webkit-scrollbar {
+            display: none;
+        }
+
+    .ha-filtros {
+        display: flex;
+        gap: .4rem;
+        margin-bottom: .6rem;
+        flex: none;
+    }
+
+    .ha input, .ha select {
+        padding: .45rem .6rem;
+        border-radius: 8px;
+        border: 1px solid rgba(80,200,180,.35);
+        background: rgba(5,15,15,.7);
+        color: inherit;
+        box-sizing: border-box;
+    }
+
+    .ha-filtros input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .ha-lista {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        scrollbar-width: none;
+        display: flex;
+        flex-direction: column;
+        gap: .3rem;
+    }
+
+        .ha-lista::-webkit-scrollbar {
+            display: none;
+        }
+
+        .ha-lista li {
+            flex: none;
+            display: flex;
+            justify-content: space-between;
+            gap: .5rem;
+            padding: .5rem .7rem;
+            border-radius: 10px;
+            border: 1px solid rgba(80,200,180,.18);
+            cursor: pointer;
+        }
+
+            .ha-lista li.sel {
+                border-color: #1fa37a;
+                background: rgba(31,163,122,.18);
+            }
+
+            .ha-lista li.vazio {
+                cursor: default;
+                opacity: .7;
+                border: 0;
+            }
+
+        .ha-lista .n {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .ha-lista em {
+            font-style: normal;
+            font-size: .68rem;
+            margin-left: .4rem;
+            padding: .1rem .4rem;
+            border-radius: 999px;
+            background: rgba(255,255,255,.12);
+        }
+
+        .ha-lista .t {
+            font-weight: 700;
+            color: #ffd24a;
+        }
+
+    .ha-ed label {
+        display: flex;
+        flex-direction: column;
+        gap: .25rem;
+        font-size: .85rem;
+        opacity: .95;
+        margin-bottom: .7rem;
+    }
+
+        .ha-ed label.ha-check {
+            flex-direction: row;
+            align-items: center;
+            gap: .6rem;
+            font-size: .95rem;
+        }
+
+    .ha-check input {
+        width: 1.2rem;
+        height: 1.2rem;
+        accent-color: #1fa37a;
+    }
+
+    .ha-anos-cab {
+        display: flex;
+        justify-content: space-between;
+        margin: .3rem 0 .4rem;
+        font-size: .9rem;
+    }
+
+    .ha-anos {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+        gap: .5rem;
+    }
+
+        .ha-anos label {
+            margin: 0;
+        }
+
+            .ha-anos label span {
+                font-size: .75rem;
+                opacity: .75;
+            }
+
+        .ha-anos input {
+            width: 100%;
+        }
+
+    .ha-rodape {
+        display: flex;
+        gap: .5rem;
+        margin-top: 1rem;
+    }
+
+    .ha-juntar {
+        margin-top: 1.2rem;
+        padding-top: .8rem;
+        border-top: 1px dashed rgba(80,200,180,.3);
+        font-size: .85rem;
+    }
+
+        .ha-juntar div {
+            display: flex;
+            gap: .5rem;
+            margin-top: .4rem;
+        }
+
+        .ha-juntar select {
+            flex: 1;
+            min-width: 0;
+        }
+
+    .ha-voltar {
+        display: none;
+        align-self: flex-start;
+        margin-bottom: .6rem;
+        background: none;
+        border: 0;
+        color: inherit;
+        cursor: pointer;
+        padding: 0;
+    }
+
     @@media (max-width: 899px) {
-        .ha-corpo { grid-template-columns: 1fr; }
-        .ha.editando .ha-lista-col { display: none; }
-        .ha:not(.editando) .ha-ed { display: none; }
-        .ha-voltar { display: block; }
+        .ha-corpo {
+            grid-template-columns: 1fr;
+        }
+
+        .ha.editando .ha-lista-col {
+            display: none;
+        }
+
+        .ha:not(.editando) .ha-ed {
+            display: none;
+        }
+
+        .ha-voltar {
+            display: block;
+        }
     }
 </style>

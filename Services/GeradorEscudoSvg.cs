@@ -110,6 +110,8 @@ public static class GeradorEscudoSvg
         var cor2 = Cor(c.Cor2, "#f5c518");
         var borda = Cor(c.CorBorda, "#0b3d2e");
         var cs = Cor(c.CorSimbolo, "#ffffff");
+        var corFaixa = Cor(c.CorFaixa, cs);    // sem cor própria, faixa e coroa seguem a cor dos elementos
+        var corCoroa = Cor(c.CorCoroa, cs);
         id = new string((id ?? "x").Where(char.IsLetterOrDigit).ToArray());
 
         var sb = new StringBuilder();
@@ -121,7 +123,7 @@ public static class GeradorEscudoSvg
         if (c.Simbolos is null) sb.Append(Simbolo(c, cor1, borda, cs));          // escudo antigo
         else sb.Append(SimbolosPosicionados(c, id, cor1, borda, cs));
         if (c.Contorno) sb.Append($"<path d=\"{forma}\" fill=\"none\" stroke=\"{borda}\" stroke-width=\"5\" stroke-linejoin=\"round\"/>");
-        sb.Append(Ornamentos(c.Forma, cs, borda));
+        sb.Append(Ornamentos(c.Forma, corFaixa, corCoroa, borda));
         return sb.ToString();
     }
 
@@ -294,15 +296,17 @@ public static class GeradorEscudoSvg
         "<path d='M5 100H95L89 109L95 118H5L11 109Z'/>"
     };
 
-    private static string Ornamentos(string? chave, string cs, string borda)
+    private static string Ornamentos(string? chave, string corFaixa, string corCoroa, string borda)
     {
         var m = FormaOrnada.Match(chave ?? "");
         if (!m.Success) return "";
         var k = int.Parse(m.Groups[1].Value) - 26;
-        var sb = new StringBuilder($"<g fill=\"{cs}\" stroke=\"{borda}\" stroke-width=\"1.1\" stroke-linejoin=\"round\">");
-        if (m.Groups[2].Value.Contains('f')) sb.Append(Faixas[k % Faixas.Length]);
-        if (m.Groups[2].Value.Contains('c')) sb.Append(Coroas[k % Coroas.Length]);
-        return sb.Append("</g>").ToString();
+        var sb = new StringBuilder();
+        string Grupo(string cor, string corpo) =>
+            $"<g fill=\"{cor}\" stroke=\"{borda}\" stroke-width=\"1.1\" stroke-linejoin=\"round\">{corpo}</g>";
+        if (m.Groups[2].Value.Contains('f')) sb.Append(Grupo(corFaixa, Faixas[k % Faixas.Length]));
+        if (m.Groups[2].Value.Contains('c')) sb.Append(Grupo(corCoroa, Coroas[k % Coroas.Length]));
+        return sb.ToString();
     }
 
     private static string F(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
@@ -327,8 +331,9 @@ public static class GeradorEscudoSvg
             var sw = 1.2 / esc;                       // borda de ~1,2 unidade na tela, qualquer que seja o tamanho
             var corpo = Corpo(s.Chave, c.Sigla, cor1, borda, sw);
             if (corpo.Length == 0) continue;
+            var corEl = Cor(s.Cor, cs);   // cor própria do elemento, ou a cor geral dos elementos
             sb.Append($"<g transform=\"translate({F(EscudoConfig.LimitarX(s.X))} {F(EscudoConfig.LimitarY(s.Y))}) scale({F(esc)})\" " +
-                      $"fill=\"{cs}\" stroke=\"{borda}\" stroke-width=\"{F(sw)}\" stroke-linejoin=\"round\">{Animar(c, s.Chave, corpo)}</g>");
+                      $"fill=\"{corEl}\" stroke=\"{borda}\" stroke-width=\"{F(sw)}\" stroke-linejoin=\"round\">{Animar(c, s.Chave, corpo)}</g>");
         }
         return sb.Append("</g>").ToString();
     }

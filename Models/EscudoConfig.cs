@@ -1,5 +1,7 @@
 using System.Globalization;
+using System.Runtime.Serialization;
 using System.Text;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
 namespace SumulaCartolaProject.Models;
@@ -17,6 +19,8 @@ public class SimboloPosicionado
     [JsonProperty("tamanho")] public int Tamanho { get; set; } = 26;
     /// <summary>Olho da camada no editor: false esconde o símbolo.</summary>
     [JsonProperty("visivel")] public bool Visivel { get; set; } = true;
+    /// <summary>Cor própria deste símbolo (#rrggbb). Null = usa EscudoConfig.CorSimbolo.</summary>
+    [JsonProperty("cor")] public string? Cor { get; set; }
 
     public SimboloPosicionado Copiar() => (SimboloPosicionado)MemberwiseClone();
 }
@@ -33,6 +37,35 @@ public class EscudoConfig
     [JsonProperty("cor2")] public string Cor2 { get; set; } = "#f5c518";
     [JsonProperty("cor_borda")] public string CorBorda { get; set; } = "#0b3d2e";
     [JsonProperty("cor_simbolo")] public string CorSimbolo { get; set; } = "#ffffff";
+
+    /// <summary>Cor da faixa inferior das formas com faixa (e26f, e26cf...). Null = usa CorSimbolo.</summary>
+    [JsonProperty("cor_faixa")] public string? CorFaixa { get; set; }
+    /// <summary>Cor da coroa das formas com coroa (e26c, e26cf...). Null = usa CorSimbolo.</summary>
+    [JsonProperty("cor_coroa")] public string? CorCoroa { get; set; }
+
+    // Cor individual de cada símbolo, na ordem de Simbolos. Vai ao banco num campo à parte (cores_simbolos)
+    // e volta para SimboloPosicionado.Cor ao ler, para não depender de a função salvar_escudo conhecer o campo "cor".
+    private List<string?>? _coresLidas;
+    [JsonProperty("cores_simbolos")]
+    public List<string?>? CoresSimbolos
+    {
+        get => Simbolos?.Select(x => x.Cor).ToList();
+        set => _coresLidas = value;
+    }
+
+    [OnDeserialized]
+    private void AoDesserializar(StreamingContext _)
+    {
+        if (_coresLidas is null || Simbolos is null) return;
+        for (var i = 0; i < Simbolos.Count && i < _coresLidas.Count; i++)
+            Simbolos[i].Cor ??= _coresLidas[i];
+    }
+
+    private static readonly Regex FormaOrnadaRx = new(@"^e(2[6-9]|3[0-8])(c|f|cf)$", RegexOptions.Compiled);
+    /// <summary>A forma escolhida tem coroa?</summary>
+    [JsonIgnore] public bool TemCoroa => FormaOrnadaRx.Match(Forma ?? "") is { Success: true } m && m.Groups[2].Value.Contains('c');
+    /// <summary>A forma escolhida tem faixa embaixo?</summary>
+    [JsonIgnore] public bool TemFaixaInferior => FormaOrnadaRx.Match(Forma ?? "") is { Success: true } m && m.Groups[2].Value.Contains('f');
 
     /// <summary>Símbolos posicionados (até MaxSimbolos). Null = escudo antigo, com um símbolo central (campos Simbolo/Escala).</summary>
     [JsonProperty("simbolos")] public List<SimboloPosicionado>? Simbolos { get; set; }
@@ -98,6 +131,14 @@ public class EscudoConfig
             ["tamanho"] = Math.Clamp(x.Tamanho, TamanhoMin, TamanhoMax),
             ["visivel"] = x.Visivel
         }).ToList()
+    };
+
+    /// <summary>Cores individuais (faixa, coroa e cada símbolo). Gravadas por salvar_escudo_cores, logo após salvar_escudo.</summary>
+    public Dictionary<string, object?> CoresParaDicionario() => new()
+    {
+        ["cor_faixa"] = CorFaixa,
+        ["cor_coroa"] = CorCoroa,
+        ["cores_simbolos"] = (Simbolos ?? new()).Take(MaxSimbolos).Select(x => x.Cor).ToList()
     };
 
     // ---------- Catálogos usados pelo editor ----------
