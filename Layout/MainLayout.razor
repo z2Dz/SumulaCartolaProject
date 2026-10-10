@@ -98,6 +98,9 @@
     </div>
 </div>
 
+<TutorialInicial />
+<InstalarApp />
+
 @code {
     private int Torc => Torcidas.Cache?.Torcida ?? Torcida.Inicial;
     private bool Coroa => Torcidas.Cache is { } c && c.Clube.Coroa && Torc >= Torcida.MinCoroa;
@@ -138,26 +141,86 @@
 }
 
 <style>
-    .admin-fundo, .admin-folha { display: none; }
+    .admin-fundo, .admin-folha {
+        display: none;
+    }
+
     @@media (max-width: 899px) {
         .abas-m .aba-admin {
-            flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem;
-            padding: .45rem .2rem .35rem; border: 0; border-radius: 12px; background: transparent;
-            font: inherit; font-size: .68rem; font-weight: 600; line-height: 1.1; text-align: center;
-            color: var(--suave); cursor: pointer;
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: .15rem;
+            padding: .45rem .2rem .35rem;
+            border: 0;
+            border-radius: 12px;
+            background: transparent;
+            font: inherit;
+            font-size: .68rem;
+            font-weight: 600;
+            line-height: 1.1;
+            text-align: center;
+            color: var(--suave);
+            cursor: pointer;
         }
-        .abas-m .aba-admin.active { color: var(--acento); }
-        .abas-m .aba-admin.active svg { filter: drop-shadow(0 0 6px rgba(25,201,138,.7)); }
 
-        .admin-fundo { display: block; position: fixed; left: 0; right: 0; top: 0; bottom: calc(4.3rem + env(safe-area-inset-bottom, 0px)); z-index: 26; background: rgba(0,0,0,.45); }
-        .admin-folha {
-            display: flex; flex-direction: column; gap: .15rem; position: fixed; z-index: 27;
-            left: .6rem; right: .6rem; bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
-            padding: .45rem; border-radius: 18px; background: rgba(8,20,15,.97);
-            border: 1px solid rgba(80,200,180,.35); box-shadow: 0 -8px 30px rgba(0,0,0,.5);
+            .abas-m .aba-admin.active {
+                color: var(--acento);
+            }
+
+                .abas-m .aba-admin.active svg {
+                    filter: drop-shadow(0 0 6px rgba(25,201,138,.7));
+                }
+
+        .admin-fundo {
+            display: block;
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: calc(4.3rem + env(safe-area-inset-bottom, 0px));
+            z-index: 26;
+            background: rgba(0,0,0,.45);
         }
-        .admin-folha a { display: flex; align-items: center; gap: .75rem; padding: .8rem .9rem; border-radius: 12px; color: #fff; text-decoration: none; font-size: .92rem; font-weight: 600; }
-        .admin-folha a svg { flex: none; opacity: .85; }
-        .admin-folha a.active { background: rgba(25,201,138,.18); color: var(--acento); }
+
+        .admin-folha {
+            display: flex;
+            flex-direction: column;
+            gap: .15rem;
+            position: fixed;
+            z-index: 27;
+            left: .6rem;
+            right: .6rem;
+            bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+            padding: .45rem;
+            border-radius: 18px;
+            background: rgba(8,20,15,.97);
+            border: 1px solid rgba(80,200,180,.35);
+            box-shadow: 0 -8px 30px rgba(0,0,0,.5);
+        }
+
+            .admin-folha a {
+                display: flex;
+                align-items: center;
+                gap: .75rem;
+                padding: .8rem .9rem;
+                border-radius: 12px;
+                color: #fff;
+                text-decoration: none;
+                font-size: .92rem;
+                font-weight: 600;
+            }
+
+                .admin-folha a svg {
+                    flex: none;
+                    opacity: .85;
+                }
+
+                .admin-folha a.active {
+                    background: rgba(25,201,138,.18);
+                    color: var(--acento);
+                }
     }
 </style>

@@ -1,0 +1,160 @@
+﻿@* Componentes/InstalarApp.razor *@
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@if (visivel)
+{
+    <div class="instalar-fundo" @onclick="Depois">
+        <div class="instalar-caixa" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="instalar-titulo">
+            <img class="instalar-icone" src="icons/icon-192.png" alt="" />
+            <h2 id="instalar-titulo">Instalar o Cartola dos Amigos?</h2>
+
+            @if (ios)
+            {
+                <p>Para abrir como app, toque em <strong>Compartilhar</strong> (o quadrado com a seta para cima) e depois em <strong>Adicionar à Tela de Início</strong>.</p>
+            }
+            else
+            {
+                <p>Instale na tela inicial do celular para abrir mais rápido e em tela cheia.</p>
+            }
+
+            <div class="instalar-botoes">
+                @if (!ios)
+                {
+                    <button type="button" class="instalar-sim" @onclick="Instalar">Instalar</button>
+                }
+                <button type="button" class="instalar-nao" @onclick="Depois">@(ios ? "Entendi" : "Agora não")</button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .instalar-fundo {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        background: rgba(0, 0, 0, .6);
+        padding: 16px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .instalar-caixa {
+        width: 100%;
+        max-width: 380px;
+        text-align: center;
+        background: #0b3d2e;
+        color: #fff;
+        border-radius: 20px;
+        padding: 24px 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
+        font-family: inherit;
+    }
+
+    .instalar-icone {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        margin-bottom: 12px;
+    }
+
+    .instalar-caixa h2 {
+        margin: 0 0 8px;
+        font-size: 1.15rem;
+    }
+
+    .instalar-caixa p {
+        margin: 0 0 18px;
+        font-size: .95rem;
+        line-height: 1.4;
+        opacity: .9;
+    }
+
+    .instalar-botoes {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+        .instalar-botoes button {
+            border: 0;
+            border-radius: 999px;
+            padding: 12px 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+    .instalar-sim {
+        background: #f5c518;
+        color: #0b3d2e;
+    }
+
+    .instalar-nao {
+        background: transparent;
+        color: #fff;
+        opacity: .8;
+    }
+</style>
+
+@code {
+    private IJSObjectReference? modulo;
+    private bool visivel;
+    private bool ios;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        try
+        {
+            modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/instalar.js");
+
+            if (await modulo.InvokeAsync<bool>("jaInstalado")) return;
+            if (await modulo.InvokeAsync<bool>("adiadoRecente")) return;
+
+            // Quem ainda não viu o tutorial vê primeiro o tutorial; o convite de instalação vem na próxima visita.
+            if (await JS.InvokeAsync<string?>("localStorage.getItem", "tutorial-visto") != "1") return;
+
+            ios = await modulo.InvokeAsync<bool>("ehIos");
+
+            // No Android, só mostra se o navegador liberou a instalação (espera até 4 s).
+            if (!ios && !await modulo.InvokeAsync<bool>("podeInstalar", 4000)) return;
+
+            visivel = true;
+            StateHasChanged();
+        }
+        catch
+        {
+            // Se algo falhar, simplesmente não mostra o convite.
+        }
+    }
+
+    private async Task Instalar()
+    {
+        visivel = false;
+        if (modulo is not null)
+        {
+            var resultado = await modulo.InvokeAsync<string>("instalar");
+            if (resultado == "dismissed") await modulo.InvokeVoidAsync("adiar");
+        }
+    }
+
+    private async Task Depois()
+    {
+        visivel = false;
+        if (modulo is not null) await modulo.InvokeVoidAsync("adiar");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (modulo is not null)
+        {
+            try { await modulo.DisposeAsync(); } catch { }
+        }
+    }
+}

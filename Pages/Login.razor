@@ -7,8 +7,11 @@
 
 <div class="login">
     <div class="login-marca">
-        <div class="login-bola">⚽</div>
-        <h1>Cartola dos Amigos</h1>
+        <div class="login-escudos">
+            <img src="img/time-amarelo.png" alt="Time amarelo" />
+            <img src="img/time-vermelho.png" alt="Time vermelho" />
+        </div>
+        <h1>AFC Cartola</h1>
         <p>Escale seus atletas e dispute o ranking.</p>
     </div>
 
@@ -115,3 +118,25 @@
         }
     }
 }
+
+<style>
+    .login-escudos {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .9rem;
+        margin-bottom: .8rem;
+    }
+
+        .login-escudos img {
+            height: 84px;
+            width: auto;
+            max-width: 42%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,.45));
+        }
+
+    .login-marca h1:focus {
+        outline: none;
+    }
+</style>

@@ -1,0 +1,279 @@
+﻿@* Componentes/TutorialInicial.razor *@
+@* Aparece uma vez por navegador, logo depois do primeiro login ou cadastro. *@
+@inject IJSRuntime JS
+
+@if (visivel)
+{
+    <div class="tut-fundo">
+        <div class="tut-caixa" role="dialog" aria-modal="true" aria-labelledby="tut-titulo">
+            <button type="button" class="tut-pular" @onclick="Fechar">Pular</button>
+
+            <div class="tut-numero">@(passo + 1)</div>
+
+            @switch (passo)
+            {
+                case 0:
+                    <h2 id="tut-titulo">Bem-vindo ao Cartola dos Amigos!</h2>
+                    <p>Aqui você monta o seu time com os atletas da nossa pelada e disputa o ranking com os amigos.</p>
+                    <p>Em poucos passos você vê como tudo funciona.</p>
+                    break;
+
+                case 1:
+                    <h2 id="tut-titulo">Monte o seu time</h2>
+                    <p>Na aba <strong>Escalar</strong>, escolha o esquema tático e preencha as <strong>12 vagas</strong>: goleiro, 10 jogadores de linha e o técnico. Toque numa vaga para ver os atletas daquela posição.</p>
+                    <p>Você tem <strong>@Formato.Moeda(Valorizacao.Orcamento)</strong> para gastar. Goleiro e técnico não custam nada, então o orçamento vale para os jogadores de linha. Atacante é caro e zagueiro é barato, e é aí que está a escolha.</p>
+                    break;
+
+                case 2:
+                    <h2 id="tut-titulo">Capitão e salvar</h2>
+                    <p>Toque num atleta escalado para escolher o <strong>capitão</strong>.</p>
+                    <p>O botão <strong>Salvar escalação</strong> só libera com as 12 vagas preenchidas e dentro do orçamento. Depois de salvar, o seu time vale para a próxima rodada.</p>
+                    <p>O administrador abre e fecha o <strong>mercado</strong>. Com ele fechado, a escalação não muda mais.</p>
+                    break;
+
+                case 3:
+                    <h2 id="tut-titulo">Como os atletas pontuam</h2>
+                    <p>Em cada jogo, todo atleta de linha começa com <strong>7 pontos</strong> e o goleiro com <strong>12</strong>. Depois:</p>
+                    <ul>
+                        <li>Time fez gol: <strong>+2</strong> para quem joga na linha e <strong>+1</strong> para o goleiro. Quem fez o gol ganha <strong>+4</strong>.</li>
+                        <li>Time tomou gol: <strong>−4</strong> para a linha e <strong>−2</strong> para o goleiro.</li>
+                        <li>Cartão amarelo <strong>−2</strong>, azul <strong>−3</strong> e vermelho <strong>−5</strong>.</li>
+                    </ul>
+                    <p>A pontuação do seu time é a soma dos pontos dos seus atletas.</p>
+                    break;
+
+                case 4:
+                    <h2 id="tut-titulo">O preço dos atletas muda</h2>
+                    <p>Depois de cada rodada, quem fez <strong>mais pontos que a própria média</strong> valoriza. Quem fez menos desvaloriza, e quem fez exatamente a média não muda.</p>
+                    <p>A variação é de <strong>@Formato.Moeda(Valorizacao.ReaisPorPonto)</strong> por ponto de diferença, com no máximo @((Valorizacao.LimitePorRodada * 100).ToString("0"))% do valor do atleta por rodada. Fique de olho: um atleta em alta fica mais caro.</p>
+                    break;
+
+                case 5:
+                    <h2 id="tut-titulo">Ranking</h2>
+                    <p>No <strong>Ranking</strong> você compara o seu time com o dos amigos. Dá para ordenar por <strong>pontos</strong> ou por <strong>torcida</strong>.</p>
+                    <p>Toque num time para ver a escalação dele. Os pontos contam só de jogos que já terminaram.</p>
+                    break;
+
+                case 6:
+                    <h2 id="tut-titulo">Seu clube cresce</h2>
+                    <p>Todo clube começa com <strong>@Torcida.Fmt(Torcida.Inicial) torcedores</strong>, e a torcida <strong>nunca cai</strong>. Ela cresce assim:</p>
+                    <ul>
+                        <li><strong>Estreia:</strong> +@Torcida.Estreia na primeira rodada em que você estiver escalado.</li>
+                        <li><strong>Acima da média:</strong> se o seu time fizer mais pontos que a média das rodadas anteriores, ganha a diferença × @Torcida.PorPonto torcedores, no máximo +@Torcida.TetoRodada por rodada.</li>
+                        <li><strong>Sequência:</strong> a cada @Torcida.SequenciaTam rodadas seguidas acima da média, +@Torcida.BonusSequencia.</li>
+                        <li><strong>Conquistas:</strong> dão torcedores extras uma única vez.</li>
+                    </ul>
+                    <p>A torcida é atualizada quando você abre o app, então entre depois de cada rodada para ver o clube crescer.</p>
+                    break;
+
+                default:
+                    <h2 id="tut-titulo">Recompensas do clube</h2>
+                    <p>Quanto maior a torcida, mais você personaliza o clube em <strong>Meu clube</strong>:</p>
+                    <ul>
+                        @foreach (var r in Recompensas())
+                        {
+                            <li><strong>@Torcida.Fmt(r.Min)</strong> torcedores: @r.Texto</li>
+                        }
+                    </ul>
+                    <p>São só visuais, sem vantagem no jogo. A personalização aparece para os amigos quando eles olham a sua escalação no ranking.</p>
+                    break;
+            }
+
+            <div class="tut-pontos" aria-hidden="true">
+                @for (var i = 0; i < total; i++)
+                {
+                    <span class="@(i == passo ? "ativo" : "")"></span>
+                }
+            </div>
+
+            <div class="tut-botoes">
+                @if (passo > 0)
+                {
+                    <button type="button" class="tut-voltar" @onclick="Voltar">Voltar</button>
+                }
+                <button type="button" class="tut-proximo" @onclick="Avancar">@(passo == total - 1 ? "Começar" : "Próximo")</button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .tut-fundo {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, .72);
+        padding: 16px;
+        padding-top: calc(16px + env(safe-area-inset-top, 0px));
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .tut-caixa {
+        position: relative;
+        width: 100%;
+        max-width: 420px;
+        max-height: 100%;
+        overflow-y: auto;
+        background: #0b3d2e;
+        color: #fff;
+        border-radius: 22px;
+        border: 1px solid rgba(80, 200, 180, .35);
+        padding: 28px 22px 20px;
+        box-shadow: 0 12px 44px rgba(0, 0, 0, .55);
+    }
+
+    .tut-pular {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        border: 0;
+        background: transparent;
+        color: #fff;
+        opacity: .7;
+        font: inherit;
+        font-size: .85rem;
+        cursor: pointer;
+    }
+
+    .tut-numero {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        margin: 0 auto 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f5c518;
+        color: #0b3d2e;
+        font-weight: 800;
+        font-size: 1.15rem;
+    }
+
+    .tut-caixa h2 {
+        margin: 0 0 12px;
+        font-size: 1.2rem;
+        text-align: center;
+    }
+
+    .tut-caixa p, .tut-caixa li {
+        font-size: .95rem;
+        line-height: 1.45;
+        opacity: .92;
+    }
+
+    .tut-caixa p {
+        margin: 0 0 10px;
+    }
+
+    .tut-caixa ul {
+        margin: 0 0 10px;
+        padding-left: 1.2rem;
+    }
+
+    .tut-caixa li {
+        margin-bottom: 4px;
+    }
+
+    .tut-pontos {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin: 14px 0 16px;
+    }
+
+        .tut-pontos span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .25);
+        }
+
+            .tut-pontos span.ativo {
+                width: 22px;
+                border-radius: 999px;
+                background: #f5c518;
+            }
+
+    .tut-botoes {
+        display: flex;
+        gap: 8px;
+    }
+
+        .tut-botoes button {
+            flex: 1;
+            border: 0;
+            border-radius: 999px;
+            padding: 12px 16px;
+            font: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+    .tut-proximo {
+        background: #f5c518;
+        color: #0b3d2e;
+    }
+
+    .tut-voltar {
+        background: rgba(255, 255, 255, .12);
+        color: #fff;
+    }
+</style>
+
+@code {
+    private const string Chave = "tutorial-visto";
+    private const int total = 7;
+
+    private bool visivel;
+    private int passo;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        try
+        {
+            var visto = await JS.InvokeAsync<string?>("localStorage.getItem", Chave);
+            if (visto == "1") return;
+
+            visivel = true;
+            StateHasChanged();
+        }
+        catch
+        {
+            // Se o navegador bloquear o armazenamento, simplesmente não mostra o tutorial.
+        }
+    }
+
+    private static IEnumerable<(int Min, string Texto)> Recompensas() => new (int Min, string Texto)[]
+    {
+        (Torcida.MinTextos, "nome do estádio, apelido da torcida, grito de guerra e faixa nas laterais do campo"),
+        (Torcida.MinCampo, "estilos de gramado e cor das linhas no campo de escalação"),
+        (Torcida.MinEscudo, "novas formas de escudo"),
+        (Torcida.MinAnimacao, "escudo animado"),
+        (Torcida.MinMoldura, "molduras para os cards dos jogadores"),
+        (Torcida.MinCoroa, "coroa, estrelas e fundo personalizado na Home"),
+        (Torcida.MinDourado, "Lenda da pelada, com escudo dourado, destaque no ranking e um estádio em volta do campo"),
+    }.OrderBy(r => r.Min);
+
+    private void Voltar()
+    {
+        if (passo > 0) passo--;
+    }
+
+    private async Task Avancar()
+    {
+        if (passo < total - 1) passo++;
+        else await Fechar();
+    }
+
+    private async Task Fechar()
+    {
+        visivel = false;
+        try { await JS.InvokeVoidAsync("localStorage.setItem", Chave, "1"); } catch { }
+    }
+}
