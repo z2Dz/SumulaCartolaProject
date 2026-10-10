@@ -120,6 +120,37 @@ else
                                             <button type="button" class="botao-sec largo" @onclick="AdicionarTexto">Adicionar texto ao escudo</button>
                                         }
 
+                                        @if (!Torcida.AnimacaoBloqueada(torcidaAtual))
+                                        {
+                                            <div class="ed-grupo">Animação</div>
+                                            @if (AnimacoesEscudo.TemAnimavel(cfg))
+                                            {
+                                                <div class="ed-anim ed-anim-previa">
+                                                    <Escudo Config="@ComAnimacao()" Tamanho="72" />
+                                                    <small>Prévia da animação</small>
+                                                </div>
+                                                <div class="prev-anim-grade">
+                                                    @foreach (var k in cfg.Simbolos!.Where(x => x.Visivel).Select(x => x.Chave).Distinct().Where(k => AnimacoesEscudo.Mapa.ContainsKey(k)))
+                                                    {
+                                                        <PreviaAnimacao Chave="@k" Tamanho="44" />
+                                                    }
+                                                </div>
+                                            }
+                                            <div class="ed-anim">
+                                                <label>
+                                                    <input type="checkbox" @bind="cfg.Animado" />
+                                                    Animar elementos
+                                                </label>
+                                                @if (!AnimacoesEscudo.TemAnimavel(cfg))
+                                                {
+                                                    <small>Nenhum elemento do escudo tem animação.</small>
+                                                }
+                                                else
+                                                {
+                                                    <small>@string.Join(", ", cfg.Simbolos!.Where(x => x.Visivel).Select(x => AnimacoesEscudo.De(x.Chave)?.Nome).Where(n => n is not null).Distinct())</small>
+                                                }
+                                            </div>
+                                        }
                                         break;
 
                                     case "nome":
@@ -144,37 +175,6 @@ else
                                                         title="@p.Nome" aria-label="@p.Nome" @onclick="() => EscolherPadrao(p.Chave)">
                                                     <Escudo Config="@ComEstampa(p.Chave)" Tamanho="44" />
                                                 </button>
-                                            }
-                                        </div>
-                                        @if (AnimacoesEscudo.TemAnimavel(cfg))
-                                        {
-                                            <div class="ed-anim ed-anim-previa">
-                                                <Escudo Config="@ComAnimacao()" Tamanho="72" />
-                                                <small>Prévia da animação@(Torcida.AnimacaoBloqueada(torcidaAtual) ? " (bloqueada)" : "")</small>
-                                            </div>
-                                            <div class="prev-anim-grade">
-                                                @foreach (var k in cfg.Simbolos!.Where(x => x.Visivel).Select(x => x.Chave).Distinct().Where(k => AnimacoesEscudo.Mapa.ContainsKey(k)))
-                                                {
-                                                    <PreviaAnimacao Chave="@k" Tamanho="44" />
-                                                }
-                                            </div>
-                                        }
-                                        <div class="ed-anim @(Torcida.AnimacaoBloqueada(torcidaAtual) ? "bloqueado" : "")">
-                                            <label>
-                                                <input type="checkbox" @bind="cfg.Animado" disabled="@Torcida.AnimacaoBloqueada(torcidaAtual)" />
-                                                Animar elementos
-                                            </label>
-                                            @if (Torcida.AnimacaoBloqueada(torcidaAtual))
-                                            {
-                                                <small>Libera com @Torcida.Fmt(Torcida.MinAnimacao) torcedores.</small>
-                                            }
-                                            else if (!AnimacoesEscudo.TemAnimavel(cfg))
-                                            {
-                                                <small>Nenhum elemento do escudo tem animação.</small>
-                                            }
-                                            else
-                                            {
-                                                <small>@string.Join(", ", cfg.Simbolos!.Where(x => x.Visivel).Select(x => AnimacoesEscudo.De(x.Chave)?.Nome).Where(n => n is not null).Distinct())</small>
                                             }
                                         </div>
                                         break;

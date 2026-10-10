@@ -1,0 +1,293 @@
+﻿@implements IDisposable
+@inject ServicoTorcida Torcidas
+@inject ProvedorEstadoAutenticacao Provedor
+@inject NavigationManager Nav
+@inject IJSRuntime Js
+
+@* Popup de "conquista liberada": aparece quando a torcida do clube passa para um nível novo.
+   Coloque UMA vez no MainLayout (e no layout que mostrar a Home, se for outro): <PopupConquista />
+   O último nível visto fica no localStorage (por usuário), então cada conquista aparece uma única vez. *@
+
+@if (atual is not null)
+{
+    <div class="pc-fundo" role="dialog" aria-modal="true" aria-labelledby="pc-titulo" @onclick="Fechar">
+        <div class="pc-caixa" @onclick:stopPropagation="true">
+            <div class="pc-confete" aria-hidden="true">
+                @for (var i = 0; i < 14; i++)
+                {
+                    <span style="--i:@i"></span>
+                }
+            </div>
+
+            <div class="pc-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 4H16V9A4 4 0 0 1 8 9Z" fill="currentColor" fill-opacity=".25" />
+                    <path d="M8 6H5V8A3 3 0 0 0 8 11M16 6H19V8A3 3 0 0 1 16 11M12 13V17M8 20H16M10 17H14" />
+                </svg>
+            </div>
+
+            <small class="pc-selo">Conquista liberada@(totalNaFila > 1 ? $" · {posicao} de {totalNaFila}" : "")</small>
+            <h2 id="pc-titulo">Parabéns!</h2>
+            <p class="pc-texto">
+                Seu clube alcançou <b>@Torcida.Fmt(atual.Minimo) torcedores</b>
+                e agora pode @atual.Liberou.
+            </p>
+            <span class="pc-nivel">Nível @Torcida.Numero(atual.Minimo) · @atual.Nome</span>
+
+            <div class="pc-acoes">
+                <button type="button" class="botao-sec" @onclick="Fechar" @ref="botao">
+                    @(fila.Count > 0 ? "Próxima conquista" : "Continuar")
+                </button>
+                <button type="button" class="botao" @onclick="Ir">@RotuloDoDestino</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly Queue<NivelTorcida> fila = new();
+    private NivelTorcida? atual;
+    private ElementReference botao;
+    private bool focar;
+    private bool verificando;
+    private int ate;            // maior nível já enfileirado/mostrado nesta sessão
+    private int totalNaFila;    // quantos popups saíram juntos (para "1 de 3")
+    private int posicao;
+
+    protected override void OnInitialized()
+    {
+        Torcidas.Mudou += AoMudar;
+        if (Torcidas.Cache is not null) AoMudar();
+    }
+
+    public void Dispose() => Torcidas.Mudou -= AoMudar;
+
+    private void AoMudar() => _ = InvokeAsync(VerificarAsync);
+
+    private static string Chave(Guid id) => $"torcida_nivel_visto:{id}";
+
+    private async Task VerificarAsync()
+    {
+        if (verificando) return;
+        verificando = true;
+        try
+        {
+            var resumo = Torcidas.Cache;
+            var id = Provedor.Perfil?.Id;
+            if (resumo is null || id is null) return;
+
+            var nivel = Torcida.Numero(resumo.Torcida);   // 1 = nível inicial
+            var salvo = await Js.InvokeAsync<string?>("localStorage.getItem", Chave(id.Value));
+
+            // Primeira vez neste aparelho: só guarda o nível atual (não "comemora" o que já foi conquistado antes)
+            if (!int.TryParse(salvo, out var visto))
+            {
+                await Js.InvokeVoidAsync("localStorage.setItem", Chave(id.Value), nivel.ToString());
+                return;
+            }
+
+            var de = Math.Max(visto, ate);
+            if (nivel <= de) return;
+
+            foreach (var n in Torcida.Niveis.Skip(de).Take(nivel - de).Where(n => n.Liberou is not null))
+                fila.Enqueue(n);
+            ate = nivel;
+
+            if (atual is null && fila.Count > 0)
+            {
+                totalNaFila = fila.Count;
+                posicao = 0;
+                Proxima();
+            }
+            else if (fila.Count == 0)
+            {
+                // subiu de nível sem nada para anunciar: só guarda
+                await Js.InvokeVoidAsync("localStorage.setItem", Chave(id.Value), nivel.ToString());
+            }
+        }
+        catch { /* sem localStorage: sem popup, o resto do app segue normal */ }
+        finally { verificando = false; }
+    }
+
+    private void Proxima()
+    {
+        if (fila.Count == 0) { atual = null; return; }
+        atual = fila.Dequeue();
+        posicao++;
+        focar = true;
+        StateHasChanged();
+    }
+
+    private async Task Fechar()
+    {
+        if (atual is null) return;
+        var id = Provedor.Perfil?.Id;
+        var nivelVisto = Torcida.Numero(atual.Minimo);
+        try { if (id is not null) await Js.InvokeVoidAsync("localStorage.setItem", Chave(id.Value), nivelVisto.ToString()); }
+        catch { }
+        Proxima();
+    }
+
+    // Escudo é onde se usam as novas formas e as animações; o resto da personalização fica no clube
+    private string Destino => atual?.Minimo is Torcida.MinEscudo or Torcida.MinAnimacao ? "escudo" : "clube";
+    private string RotuloDoDestino => Destino == "escudo" ? "Editar escudo" : "Personalizar clube";
+
+    private async Task Ir()
+    {
+        var destino = Destino;
+        await Fechar();
+        Nav.NavigateTo(destino);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!focar) return;
+        focar = false;
+        try { await botao.FocusAsync(); } catch { }
+    }
+}
+
+<style>
+    .pc-fundo {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+        background: rgba(0,0,0,.65);
+        backdrop-filter: blur(3px);
+        animation: pc-fade .25s ease-out;
+    }
+
+    .pc-caixa {
+        position: relative;
+        overflow: hidden;
+        width: min(420px, 100%);
+        box-sizing: border-box;
+        text-align: center;
+        padding: 1.6rem 1.4rem 1.3rem;
+        border-radius: 20px;
+        background: linear-gradient(160deg, rgba(14,40,36,.98), rgba(8,22,22,.98));
+        border: 1px solid rgba(255,210,74,.55);
+        box-shadow: 0 0 0 1px rgba(80,200,180,.2), 0 18px 60px rgba(0,0,0,.6), 0 0 40px rgba(255,210,74,.18);
+        animation: pc-pop .35s cubic-bezier(.2,1.3,.4,1);
+    }
+
+    .pc-icone {
+        width: 76px;
+        height: 76px;
+        margin: 0 auto .6rem;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        color: #ffd24a;
+        background: radial-gradient(circle, rgba(255,210,74,.22), rgba(255,210,74,.04));
+        border: 1px solid rgba(255,210,74,.5);
+    }
+
+    .pc-selo {
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        font-size: .68rem;
+        opacity: .75;
+        color: #ffd24a;
+    }
+
+    .pc-caixa h2 {
+        margin: .25rem 0 .5rem;
+        font-size: 1.6rem;
+    }
+
+    .pc-texto {
+        margin: 0 0 .8rem;
+        line-height: 1.45;
+        opacity: .95;
+    }
+
+        .pc-texto b {
+            color: #ffd24a;
+        }
+
+    .pc-nivel {
+        display: inline-block;
+        padding: .25rem .7rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        border: 1px solid rgba(80,200,180,.45);
+        background: rgba(31,163,122,.15);
+    }
+
+    .pc-acoes {
+        display: flex;
+        gap: .5rem;
+        margin-top: 1.1rem;
+    }
+
+        .pc-acoes > button {
+            flex: 1;
+        }
+
+    .pc-confete {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+        .pc-confete span {
+            position: absolute;
+            top: -10px;
+            left: calc(var(--i) * 7.2%);
+            width: 7px;
+            height: 12px;
+            border-radius: 2px;
+            background: hsl(calc(var(--i) * 47), 85%, 60%);
+            opacity: 0;
+            animation: pc-cai 2.4s ease-in calc(var(--i) * .07s) 1 forwards;
+        }
+
+    @@keyframes pc-fade {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @@keyframes pc-pop {
+        from {
+            transform: scale(.85);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    @@keyframes pc-cai {
+        0% {
+            transform: translateY(0) rotate(0);
+            opacity: 1;
+        }
+
+        100% {
+            transform: translateY(520px) rotate(540deg);
+            opacity: 0;
+        }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .pc-fundo, .pc-caixa {
+            animation: none;
+        }
+
+        .pc-confete {
+            display: none;
+        }
+    }
+</style>

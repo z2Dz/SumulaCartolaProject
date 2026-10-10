@@ -3,7 +3,8 @@ using Newtonsoft.Json;
 
 namespace SumulaCartolaProject.Models;
 
-public record NivelTorcida(int Minimo, string Nome, string[] Recompensas);
+/// <summary>Liberou = o que o time passa a poder fazer, escrito para completar "agora pode ..." no popup de conquista.</summary>
+public record NivelTorcida(int Minimo, string Nome, string[] Recompensas, string? Liberou = null);
 public record ConquistaDef(string Chave, string Nome, string Descricao, int Bonus);
 
 /// <summary>
@@ -21,15 +22,15 @@ public static class Torcida
     public static readonly IReadOnlyList<NivelTorcida> Niveis = new[]
     {
         new NivelTorcida(1000,  "Pelada de bairro",  new[] { "Escudo básico" }),
-        new NivelTorcida(1500,  "Torcida animada",   new[] { "Nome do estádio", "Apelido da torcida", "Grito de guerra", "Faixa lateral no campo" }),
-        new NivelTorcida(2000,  "Casa cheia",        new[] { "Estilos do campo e cor das linhas" }),
-        new NivelTorcida(2500,  "Escudo de respeito",new[] { "Novas formas de escudo" }),
-        new NivelTorcida(3000,  "Cards de gala",    new[] { "Moldura Esmeralda nos cards" }),
-        new NivelTorcida(4000,  "Time de coroa",     new[] { "Coroa e estrelas no escudo", "Fundo da Home" }),
-        new NivelTorcida(5000,  "Time de camisa",    new[] { "Camisa do time na Home", "Moldura Rubro Ouro nos cards" }),
-        new NivelTorcida(6000,  "Escudo em movimento", new[] { "Animações dos elementos do escudo" }),
-        new NivelTorcida(7500,  "Mascote da turma",  new[] { "Mascote na Home" }),
-        new NivelTorcida(10000, "Lenda da pelada",   new[] { "Escudo dourado", "Destaque no ranking", "Estádio em volta do campo" })
+        new NivelTorcida(1500,  "Torcida animada",   new[] { "Nome do estádio", "Apelido da torcida", "Grito de guerra", "Faixa lateral no campo" }, "dar nome ao seu estádio, escolher o apelido da torcida, criar o grito de guerra e colocar uma faixa lateral no campo"),
+        new NivelTorcida(2000,  "Casa cheia",        new[] { "Estilos do campo e cor das linhas" }, "mudar o estilo do campo e a cor das linhas"),
+        new NivelTorcida(2500,  "Escudo de respeito",new[] { "Novas formas de escudo" }, "usar novas formas de escudo"),
+        new NivelTorcida(3000,  "Cards de gala",    new[] { "Moldura Esmeralda nos cards" }, "usar a moldura Esmeralda nos cards"),
+        new NivelTorcida(4000,  "Time de coroa",     new[] { "Coroa e estrelas no escudo", "Fundo da Home" }, "colocar coroa e estrelas no escudo e escolher o fundo da Home"),
+        new NivelTorcida(5000,  "Time de camisa",    new[] { "Camisa do time na Home", "Moldura Rubro Ouro nos cards" }, "colocar a camisa do time na Home e usar a moldura Rubro Ouro nos cards"),
+        new NivelTorcida(6000,  "Escudo em movimento", new[] { "Animações dos elementos do escudo" }, "animar os elementos do escudo"),
+        new NivelTorcida(7500,  "Mascote da turma",  new[] { "Mascote na Home" }, "ter um mascote na Home"),
+        new NivelTorcida(10000, "Lenda da pelada",   new[] { "Escudo dourado", "Destaque no ranking", "Estádio em volta do campo" }, "ter o escudo dourado, destaque no ranking e o estádio em volta do campo")
     };
 
     public static readonly IReadOnlyList<ConquistaDef> Conquistas = new[]
@@ -156,19 +157,34 @@ public class ClubeConfig
     {
         var d = new Dictionary<string, object>
         {
-            ["estadio"] = Estadio, ["apelido"] = Apelido, ["grito"] = Grito,
-            ["faixa_texto"] = FaixaTexto, ["faixa_cor1"] = FaixaCor1, ["faixa_cor2"] = FaixaCor2,
-            ["campo"] = Campo, ["campo_linhas"] = CampoLinhas, ["moldura"] = Moldura,
-            ["coroa"] = Coroa, ["estrelas"] = Estrelas, ["fundo_home"] = FundoHome,
-            ["mascote"] = Mascote, ["mascote_cor"] = MascoteCor,
+            ["estadio"] = Estadio,
+            ["apelido"] = Apelido,
+            ["grito"] = Grito,
+            ["faixa_texto"] = FaixaTexto,
+            ["faixa_cor1"] = FaixaCor1,
+            ["faixa_cor2"] = FaixaCor2,
+            ["campo"] = Campo,
+            ["campo_linhas"] = CampoLinhas,
+            ["moldura"] = Moldura,
+            ["coroa"] = Coroa,
+            ["estrelas"] = Estrelas,
+            ["fundo_home"] = FundoHome,
+            ["mascote"] = Mascote,
+            ["mascote_cor"] = MascoteCor,
             ["estadio_modelo"] = EstadioModelo ?? "",
-            ["campo_cor1"] = CampoCor1 ?? "", ["campo_cor2"] = CampoCor2 ?? "", ["moldura_cor"] = MolduraCor ?? "",
-            ["estadio_cor1"] = EstadioCor1 ?? "", ["estadio_cor2"] = EstadioCor2 ?? ""
+            ["campo_cor1"] = CampoCor1 ?? "",
+            ["campo_cor2"] = CampoCor2 ?? "",
+            ["moldura_cor"] = MolduraCor ?? "",
+            ["estadio_cor1"] = EstadioCor1 ?? "",
+            ["estadio_cor2"] = EstadioCor2 ?? ""
         };
         if (Camisa is not null)
             d["camisa"] = new Dictionary<string, object>
             {
-                ["padrao"] = Camisa.Padrao, ["cor1"] = Camisa.Cor1, ["cor2"] = Camisa.Cor2, ["cor3"] = Camisa.Cor3
+                ["padrao"] = Camisa.Padrao,
+                ["cor1"] = Camisa.Cor1,
+                ["cor2"] = Camisa.Cor2,
+                ["cor3"] = Camisa.Cor3
             };
         return d;
     }
