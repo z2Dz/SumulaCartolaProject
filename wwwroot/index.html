@@ -3,13 +3,13 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Cartola dos Amigos</title>
+    <title>AFC Cartola</title>
     <base href="/" />
     <meta name="theme-color" content="#0b3d2e" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Cartola" />
+    <meta name="apple-mobile-web-app-title" content="AFC Cartola" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" type="image/png" href="icons/icon-192.png" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
@@ -28,10 +28,10 @@
         <a class="dismiss">🗙</a>
     </div>
     <script>
-                // Guarda o aviso de instalação do navegador para o pop-up usar depois do login
-                var __instalarEvento = null;
-                window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); __instalarEvento = e; });
-                window.addEventListener('appinstalled', function () { __instalarEvento = null; localStorage.setItem('app-instalado', '1'); });
+                        // Guarda o aviso de instalação do navegador para o pop-up usar depois do login
+                        var __instalarEvento = null;
+                        window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); __instalarEvento = e; });
+                        window.addEventListener('appinstalled', function () { __instalarEvento = null; localStorage.setItem('app-instalado', '1'); });
     </script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
