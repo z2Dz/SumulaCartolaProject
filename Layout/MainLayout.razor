@@ -65,7 +65,13 @@
                     </AuthorizeView>
                 </span>
             </a>
-            <button type="button" class="perfil-btn" title="Sair" aria-label="Sair" @onclick="Sair"><span class="pb-desk"><IconeUi Nome="usuario" Tamanho="22" /></span><span class="pb-mob"><IconeUi Nome="sair" Tamanho="18" /> Sair</span></button>
+            <div class="topo-m-acoes">
+                @if (podeInstalar)
+                {
+                    <button type="button" class="perfil-btn" title="Instalar app" aria-label="Instalar app" @onclick="AbrirInstalacao"><span class="pb-mob"><IconeUi Nome="baixar" Tamanho="18" /> Instalar</span></button>
+                }
+                <button type="button" class="perfil-btn" title="Sair" aria-label="Sair" @onclick="Sair"><span class="pb-desk"><IconeUi Nome="usuario" Tamanho="22" /></span><span class="pb-mob"><IconeUi Nome="sair" Tamanho="18" /> Sair</span></button>
+            </div>
         </header>
 
         @* ===== abas (celular) ===== *@
@@ -152,6 +158,13 @@
 <style>
     .admin-fundo, .admin-folha {
         display: none;
+    }
+
+    .topo-m-acoes {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin-left: auto;
     }
 
     .lateral-rodape .lateral-instalar {
