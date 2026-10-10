@@ -1,0 +1,50 @@
+@* Faixa lateral do campo: estandarte pendurado numa haste, com franja e o escudo do time dentro.
+   Modelo vazio desenha um espaço invisível do mesmo tamanho, para o campo continuar centralizado quando só um lado tem faixa. *@
+@if (_m is null)
+{
+    <div class="faixa-lateral vazia @Classe" aria-hidden="true"></div>
+}
+else
+{
+    <div class="faixa-lateral @Classe" style="--fz-c1:@_c1;--fz-c2:@_c2" role="img" aria-label="@("Faixa " + _m.Nome + " com o escudo do time")">
+        <svg class="faixa-svg" viewBox="0 0 100 160" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+            <path class="fz-corpo" d="@_m.Corpo" />
+            <path class="fz-fio" d="@_m.Corpo" transform="translate(50 80) scale(.94) translate(-50 -80)" />
+            <path class="fz-franja" d="@_m.Franja" />
+            <path class="fz-contas" d="@_m.Contas" />
+            <rect class="fz-haste" x="9" y="1.8" width="82" height="4.8" rx="2.4" />
+            <circle class="fz-haste" cx="5.2" cy="4.2" r="3.6" />
+            <circle class="fz-haste" cx="94.8" cy="4.2" r="3.6" />
+            <circle class="fz-haste" cx="1.4" cy="4.2" r="1.4" />
+            <circle class="fz-haste" cx="98.6" cy="4.2" r="1.4" />
+        </svg>
+        <span class="faixa-escudo" style="@_m.EstiloEscudo"><Escudo Config="Escudo" Tamanho="40" /></span>
+    </div>
+}
+
+@code {
+    /// <summary>Chave do modelo (ver FaixasLaterais.Modelos). Vazio = sem faixa neste lado.</summary>
+    [Parameter] public string? Modelo { get; set; }
+    /// <summary>Cor do pano.</summary>
+    [Parameter] public string? Cor1 { get; set; }
+    /// <summary>Cor da haste, do filete e da franja.</summary>
+    [Parameter] public string? Cor2 { get; set; }
+    /// <summary>Escudo do time que fica dentro da faixa.</summary>
+    [Parameter] public EscudoConfig? Escudo { get; set; }
+    /// <summary>Classe extra (ex.: "mini" nas opções do painel).</summary>
+    [Parameter] public string Classe { get; set; } = "";
+
+    private FaixaModelo? _m;
+    private string _c1 = "#0b3d2e", _c2 = "#f5c518";
+
+    protected override void OnParametersSet()
+    {
+        _m = FaixasLaterais.Achar(Modelo);
+        _c1 = Hex(Cor1, "#0b3d2e");
+        _c2 = Hex(Cor2, "#f5c518");
+    }
+
+    // A cor vem do banco (e, no ranking, de outros usuários): só entra no estilo se for #rgb ou #rrggbb
+    private static string Hex(string? c, string padrao) =>
+        c is { Length: 4 or 7 } && c[0] == '#' && c.Skip(1).All(Uri.IsHexDigit) ? c : padrao;
+}

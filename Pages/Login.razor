@@ -1,0 +1,117 @@
+@page "/entrar"
+@layout LayoutSemMenu
+@inject ServicoAutenticacao Auth
+@inject NavigationManager Nav
+
+<PageTitle>Entrar · Cartola dos Amigos</PageTitle>
+
+<div class="login">
+    <div class="login-marca">
+        <div class="login-bola">⚽</div>
+        <h1>Cartola dos Amigos</h1>
+        <p>Escale seus atletas e dispute o ranking.</p>
+    </div>
+
+    <div class="abas">
+        <button type="button" class="@(!modoCadastro ? "ativa" : "")" @onclick="() => Alternar(false)">Entrar</button>
+        <button type="button" class="@(modoCadastro ? "ativa" : "")" @onclick="() => Alternar(true)">Criar conta</button>
+    </div>
+
+    <form class="formulario" @onsubmit="Enviar">
+        <label>
+            Nome de usuário
+            <input @bind="nomeUsuario" @bind:event="oninput" autocomplete="username"
+                   autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="ex.: joao" />
+        </label>
+
+        @if (modoCadastro)
+        {
+            <label>
+                Nome do seu time
+                <input @bind="nomeTime" @bind:event="oninput" maxlength="40" placeholder="ex.: Os Perebas FC" />
+            </label>
+        }
+
+        <label>
+            Senha
+            <input type="password" @bind="senha" @bind:event="oninput"
+                   autocomplete="@(modoCadastro ? "new-password" : "current-password")" placeholder="mínimo 6 caracteres" />
+        </label>
+
+        @if (modoCadastro)
+        {
+            <label>
+                Confirmar senha
+                <input type="password" @bind="confirmacao" @bind:event="oninput" autocomplete="new-password" />
+            </label>
+        }
+
+        @if (erro is not null)
+        {
+            <div class="erro" role="alert">@erro</div>
+        }
+
+        <button class="botao" type="submit" disabled="@carregando">
+            @(carregando ? "Aguarde…" : modoCadastro ? "Criar conta" : "Entrar")
+        </button>
+    </form>
+</div>
+
+@code {
+    private bool modoCadastro;
+    private bool carregando;
+    private string nomeUsuario = "";
+    private string nomeTime = "";
+    private string senha = "";
+    private string confirmacao = "";
+    private string? erro;
+
+    protected override void OnInitialized()
+    {
+        if (Auth.Logado) Nav.NavigateTo("", replace: true);
+    }
+
+    private void Alternar(bool cadastro)
+    {
+        modoCadastro = cadastro;
+        erro = null;
+    }
+
+    private async Task Enviar()
+    {
+        erro = null;
+
+        if (!ServicoAutenticacao.NomeUsuarioValido(nomeUsuario))
+        { erro = "Nome de usuário: 3 a 30 caracteres, só letras, números, ponto, hífen ou sublinhado."; return; }
+        if (senha.Length < 6)
+        { erro = "A senha deve ter pelo menos 6 caracteres."; return; }
+        if (modoCadastro)
+        {
+            if (string.IsNullOrWhiteSpace(nomeTime)) { erro = "Dê um nome ao seu time."; return; }
+            if (senha != confirmacao) { erro = "As senhas não conferem."; return; }
+        }
+
+        carregando = true;
+        try
+        {
+            if (modoCadastro) await Auth.CadastrarAsync(nomeUsuario, nomeTime, senha);
+            else await Auth.EntrarAsync(nomeUsuario, senha);
+
+            if (!Auth.Logado)
+            {
+                erro = "Conta criada, mas sem sessão. O administrador precisa desativar a confirmação de e-mail no Supabase.";
+                return;
+            }
+            // Conta nova vai direto criar o escudo; quem já tem escudo cai no Início
+            Nav.NavigateTo(modoCadastro ? "escudo" : "", replace: true);
+        }
+        catch (Exception ex)
+        {
+            erro = ServicoAutenticacao.TraduzirErro(ex);
+        }
+        finally
+        {
+            carregando = false;
+        }
+    }
+}

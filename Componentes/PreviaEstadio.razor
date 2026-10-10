@@ -1,0 +1,21 @@
+@* Prévia do estádio em volta de um campo pequeno. Chave vazia = campo sem estádio. *@
+<div class="prev-est @Classe">
+    @if (!string.IsNullOrEmpty(Chave))
+    {
+        <div class="estadio-fundo estadio-@Chave" aria-hidden="true">
+            <i class="luz l1"></i><i class="luz l2"></i><i class="luz l3"></i><i class="luz l4"></i>
+        </div>
+    }
+    <div class="campo-mini">
+        <span class="cm-area cm-cima"></span>
+        <span class="cm-meio"></span>
+        <span class="cm-circ"></span>
+        <span class="cm-area cm-baixo"></span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Chave { get; set; }
+    /// <summary>Classe extra, por exemplo "peq" para a miniatura das opções.</summary>
+    [Parameter] public string Classe { get; set; } = "";
+}

@@ -1,0 +1,50 @@
+/* Cabeçalho do app
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.topo {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(.6rem + env(safe-area-inset-top, 0px)) 1rem .6rem;
+    background: var(--verde);
+    color: var(--branco);
+}
+
+.topo-bola {
+    font-size: 1.4rem;
+}
+
+.topo-escudo {
+    display: flex;
+    line-height: 0;
+}
+
+.nome-time {
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin: .6rem 0;
+}
+
+.lapis-mini {
+    position: absolute;
+    right: -8px;
+    bottom: -2px;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--acento);
+    color: #04140d;
+}
+
+.lema {
+    font-size: .65rem;
+    letter-spacing: .35em;
+    color: var(--suave);
+    padding-bottom: .5rem;
+    border-bottom: 2px solid var(--acento);
+}

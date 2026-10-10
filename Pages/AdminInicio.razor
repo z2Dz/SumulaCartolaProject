@@ -1,0 +1,96 @@
+@page "/admin"
+@attribute [Authorize(Roles = "admin")]
+@inject ServicoMercado Mercado
+@inject IJSRuntime Js
+
+<PageTitle>Admin · Cartola dos Amigos</PageTitle>
+
+<div class="pagina adm adm2">
+    <header class="adm2-topo">
+        <span class="adm2-hex"><IconeUi Nome="engrenagem" Tamanho="30" /></span>
+        <div>
+            <h1>Administração</h1>
+            <span class="adm2-traco"></span>
+        </div>
+    </header>
+
+    <section class="adm2-vidro">
+        <h3>Mercado de escalação</h3>
+        @if (!string.IsNullOrEmpty(erroMercado)) { <p class="erro">@erroMercado</p> }
+        @if (mercadoAberto is not null)
+        {
+            <p class="adm-dica">
+                O mercado está <strong>@(mercadoAberto == true ? "aberto" : "fechado")</strong>.
+                @(mercadoAberto == true
+                    ? "Os usuários podem montar e alterar a escalação."
+                    : "Os usuários veem a escalação salva, mas não conseguem alterar.")
+            </p>
+            <div class="adm-linha-form adm-topo-gap">
+                <button type="button" class="adm2-btn @(mercadoAberto == true ? "" : "destaque")" disabled="@mercadoOcupado" @onclick="AlternarMercado">
+                    @if (mercadoAberto == true)
+                    {
+                        <IconeUi Nome="desfazer" Tamanho="18" /> @(mercadoOcupado ? "Fechando…" : "Fechar mercado")
+                    }
+                    else
+                    {
+                        <IconeUi Nome="check" Tamanho="18" /> @(mercadoOcupado ? "Abrindo…" : "Abrir mercado")
+                    }
+                </button>
+            </div>
+        }
+        else if (string.IsNullOrEmpty(erroMercado))
+        {
+            <p class="adm-dica">Carregando…</p>
+        }
+    </section>
+
+    <section class="adm2-vidro">
+        <h3>Cartola</h3>
+        <p class="adm-dica">Partidas, ordem de chegada e súmula. Ao finalizar a partida, ela vale pontos e torcida para os times.</p>
+        <div class="adm-linha-form adm-topo-gap">
+            <a class="adm2-btn destaque" href="admin/cartola"><IconeUi Nome="campo" Tamanho="18" /> Partidas e súmulas</a>
+        </div>
+    </section>
+
+    <section class="adm2-vidro">
+        <h3>Histórico e estatísticas</h3>
+        <p class="adm-dica">Gols, cartões e jogos da pelada: temporada atual e total de todos os anos.</p>
+        <div class="adm-linha-form adm-topo-gap">
+            <a class="adm2-btn" href="admin/temporada"><IconeUi Nome="calendario" Tamanho="18" /> Temporada atual</a>
+            <a class="adm2-btn" href="admin/historico"><IconeUi Nome="documento" Tamanho="18" /> Gols e cartões</a>
+            <a class="adm2-btn" href="admin/artilheiros"><IconeUi Nome="bola" Tamanho="18" /> Editar artilheiros</a>
+        </div>
+    </section>
+</div>
+
+@code {
+    private bool? mercadoAberto;
+    private bool mercadoOcupado;
+    private string? erroMercado;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { mercadoAberto = await Mercado.LerMercadoAsync(); }
+        catch (ErroMercadoException ex) { erroMercado = ex.Message; }
+    }
+
+    private async Task AlternarMercado()
+    {
+        if (mercadoAberto is null) return;
+        var abrir = mercadoAberto != true;
+        var pergunta = abrir
+            ? "Abrir o mercado? Os usuários voltam a poder alterar a escalação."
+            : "Fechar o mercado? Ninguém vai conseguir alterar a escalação até você abrir de novo.";
+        if (!await Js.InvokeAsync<bool>("confirm", pergunta)) return;
+
+        erroMercado = null;
+        mercadoOcupado = true;
+        try
+        {
+            await Mercado.DefinirMercadoAsync(abrir);
+            mercadoAberto = abrir;
+        }
+        catch (ErroMercadoException ex) { erroMercado = ex.Message; }
+        mercadoOcupado = false;
+    }
+}

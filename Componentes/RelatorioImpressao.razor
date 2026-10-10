@@ -1,0 +1,49 @@
+@* Relatório de impressão / PDF do admin. Oculto na tela; só aparece no print (ver .rel-imp em historico-partidas.css).
+   Cada fragmento vira uma folha com cabeçalho próprio: Gols (tema vermelho, escudo do Vermelho) e, se informado,
+   Cartoes (tema preto e amarelo, escudo do Amarelo). *@
+<div class="rel-imp">
+    <section class="rel-folha rel-verm">
+        <header class="rel-cab">
+            <img class="rel-escudo" src="img/time-vermelho.png" alt="" />
+            <div class="rel-tit">
+                <h1>@Titulo</h1>
+                <p>@Subtitulo</p>
+            </div>
+            <svg class="rel-faixas" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+                <polygon points="14,60 52,0 82,0 44,60" fill="#d4101a" />
+                <polygon points="48,60 86,0 92,0 54,60" fill="#111" />
+            </svg>
+        </header>
+        @Gols
+    </section>
+
+    @if (Cartoes is not null)
+    {
+        <section class="rel-folha rel-amar">
+            <header class="rel-cab">
+                <img class="rel-escudo" src="img/time-amarelo.png" alt="" />
+                <div class="rel-tit">
+                    <h1>@Titulo</h1>
+                    <p>@Subtitulo</p>
+                </div>
+                <svg class="rel-faixas" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+                    <polygon points="14,60 52,0 82,0 44,60" fill="#f2c40d" />
+                    <polygon points="48,60 86,0 92,0 54,60" fill="#111" />
+                    <polygon points="58,60 96,0 100,0 100,8 64,60" fill="#fff" />
+                </svg>
+            </header>
+            @Cartoes
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Titulo { get; set; } = "";
+    [Parameter] public string? Subtitulo { get; set; }
+
+    /// <summary>Conteúdo da primeira folha (tema vermelho).</summary>
+    [Parameter] public RenderFragment? Gols { get; set; }
+
+    /// <summary>Conteúdo da segunda folha (tema preto e amarelo). Sem ele, o relatório tem uma folha só.</summary>
+    [Parameter] public RenderFragment? Cartoes { get; set; }
+}

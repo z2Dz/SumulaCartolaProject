@@ -1,0 +1,225 @@
+/* Temas dos cartões
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+/* =====================================================================
+   Temas de cartão desenhados em código (inspirados em cartões comemorativos):
+   Grafite, Marfim, Obsidiana, Real Azul, Real Verde e Safira
+   ===================================================================== */
+.slot-btn.tema,
+.slot-btn.tema.bronze,
+.slot-btn.tema.prata,
+.slot-btn.tema.ouro {
+    --carta-fundo: #0b0b0e;
+    --carta-borda: #d9b04a;
+    --carta-linha: rgba(217,176,74,.8);
+    --t-txt: #f4d68a;
+    --t-sil: rgba(255,238,200,.92);
+    --t-faixa: rgba(255,255,255,.10);
+    --t-fio: rgba(217,176,74,.75);
+}
+
+.slot-btn.tema .carta-forma {
+        stroke-width: 2.5px;
+    }
+
+.slot-btn.tema .carta-linha {
+        stroke-width: 1px;
+        opacity: .9;
+    }
+
+.tm-painel {
+    fill: var(--preto-suave);
+}
+
+.tema-marfim .tm-painel {
+    fill: url(#tm-marfim);
+}
+
+.tema-rubi .tm-painel {
+    fill: url(#tm-rubi);
+}
+
+.tema-obsidiana .tm-painel {
+    fill: url(#tm-obsidiana);
+}
+
+.tema-real_azul .tm-painel {
+    fill: url(#tm-real_azul);
+}
+
+.tema-real_verde .tm-painel {
+    fill: url(#tm-real_verde);
+}
+
+.tema-grafite .tm-painel {
+    fill: url(#tm-grafite);
+}
+
+.tm-faixa {
+    fill: var(--t-faixa);
+}
+
+.tm-faixa.f2 {
+        opacity: .6;
+    }
+
+.tm-fio {
+    fill: none;
+    stroke: var(--t-fio);
+    stroke-width: .8px;
+    vector-effect: non-scaling-stroke;
+}
+
+.tm-borda {
+    fill: none;
+    stroke: #d9b04a;
+    stroke-width: 1.2px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.tm-ouro, .tm-coroa, .tm-taca {
+    fill: #d9b04a;
+}
+
+.tm-fio-baixo {
+    fill: none;
+    stroke: #d9b04a;
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+}
+
+.slot-btn.tema.tema-marfim {
+    --carta-fundo: #17130a;
+    --carta-borda: #c9a24a;
+    --t-txt: #2a2108;
+    --t-sil: rgba(40,28,6,.9);
+    --t-faixa: rgba(201,162,74,.22);
+    --t-fio: rgba(201,162,74,.8);
+}
+
+.slot-btn.tema.tema-marfim .tm-coroa,
+    .slot-btn.tema.tema-marfim .tm-ouro {
+        fill: #b68a2a;
+    }
+
+.slot-btn.tema.tema-real_azul {
+    --t-faixa: rgba(255,255,255,.16);
+    --t-fio: rgba(255,255,255,.7);
+}
+
+.slot-btn.tema.tema-real_verde {
+    --t-faixa: rgba(255,255,255,.18);
+    --t-fio: rgba(255,255,255,.7);
+}
+
+.slot-btn.tema.tema-grafite {
+    --t-fio: rgba(255,170,40,.9);
+    --t-faixa: rgba(255,255,255,.06);
+}
+
+.slot-btn.tema .carta-nota,
+.slot-btn.tema .carta-pos {
+    color: var(--t-txt);
+    left: 16%;
+    font-weight: 900;
+}
+
+.slot-btn.tema .carta-nota {
+    top: 20.5%;
+}
+
+.slot-btn.tema .carta-pos {
+    top: 35%;
+    padding-bottom: calc(var(--slot) * .035);
+    font-size: calc(var(--slot) * .21);
+    border-bottom: 1.5px solid #d9b04a;
+}
+
+.slot-btn.tema .carta-sil {
+    color: var(--t-sil);
+}
+
+.campo .slot-btn.tema .slot-rotulo.nome {
+    top: 74%;
+    min-width: calc(var(--slot) * .8);
+    background: none;
+    border: 0;
+    color: #f4d68a;
+    font-weight: 800;
+    text-shadow: 0 1px 1px rgba(0,0,0,.9);
+}
+
+/* nome do cartão Ornamentado / Rubro Ouro quando aplicado a um cartão só (sem depender da classe do campo) */
+.campo .slot-btn.rubro .slot-rotulo.nome {
+    top: 74%;
+    min-width: calc(var(--slot) * .8);
+    background: none;
+    border: 0;
+    color: #f4d68a;
+    font-weight: 800;
+    text-shadow: 0 1px 1px rgba(0,0,0,.9);
+}
+
+.campo .slot-btn.orn .slot-rotulo.nome {
+    top: 73%;
+    width: calc(var(--slot) * .84);
+    padding: 3px 4px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background: linear-gradient(#202020, #070707) padding-box, linear-gradient(#ffd9a0, #b4691c 50%, #ffd9a0) border-box;
+    color: #ffe9c2;
+    text-shadow: 0 1px 1px rgba(0,0,0,.8);
+    font-weight: 800;
+}
+
+/* Marfim e demais temas: as variáveis próprias precisam vencer as do nível bronze/prata/ouro do cartão */
+.slot-btn.tema.tema-marfim .carta-nota,
+    .slot-btn.tema.tema-marfim .carta-pos {
+        color: #2a2108;
+        border-bottom-color: #b68a2a;
+    }
+
+.slot-btn.tema.tema-marfim .carta-sil {
+        color: rgba(40,28,6,.9);
+    }
+
+/* ===== Cristal Rubi: mármore branco, borda dourada, cacos de rubi e faceta roxa ===== */
+.slot-btn.tema.tema-rubi {
+    --carta-fundo: #e9e6e0;
+    --carta-borda: #b8963f;
+    --carta-linha: rgba(184,150,63,.85);
+    --t-txt: var(--branco);
+    --t-sil: rgba(32,16,44,.92);
+    --t-fio: rgba(184,150,63,.85);
+}
+
+.tm-estrela {
+    fill: #b8963f;
+}
+
+.tm-bola {
+    fill: #8a6a1c;
+    stroke: #d9b04a;
+    stroke-width: .6px;
+    vector-effect: non-scaling-stroke;
+}
+
+.slot-btn.tema.tema-rubi .carta-nota,
+.slot-btn.tema.tema-rubi .carta-pos {
+    color: var(--branco);
+    text-shadow: 1px 1px 0 rgba(20,6,30,.9) !important;
+    border-bottom-color: #d9b04a;
+}
+
+/* letras da posição: borda roxa escura em volta (legível sobre o mármore claro) */
+.slot-btn.tema.tema-rubi .carta-pos {
+    -webkit-text-stroke: calc(var(--slot) * .05) #2a0f3a;
+    paint-order: stroke fill;
+    text-shadow: none !important;
+}
+
+.campo .slot-btn.tema.tema-rubi .slot-rotulo.nome {
+    color: #3a2a08;
+    text-shadow: none !important;
+}

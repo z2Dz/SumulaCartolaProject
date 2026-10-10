@@ -1,0 +1,374 @@
+@* Janela para personalizar o clube (torcida, campo, cartões, escudo da Home, camisa, mascote e estádio, na ordem das recompensas) sem sair da tela Escalar. Salva direto no clube. *@
+@inject ServicoTorcida Torcidas
+@inject ProvedorEstadoAutenticacao Provedor
+
+<div class="pc-fundo" @onclick="Fechar">
+    <div class="pc-painel pc2" role="dialog" aria-label="Personalizar clube" @onclick:stopPropagation="true">
+        <header class="pc2-topo">
+            <span class="pc2-icone"><IconeUi Nome="campo" Tamanho="22" /></span>
+            <div>
+                <strong>PERSONALIZAR CLUBE</strong>
+                <small>Deixe seu clube com a sua cara!</small>
+            </div>
+            <button type="button" class="pc-x" @onclick="Fechar" aria-label="Fechar">✕</button>
+        </header>
+
+        @if (erro is not null)
+        {
+            <div class="pc-erro pc-erro-topo" role="alert"><strong>Não foi possível salvar:</strong> @erro</div>
+        }
+
+        @* ===== 1. Torcida organizada ===== *@
+        <section class="pc2-sec">
+            <h4><span class="pc2-num">1</span> Torcida organizada</h4>
+            <small class="suave">Apelido da torcida e até duas faixas nas laterais do campo (uma para cada lado), com o escudo do time dentro.@(Torc < Torcida.MinTextos ? " Libera com " + Torcida.Fmt(Torcida.MinTextos) + " torcedores." : "")</small>
+            <label class="campo-txt"><span>Apelido da torcida (ex: Fiel, Legião)</span><input maxlength="24" value="@Clube.Apelido" disabled="@(Torc < Torcida.MinTextos || salvando)" @onchange="e => Mudar(c => c.Apelido = Valor(e))" /></label>
+            @foreach (var direita in new[] { false, true })
+            {
+                var atual = direita ? Clube.Direita() : Clube.Esquerda();
+                <div class="pc2-faixas-bloco">
+                    <strong>@(direita ? "Faixa da direita" : "Faixa da esquerda")</strong>
+                    <div class="pc2-faixas">
+                        <button type="button" class="pc2-faixa-op nenhuma @(atual is null ? "sel" : "")" disabled="@(Torc < Torcida.MinTextos || salvando)"
+                                @onclick="() => Mudar(c => FaixasLaterais.Definir(c, direita, null))">Nenhuma</button>
+                        @foreach (var f in FaixasLaterais.Modelos)
+                        {
+                            <button type="button" class="pc2-faixa-op @(atual == f.Chave ? "sel" : "")" title="@f.Nome" disabled="@(Torc < Torcida.MinTextos || salvando)"
+                                    @onclick="() => Mudar(c => FaixasLaterais.Definir(c, direita, f.Chave))">
+                                <FaixaLateral Modelo="@f.Chave" Cor1="@Clube.FaixaCor1" Cor2="@Clube.FaixaCor2" Escudo="Provedor.Perfil?.Escudo" Classe="mini" />
+                                <small>@f.Nome</small>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+            <div class="pc2-cores-grade">
+                <label class="pc2-cor"><input type="color" value="@Clube.FaixaCor1" disabled="@(Torc < Torcida.MinTextos || salvando)" @onchange="e => Mudar(c => c.FaixaCor1 = Valor(e))" /><span>Cor da faixa</span></label>
+                <label class="pc2-cor"><input type="color" value="@Clube.FaixaCor2" disabled="@(Torc < Torcida.MinTextos || salvando)" @onchange="e => Mudar(c => c.FaixaCor2 = Valor(e))" /><span>Cor dos detalhes</span></label>
+            </div>
+        </section>
+
+        @* ===== 2. Estilo do campo ===== *@
+        <section class="pc2-sec">
+            <h4><span class="pc2-num">2</span> Escolha o estilo do campo</h4>
+            <small class="suave">Defina o visual do seu gramado.</small>
+            <div class="pc2-estilos">
+                @foreach (var o in ClubeConfig.Campos)
+                {
+                    <button type="button" class="pc2-estilo @(Clube.Campo == o.Chave ? "sel" : "")" disabled="@(Torc < Torcida.MinCampo || salvando)"
+                            @onclick="() => Mudar(c => c.Campo = o.Chave)">
+                        <span class="amostra-campo campo-@o.Chave"></span>
+                        <span>@o.Nome</span>
+                        @if (Clube.Campo == o.Chave) { <i class="pc2-check">✓</i> }
+                    </button>
+                }
+            </div>
+
+            <div class="pc2-cores">
+                <strong>Cores do campo</strong>
+                <small class="suave">Personalize as cores das linhas e da grama.</small>
+                <div class="pc2-cores-grade">
+                    <label class="pc2-cor"><input type="color" value="@Clube.CampoLinhas" disabled="@(Torc < Torcida.MinCampo || salvando)" @onchange="MudarLinhas" /><span>Cor das linhas</span></label>
+                    <label class="pc2-cor"><input type="color" value="@(Cor(Clube.CampoCor1, "#1f7a38"))" disabled="@(Torc < Torcida.MinCampo || salvando)" @onchange="e => Mudar(c => c.CampoCor1 = Valor(e))" /><span>Gramado <small>(faixa clara)</small></span></label>
+                    <label class="pc2-cor"><input type="color" value="@(Cor(Clube.CampoCor2, "#1a6c31"))" disabled="@(Torc < Torcida.MinCampo || salvando)" @onchange="e => Mudar(c => c.CampoCor2 = Valor(e))" /><span>Gramado <small>(faixa escura)</small></span></label>
+                    @if (!string.IsNullOrEmpty(Clube.CampoCor1) || !string.IsNullOrEmpty(Clube.CampoCor2))
+                    {
+                        <button type="button" class="botao-sec" disabled="@salvando" @onclick='() => Mudar(c => { c.CampoCor1 = ""; c.CampoCor2 = ""; })'>Cores originais</button>
+                    }
+                </div>
+            </div>
+        </section>
+
+        @* ===== 3. Moldura dos cartões (todos, por posição ou individual) ===== *@
+        <section class="pc2-sec">
+            <h4><span class="pc2-num">3</span> Moldura dos cartões</h4>
+            <small class="suave">Escolha a moldura para todos os cartões, por posição ou para um atleta só.</small>
+
+            <div class="pc-abas">
+                <button type="button" class="pc2-aba @(escopo == "todos" ? "sel" : "")" @onclick='() => { escopo = "todos"; }'>Todos</button>
+                <button type="button" class="pc2-aba @(escopo == "posicao" ? "sel" : "")" @onclick='() => { escopo = "posicao"; }'>Por posição</button>
+                <button type="button" class="pc2-aba @(escopo == "individual" ? "sel" : "")" @onclick='() => { escopo = "individual"; }'>Individual</button>
+            </div>
+
+            @if (escopo == "posicao")
+            {
+                <div class="pc-lista">
+                    @foreach (var s in Siglas)
+                    {
+                        <button type="button" class="opcao @(posSel == s ? "sel" : "") @(!string.IsNullOrEmpty(Valor1(Cards.Posicoes, s)) ? "atual" : "")" @onclick="() => posSel = s">@s</button>
+                    }
+                </div>
+            }
+            else if (escopo == "individual")
+            {
+                @if (Escalacao is null || Escalacao.Preenchidos == 0)
+                {
+                    <small class="suave">Escale alguns atletas para personalizar cartões individuais.</small>
+                }
+                else
+                {
+                    <div class="pc-lista">
+                        @foreach (var a in Escalacao.EmCampo())
+                        {
+                            <button type="button" class="opcao @(atletaSel == a.Id ? "sel" : "") @(!string.IsNullOrEmpty(Valor1(Cards.Individuais, a.Id)) ? "atual" : "")" @onclick="() => atletaSel = a.Id">@a.Nome</button>
+                        }
+                    </div>
+                }
+            }
+
+            @if (escopo == "todos" || (escopo == "posicao" && posSel is not null) || (escopo == "individual" && atletaSel is not null))
+            {
+                var atual = Atual();
+                <div class="pc2-molduras">
+                    @if (escopo != "todos")
+                    {
+                        <button type="button" class="pc2-moldura herdar @(string.IsNullOrEmpty(atual) ? "sel" : "")" disabled="@salvando" @onclick='() => Escolher("")'>
+                            <span>Herdar</span>
+                            <small>Usa a moldura do nível de cima</small>
+                        </button>
+                    }
+                    @foreach (var m in Opcoes())
+                    {
+                        var min = CardsConfig.Minimo(m);
+                        var bloq = salvando || Torc < min || (Torc < Torcida.MinMoldura && m != "nenhuma");
+                        <button type="button" class="pc2-moldura @(atual == m ? "sel" : "")" disabled="@bloq" @onclick="() => Escolher(m)">
+                            <PreviaMoldura Chave="@m" />
+                            <span>@CardsConfig.NomeDe(m)</span>
+                            @if (m != "nenhuma" && Torc < min) { <small>libera com @Torcida.Fmt(min)</small> }
+                            @if (atual == m) { <i class="pc2-check">✓</i> }
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <small class="suave">@(escopo == "posicao" ? "Escolha uma posição." : "Escolha um atleta escalado.")</small>
+            }
+
+            @if (escopo == "todos" && string.IsNullOrEmpty(Cards.Todos) && Clube.Moldura == "esmeralda")
+            {
+                <div class="pc2-cores">
+                    <div class="pc2-cores-grade">
+                        <label class="pc2-cor"><input type="color" value="@(Cor(Clube.MolduraCor, "#2de3a0"))" disabled="@(Torc < Torcida.MinMoldura || salvando)" @onchange="e => Mudar(c => c.MolduraCor = Valor(e))" /><span>Cor da moldura Esmeralda</span></label>
+                        @if (!string.IsNullOrEmpty(Clube.MolduraCor))
+                        {
+                            <button type="button" class="botao-sec" disabled="@salvando" @onclick='() => Mudar(c => c.MolduraCor = "")'>Cor original</button>
+                        }
+                    </div>
+                </div>
+            }
+            @if (Clube.Moldura == "esmeralda" && Cards.TemAlgo)
+            {
+                <small class="suave">Com cartões personalizados, a moldura Esmeralda deixa de valer para os outros cartões.</small>
+            }
+        </section>
+
+        @* ===== 4. Escudo e fundo da Home ===== *@
+        <section class="pc2-sec">
+            <h4><span class="pc2-num">4</span> Escudo e fundo da Home</h4>
+            <small class="suave">Coroa, estrelas e fundo da tela inicial.@(Torc < Torcida.MinCoroa ? " Libera com " + Torcida.Fmt(Torcida.MinCoroa) + " torcedores." : "")</small>
+            <label class="marcar"><input type="checkbox" checked="@Clube.Coroa" disabled="@(Torc < Torcida.MinCoroa || salvando)" @onchange="e => Mudar(c => c.Coroa = (bool)(e.Value ?? false))" /> Coroa em cima do escudo</label>
+            <div class="contador-estrelas">
+                <span>Estrelas: @Clube.Estrelas</span>
+                <button type="button" class="botao-sec" aria-label="Menos uma estrela" disabled="@(Torc < Torcida.MinCoroa || salvando || Clube.Estrelas <= 0)" @onclick="() => Mudar(c => c.Estrelas--)"><IconeUi Nome="menos" Tamanho="16" /></button>
+                <button type="button" class="botao-sec" aria-label="Mais uma estrela" disabled="@(Torc < Torcida.MinCoroa || salvando || Clube.Estrelas >= 5)" @onclick="() => Mudar(c => c.Estrelas++)"><IconeUi Nome="mais" Tamanho="16" /></button>
+            </div>
+            <div class="opcoes-linha">
+                @foreach (var o in ClubeConfig.Fundos)
+                {
+                    <button type="button" class="opcao @(Clube.FundoHome == o.Chave ? "sel" : "")" disabled="@(Torc < Torcida.MinCoroa || salvando)" @onclick="() => Mudar(c => c.FundoHome = o.Chave)">
+                        <span class="amostra-fundo home-fundo-@o.Chave"></span>@o.Nome
+                    </button>
+                }
+            </div>
+        </section>
+
+        @* ===== 5. Camisa do time ===== *@
+        <section class="pc2-sec">
+            <h4><span class="pc2-num">5</span> Camisa do time</h4>
+            <small class="suave">Mostre a camisa do seu clube na Home.@(Torc < Torcida.MinCamisa ? " Libera com " + Torcida.Fmt(Torcida.MinCamisa) + " torcedores." : "")</small>
+            <label class="marcar"><input type="checkbox" checked="@(Clube.Camisa is not null)" disabled="@(Torc < Torcida.MinCamisa || salvando)" @onchange="AlternarCamisa" /> Mostrar a camisa na Home</label>
+            @if (Clube.Camisa is { } cam)
+            {
+                <div class="opcoes-linha">
+                    @foreach (var o in CamisaConfig.Padroes)
+                    {
+                        <button type="button" class="opcao @(cam.Padrao == o.Chave ? "sel" : "")" disabled="@salvando" @onclick="() => Mudar(c => c.Camisa!.Padrao = o.Chave)">
+                            <Camisa Padrao="@o.Chave" Cor1="@cam.Cor1" Cor2="@cam.Cor2" Cor3="@cam.Cor3" Tamanho="56" />@o.Nome
+                        </button>
+                    }
+                </div>
+                <div class="pc2-cores-grade">
+                    <label class="pc2-cor"><input type="color" value="@cam.Cor1" disabled="@salvando" @onchange="e => Mudar(c => c.Camisa!.Cor1 = Valor(e))" /><span>Base</span></label>
+                    <label class="pc2-cor"><input type="color" value="@cam.Cor2" disabled="@salvando" @onchange="e => Mudar(c => c.Camisa!.Cor2 = Valor(e))" /><span>Detalhe</span></label>
+                    <label class="pc2-cor"><input type="color" value="@cam.Cor3" disabled="@salvando" @onchange="e => Mudar(c => c.Camisa!.Cor3 = Valor(e))" /><span>Gola</span></label>
+                </div>
+            }
+        </section>
+
+        @* ===== 6. Mascote ===== *@
+        <section class="pc2-sec">
+            <h4><span class="pc2-num">6</span> Mascote</h4>
+            <small class="suave">Escolha um mascote para representar o clube.@(Torc < Torcida.MinMascote ? " Libera com " + Torcida.Fmt(Torcida.MinMascote) + " torcedores." : "")</small>
+            <div class="opcoes-linha">
+                <button type="button" class="opcao @(Clube.Mascote == "" ? "sel" : "")" disabled="@(Torc < Torcida.MinMascote || salvando)" @onclick='() => Mudar(c => c.Mascote = "")'>Nenhum</button>
+                @foreach (var o in ClubeConfig.Mascotes)
+                {
+                    <button type="button" class="opcao opcao-mascote @(Clube.Mascote == o.Chave ? "sel" : "")" title="@o.Nome" aria-label="@o.Nome" disabled="@(Torc < Torcida.MinMascote || salvando)" @onclick="() => Mudar(c => c.Mascote = o.Chave)">
+                        <Mascote Chave="@o.Chave" Cor="@Clube.MascoteCor" Tamanho="44" />
+                    </button>
+                }
+            </div>
+            <div class="pc2-cores-grade">
+                <label class="pc2-cor"><input type="color" value="@Clube.MascoteCor" disabled="@(Torc < Torcida.MinMascote || salvando)" @onchange="e => Mudar(c => c.MascoteCor = Valor(e))" /><span>Cor do mascote</span></label>
+            </div>
+        </section>
+
+        @* ===== 7. Estádio ===== *@
+        <section class="pc2-sec">
+            <h4><span class="pc2-num">7</span> Estádio</h4>
+            <label class="campo-txt"><span>Nome do estádio</span><input maxlength="30" value="@Clube.Estadio" disabled="@(Torc < Torcida.MinDourado || salvando)" @onchange="e => Mudar(c => c.Estadio = Valor(e))" /></label>
+            <div class="opcoes-linha">
+                <button type="button" class="opcao @(string.IsNullOrEmpty(Clube.EstadioModelo) ? "sel" : "")" disabled="@salvando"
+                        @onclick='() => Mudar(c => c.EstadioModelo = "")'>Sem estádio</button>
+                @foreach (var o in Estadios.Modelos)
+                {
+                    <button type="button" class="opcao opcao-estadio @(Clube.EstadioModelo == o.Chave ? "sel" : "")"
+                            disabled="@(Torc < Torcida.MinDourado || salvando)" @onclick="() => Mudar(c => c.EstadioModelo = o.Chave)">
+                        <PreviaEstadio Chave="@o.Chave" Classe="peq" />@o.Nome
+                    </button>
+                }
+            </div>
+            @if (Torc < Torcida.MinDourado)
+            {
+                <small class="suave">O estádio libera com @Torcida.Fmt(Torcida.MinDourado) torcedores.</small>
+            }
+            else if (!string.IsNullOrEmpty(Clube.EstadioModelo))
+            {
+                <div class="pc2-cores-grade">
+                    <label class="pc2-cor"><input type="color" value="@(Cor(Clube.EstadioCor1, "#1d2433"))" disabled="@salvando" @onchange="e => Mudar(c => c.EstadioCor1 = Valor(e))" /><span>Arquibancada</span></label>
+                    <label class="pc2-cor"><input type="color" value="@(Cor(Clube.EstadioCor2, "#c9a227"))" disabled="@salvando" @onchange="e => Mudar(c => c.EstadioCor2 = Valor(e))" /><span>Anel e luzes</span></label>
+                    @if (!string.IsNullOrEmpty(Clube.EstadioCor1) || !string.IsNullOrEmpty(Clube.EstadioCor2))
+                    {
+                        <button type="button" class="botao-sec" disabled="@salvando" @onclick='() => Mudar(c => { c.EstadioCor1 = ""; c.EstadioCor2 = ""; })'>Cores originais</button>
+                    }
+                </div>
+            }
+        </section>
+
+    </div>
+</div>
+
+@code {
+    /// <summary>Configuração do clube que a tela Escalar usa hoje no campo.</summary>
+    [Parameter, EditorRequired] public ClubeConfig Clube { get; set; } = default!;
+    [Parameter] public int Torc { get; set; }
+    /// <summary>Chamado a cada mudança (na hora e depois de salvar) com a configuração atual.</summary>
+    [Parameter] public EventCallback<ClubeConfig> OnMudou { get; set; }
+    [Parameter] public EventCallback OnFechar { get; set; }
+
+    /// <summary>Moldura de cada cartão (todos, por posição e individual).</summary>
+    [Parameter] public CardsConfig Cards { get; set; } = new();
+    [Parameter] public EventCallback<CardsConfig> OnCards { get; set; }
+    /// <summary>Atletas em campo, para a personalização individual.</summary>
+    [Parameter] public EscalacaoMontada? Escalacao { get; set; }
+
+    private string escopo = "todos";
+    private string? posSel, atletaSel;
+    private static readonly string[] Siglas = { "GOL", "LAT", "ZAG", "MEI", "ATA", "TEC" };
+
+    private static string Valor1(Dictionary<string, string> d, string k) => d.TryGetValue(k, out var v) ? v : "";
+
+    private string ValorEscopo() => escopo switch
+    {
+        "posicao" => posSel is null ? "" : Valor1(Cards.Posicoes, posSel),
+        "individual" => atletaSel is null ? "" : Valor1(Cards.Individuais, atletaSel),
+        _ => Cards.Todos
+    };
+
+    private async Task MudarCards(string moldura)
+    {
+        var antes = Cards.Copiar();
+        var novo = Cards.Copiar();
+        switch (escopo)
+        {
+            case "posicao" when posSel is not null: novo.Posicoes[posSel] = moldura; break;
+            case "individual" when atletaSel is not null: novo.Individuais[atletaSel] = moldura; break;
+            default: novo.Todos = moldura; break;
+        }
+        erro = null;
+        salvando = true;
+        await OnCards.InvokeAsync(novo);   // mostra no campo na hora
+        try
+        {
+            var salvo = await Torcidas.SalvarCardsAsync(novo);
+            await OnCards.InvokeAsync(salvo);
+        }
+        catch (ErroTorcidaException ex)
+        {
+            erro = ex.Message;
+            await OnCards.InvokeAsync(antes);
+        }
+        finally { salvando = false; }
+    }
+
+    private static readonly string[] OpcoesTodos = { "nenhuma", "ornado", "esmeralda", "rubro", "grafite", "marfim", "obsidiana", "real_azul", "real_verde", "rubi" };
+
+    // Em "Todos" entra também a Esmeralda (moldura do campo inteiro); nos outros níveis só as que valem por cartão
+    private string[] Opcoes() => escopo == "todos" ? OpcoesTodos : CardsConfig.PorCartao;
+
+    // Moldura em vigor no nível aberto ("" = herda)
+    private string Atual() => escopo == "todos"
+        ? (!string.IsNullOrEmpty(Cards.Todos) ? Cards.Todos : Clube.Moldura)
+        : ValorEscopo();
+
+    private async Task Escolher(string m)
+    {
+        if (escopo != "todos") { await MudarCards(m); return; }
+
+        // Todos: as molduras do clube (padrão, ornamentada, esmeralda, rubro) vão para o clube; os temas novos para os cartões
+        if (CardsConfig.EhTema(m))
+        {
+            await MudarCards(m);
+            return;
+        }
+        if (!string.IsNullOrEmpty(Cards.Todos)) await MudarCards("");
+        if (Clube.Moldura != m) await Mudar(c => c.Moldura = m);
+    }
+
+    private bool salvando;
+    private string? erro;
+
+    private Task AlternarCamisa(ChangeEventArgs e)
+    {
+        var ligada = e.Value is true || string.Equals(e.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
+        return Mudar(c => c.Camisa = ligada ? (c.Camisa ?? new CamisaConfig()) : null);
+    }
+
+    private static string Cor(string? c, string padrao) => string.IsNullOrEmpty(c) ? padrao : c;
+    private static string Valor(ChangeEventArgs e) => e.Value?.ToString() ?? "";
+
+    private Task Fechar() => OnFechar.InvokeAsync();
+
+    private Task MudarLinhas(ChangeEventArgs e) => Mudar(c => c.CampoLinhas = e.Value?.ToString() ?? "#ffffff");
+
+    private async Task Mudar(Action<ClubeConfig> aplicar)
+    {
+        var antes = Clube.Copiar();
+        aplicar(Clube);
+        erro = null;
+        salvando = true;
+        await OnMudou.InvokeAsync(Clube);   // mostra no campo na hora
+        try
+        {
+            var salvo = await Torcidas.SalvarClubeAsync(Clube);
+            await OnMudou.InvokeAsync(salvo);
+        }
+        catch (ErroTorcidaException ex)
+        {
+            erro = ex.Message;
+            await OnMudou.InvokeAsync(antes);   // desfaz se o banco recusou
+        }
+        finally { salvando = false; }
+    }
+}

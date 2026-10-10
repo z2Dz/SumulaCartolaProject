@@ -1,0 +1,321 @@
+@page "/admin/artilheiros"
+@attribute [Authorize(Roles = "admin")]
+@using Microsoft.AspNetCore.Authorization
+@using SumulaCartolaProject.Models
+@using SumulaCartolaProject.Servicos
+@inject ServicoHistorico Servico
+@inject IJSRuntime JS
+
+<PageTitle>Editar artilheiros</PageTitle>
+
+<div class="ha @(editando ? "editando" : "")">
+    <div class="ha-topo">
+        <div>
+            <h1>Editar artilheiros</h1>
+            <p>Histórico anual de gols (aparece na tela Artilheiros)</p>
+        </div>
+        <div class="ha-acoes">
+            <button class="ha-btn" @onclick="Recruzar" disabled="@ocupado">Cruzar com atletas</button>
+            <button class="ha-btn" @onclick="Imprimir" disabled="@(carregando || jogadores.Count == 0)">Imprimir / PDF</button>
+            <button class="ha-btn ver" @onclick="Novo">+ Novo jogador</button>
+        </div>
+    </div>
+
+    @if (msg is not null) { <p class="ha-msg @(msgErro ? "erro" : "ok")">@msg</p> }
+
+    @if (carregando)
+    {
+        <p class="ha-vazio">Carregando…</p>
+    }
+    else
+    {
+        <div class="ha-corpo">
+            <section class="ha-col ha-lista-col">
+                <div class="ha-filtros">
+                    <input type="search" placeholder="Buscar jogador" @bind="busca" @bind:event="oninput" />
+                    <select @bind="filtro">
+                        <option value="todos">Todos</option>
+                        <option value="inativos">Inativos</option>
+                        <option value="ativos">Ativos</option>
+                    </select>
+                </div>
+                <ul class="ha-lista">
+                    @foreach (var j in Filtrados)
+                    {
+                        var jj = j;
+                        <li class="@(selId == jj.JogadorId ? "sel" : "")" @onclick="() => Selecionar(jj)">
+                            <span class="n">@jj.Nome @if (!jj.Ativo){<em>inativo</em>}</span>
+                            <span class="t">@(jj.Total ?? 0)</span>
+                        </li>
+                    }
+                    @if (!Filtrados.Any()) { <li class="vazio">Nenhum jogador.</li> }
+                </ul>
+            </section>
+
+            <section class="ha-col ha-ed">
+                @if (!editando)
+                {
+                    <p class="ha-vazio">Escolha um jogador na lista ou crie um novo.</p>
+                }
+                else
+                {
+                    <button class="ha-voltar" @onclick="Fechar">← Voltar à lista</button>
+                    <h2>@(selId is null ? "Novo jogador" : "Editar jogador")</h2>
+
+                    <label>Nome (como aparece no histórico)
+                        <input type="text" @bind="nome" maxlength="60" />
+                    </label>
+                    <label>Atleta do app (opcional)
+                        <select value="@atletaSel" @onchange="AoEscolherAtleta">
+                            <option value="">— Nenhum —</option>
+                            @foreach (var a in atletas) { <option value="@a.Id">@a.Nome</option> }
+                        </select>
+                    </label>
+
+                    <label class="ha-check">
+                        <input type="checkbox" @bind="ativo" />
+                        <span>Ativo: ainda joga na pelada</span>
+                    </label>
+
+                    <div class="ha-anos-cab">
+                        <span>Gols por ano</span>
+                        <b>Total: @valores.Values.Sum()</b>
+                    </div>
+                    <div class="ha-anos">
+                        @foreach (var a in Anos)
+                        {
+                            var ano = a;
+                            <label><span>@ano</span><input type="number" min="0" max="999" @bind="valores[ano]" /></label>
+                        }
+                        <label class="outros"><span>Outros</span><input type="number" min="0" max="999" @bind="valores[0]" /></label>
+                    </div>
+
+                    <div class="ha-rodape">
+                        <button class="ha-btn ver" @onclick="Salvar" disabled="@ocupado">@(ocupado ? "Salvando…" : "Salvar")</button>
+                        @if (selId is not null)
+                        {
+                            <button class="ha-btn perigo" @onclick="Excluir" disabled="@ocupado">Excluir</button>
+                        }
+                    </div>
+
+                    @if (selId is not null)
+                    {
+                        <div class="ha-juntar">
+                            <span>Juntar com outro (soma os gols e apaga este)</span>
+                            <div>
+                                <select @bind="juntarCom">
+                                    <option value="">Escolha o jogador de destino…</option>
+                                    @foreach (var j in jogadores.Where(x => x.JogadorId != selId).OrderBy(x => x.Nome))
+                                    {
+                                        <option value="@j.JogadorId">@j.Nome (@(j.Total ?? 0))</option>
+                                    }
+                                </select>
+                                <button class="ha-btn" @onclick="Juntar" disabled="@(ocupado || string.IsNullOrEmpty(juntarCom))">Juntar</button>
+                            </div>
+                        </div>
+                    }
+                }
+            </section>
+        </div>
+    }
+</div>
+
+@* Relatório de impressão / PDF (oculto na tela) *@
+<RelatorioImpressao Titulo="Histórico de gols" Subtitulo="Todas as temporadas">
+    <Gols>
+        <section class="rel-bloco">
+            <h2 class="rel-bloco-tit"><span class="rel-ico"><IconeUi Nome="bola" Tamanho="30" /></span> Todos os gols</h2>
+            <table class="rel-tab">
+                <thead><tr><th>#</th><th>Atleta</th><th>Gols</th></tr></thead>
+                <tbody>
+                    @foreach (var (pos, j) in RelClassificacao)
+                    {
+                        <tr><td class="rel-pos">@pos</td><td class="rel-n">@j.Nome</td><td class="rel-g">@(j.Total ?? 0)</td></tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+    </Gols>
+</RelatorioImpressao>
+
+@code {
+    List<HistoricoArtilheiro> jogadores = new();
+    List<HistoricoGol> gols = new();
+    List<AtletaBasico> atletas = new();
+    Dictionary<int, int> valores = NovoMapa();
+    bool carregando = true, ocupado, editando, msgErro, ativo;
+    string? msg;
+    string busca = "", filtro = "todos", nome = "", atletaSel = "", juntarCom = "";
+    long? selId;
+
+    IEnumerable<int> Anos => Enumerable.Range(2008, Math.Max(DateTime.Now.Year, 2026) - 2007).Reverse();
+
+    static Dictionary<int, int> NovoMapa()
+    {
+        var d = new Dictionary<int, int> { [0] = 0 };
+        for (int a = 2008; a <= Math.Max(DateTime.Now.Year, 2026); a++) d[a] = 0;
+        return d;
+    }
+
+    IEnumerable<HistoricoArtilheiro> Filtrados => jogadores
+        .Where(j => filtro == "todos" || (filtro == "ativos" ? j.Ativo : !j.Ativo))
+        .Where(j => string.IsNullOrWhiteSpace(busca) || j.Nome.Contains(busca.Trim(), StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(j => j.Total ?? 0).ThenBy(j => j.Nome);
+
+    // Mais gols primeiro (nome desempata); empate em gols repete a posição (1, 2, 2, 4…).
+    IEnumerable<(int Pos, HistoricoArtilheiro J)> RelClassificacao
+    {
+        get
+        {
+            var l = jogadores.OrderByDescending(j => j.Total ?? 0).ThenBy(j => j.Nome).ToList();
+            int pos = 0;
+            for (int i = 0; i < l.Count; i++)
+            {
+                if (i == 0 || (l[i].Total ?? 0) != (l[i - 1].Total ?? 0)) pos = i + 1;
+                yield return (pos, l[i]);
+            }
+        }
+    }
+
+    Task Imprimir() => JS.InvokeVoidAsync("print").AsTask();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { atletas = await Servico.CarregarAtletasAsync(); } catch { /* lista de atletas opcional */ }
+        await Recarregar();
+    }
+
+    async Task Recarregar()
+    {
+        carregando = true;
+        try { (jogadores, gols) = await Servico.CarregarAsync(); }
+        catch (Exception ex) { Aviso("Não foi possível carregar: " + ex.Message, true); }
+        carregando = false;
+    }
+
+    void Aviso(string t, bool erro) { msg = t; msgErro = erro; }
+
+    void Novo()
+    {
+        selId = null; nome = ""; ativo = false; atletaSel = ""; juntarCom = ""; valores = NovoMapa(); editando = true; msg = null;
+    }
+
+    void Selecionar(HistoricoArtilheiro j)
+    {
+        selId = j.JogadorId; nome = j.Nome; ativo = j.Ativo; atletaSel = j.AtletaId?.ToString() ?? ""; juntarCom = "";
+        valores = NovoMapa();
+        foreach (var g in gols.Where(g => g.JogadorId == j.JogadorId))
+            valores[g.Ano ?? 0] = valores.GetValueOrDefault(g.Ano ?? 0) + g.Gols;
+        editando = true; msg = null;
+    }
+
+    void AoEscolherAtleta(ChangeEventArgs e)
+    {
+        atletaSel = e.Value?.ToString() ?? "";
+        if (atletaSel != "") ativo = true;   // escolher um atleta marca ativo; o admin pode desmarcar
+    }
+
+    void Fechar() { editando = false; selId = null; }
+
+    async Task Salvar()
+    {
+        if (string.IsNullOrWhiteSpace(nome)) { Aviso("Informe o nome do jogador.", true); return; }
+        ocupado = true; msg = null;
+        try
+        {
+            Guid? at = Guid.TryParse(atletaSel, out var g) ? g : null;
+            var id = await Servico.SalvarAsync(selId, nome, at, ativo, valores);
+            await Recarregar();
+            var j = jogadores.FirstOrDefault(x => x.JogadorId == id);
+            if (j is not null) Selecionar(j);
+            Aviso("Salvo.", false);
+        }
+        catch (Exception ex) { Aviso("Erro ao salvar: " + ex.Message, true); }
+        ocupado = false;
+    }
+
+    async Task Excluir()
+    {
+        if (selId is null) return;
+        if (!await JS.InvokeAsync<bool>("confirm", $"Excluir {nome} e todos os gols dele? Isso não pode ser desfeito.")) return;
+        ocupado = true;
+        try { await Servico.ExcluirAsync(selId.Value); Fechar(); await Recarregar(); Aviso("Jogador excluído.", false); }
+        catch (Exception ex) { Aviso("Erro ao excluir: " + ex.Message, true); }
+        ocupado = false;
+    }
+
+    async Task Juntar()
+    {
+        if (selId is null || !long.TryParse(juntarCom, out var destino)) return;
+        var alvo = jogadores.FirstOrDefault(j => j.JogadorId == destino)?.Nome ?? "destino";
+        if (!await JS.InvokeAsync<bool>("confirm", $"Somar os gols de {nome} em {alvo} e apagar {nome}?")) return;
+        ocupado = true;
+        try
+        {
+            await Servico.JuntarAsync(selId.Value, destino);
+            Fechar(); await Recarregar(); Aviso($"{nome} foi juntado em {alvo}.", false);
+        }
+        catch (Exception ex) { Aviso("Erro ao juntar: " + ex.Message, true); }
+        ocupado = false;
+    }
+
+    async Task Recruzar()
+    {
+        ocupado = true;
+        try
+        {
+            var n = await Servico.RecruzarAsync();
+            atletas = await Servico.CarregarAtletasAsync();
+            await Recarregar();
+            Aviso(n == 0 ? "Nenhum jogador novo casou com os atletas." : $"{n} jogador(es) agora estão ativos.", false);
+        }
+        catch (Exception ex) { Aviso("Erro ao cruzar: " + ex.Message, true); }
+        ocupado = false;
+    }
+}
+
+<style>
+    .ha { --ha-h: calc(100dvh - 8.5rem); max-width: 1100px; margin: 0 auto; padding: 1rem; box-sizing: border-box; height: var(--ha-h); display: flex; flex-direction: column; overflow: hidden; }
+    @@media (min-width: 900px) { .ha { --ha-h: 100dvh; } }
+    .ha h1 { margin: 0; font-size: 1.5rem; } .ha h2 { margin: .2rem 0 .8rem; font-size: 1.15rem; }
+    .ha-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: .8rem; flex-wrap: wrap; flex: none; }
+    .ha-topo p { margin: .2rem 0 .8rem; opacity: .7; }
+    .ha-acoes { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .ha-btn { padding: .5rem .9rem; border-radius: 10px; border: 1px solid rgba(80,200,180,.4); background: rgba(10,25,25,.6); color: inherit; cursor: pointer; }
+    .ha-btn.ver { background: #1fa37a; border-color: #1fa37a; color: #fff; font-weight: 600; }
+    .ha-btn.perigo { border-color: #d9534f; color: #ff8a86; }
+    .ha-btn:disabled { opacity: .5; cursor: default; }
+    .ha-msg { flex: none; margin: 0 0 .6rem; padding: .5rem .8rem; border-radius: 10px; }
+    .ha-msg.ok { background: rgba(31,163,122,.2); } .ha-msg.erro { background: rgba(217,83,79,.2); color: #ffb3b0; }
+    .ha-vazio { opacity: .7; }
+    .ha-corpo { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 340px 1fr; gap: 1rem; }
+    .ha-col { min-height: 0; display: flex; flex-direction: column; background: rgba(10,25,25,.55); border: 1px solid rgba(80,200,180,.3); border-radius: 14px; padding: .8rem; }
+    .ha-ed { overflow-y: auto; scrollbar-width: none; } .ha-ed::-webkit-scrollbar { display: none; }
+    .ha-filtros { display: flex; gap: .4rem; margin-bottom: .6rem; flex: none; }
+    .ha input, .ha select { padding: .45rem .6rem; border-radius: 8px; border: 1px solid rgba(80,200,180,.35); background: rgba(5,15,15,.7); color: inherit; box-sizing: border-box; }
+    .ha-filtros input { flex: 1; min-width: 0; }
+    .ha-lista { list-style: none; margin: 0; padding: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; gap: .3rem; }
+    .ha-lista::-webkit-scrollbar { display: none; }
+    .ha-lista li { flex: none; display: flex; justify-content: space-between; gap: .5rem; padding: .5rem .7rem; border-radius: 10px; border: 1px solid rgba(80,200,180,.18); cursor: pointer; }
+    .ha-lista li.sel { border-color: #1fa37a; background: rgba(31,163,122,.18); }
+    .ha-lista li.vazio { cursor: default; opacity: .7; border: 0; }
+    .ha-lista .n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ha-lista em { font-style: normal; font-size: .68rem; margin-left: .4rem; padding: .1rem .4rem; border-radius: 999px; background: rgba(255,255,255,.12); }
+    .ha-lista .t { font-weight: 700; color: #ffd24a; }
+    .ha-ed label { display: flex; flex-direction: column; gap: .25rem; font-size: .85rem; opacity: .95; margin-bottom: .7rem; }
+    .ha-ed label.ha-check { flex-direction: row; align-items: center; gap: .6rem; font-size: .95rem; }
+    .ha-check input { width: 1.2rem; height: 1.2rem; accent-color: #1fa37a; }
+    .ha-anos-cab { display: flex; justify-content: space-between; margin: .3rem 0 .4rem; font-size: .9rem; }
+    .ha-anos { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: .5rem; }
+    .ha-anos label { margin: 0; } .ha-anos label span { font-size: .75rem; opacity: .75; } .ha-anos input { width: 100%; }
+    .ha-rodape { display: flex; gap: .5rem; margin-top: 1rem; }
+    .ha-juntar { margin-top: 1.2rem; padding-top: .8rem; border-top: 1px dashed rgba(80,200,180,.3); font-size: .85rem; }
+    .ha-juntar div { display: flex; gap: .5rem; margin-top: .4rem; } .ha-juntar select { flex: 1; min-width: 0; }
+    .ha-voltar { display: none; align-self: flex-start; margin-bottom: .6rem; background: none; border: 0; color: inherit; cursor: pointer; padding: 0; }
+    @@media (max-width: 899px) {
+        .ha-corpo { grid-template-columns: 1fr; }
+        .ha.editando .ha-lista-col { display: none; }
+        .ha:not(.editando) .ha-ed { display: none; }
+        .ha-voltar { display: block; }
+    }
+</style>

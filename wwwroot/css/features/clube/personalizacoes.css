@@ -1,0 +1,305 @@
+/* Personalizações do clube
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.simbolos-usados {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: .6rem;
+}
+
+.grupo-titulo {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--suave);
+    margin: .9rem 0 0;
+}
+
+.icone-simbolo {
+    display: block;
+}
+
+.opcoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: .6rem;
+}
+
+.paletas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin: .6rem 0 .2rem;
+}
+
+.paleta {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 3px solid;
+    cursor: pointer;
+    padding: 0;
+}
+
+/* Lápis: mostra que o número pode ser editado */
+.camisa-edit {
+    position: absolute;
+    top: -.15rem;
+    right: -.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #ffd54a;
+    color: var(--grafite);
+    font-size: .75rem;
+    line-height: 1;
+    pointer-events: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .5);
+}
+
+.camisa.chama .camisa-edit {
+    animation: camisa-pulso-badge 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+.camisa.chama svg, .camisa.chama .camisa-edit {
+        animation: none;
+    }
+}
+
+.edt-foto-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    align-items: center;
+}
+
+.grupo.trancado {
+    opacity: .6;
+}
+
+.opcoes-linha {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin: .5rem 0;
+}
+
+.opcao-mascote {
+    padding: .3rem;
+    background: rgba(0,0,0,.35);
+}
+
+.contador-estrelas {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin: .4rem 0;
+}
+
+.camisa-editor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.opcao-min {
+    font-size: .68rem;
+    color: var(--suave);
+}
+
+/* ===== Meu clube: cabeçalho das personalizações no estilo de cartão de missão ===== */
+.pers {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: .9rem 1rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.1);
+    background: rgba(8,20,15,.6);
+}
+
+.pers-ico {
+    flex: none;
+    width: 62px;
+    height: 62px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    color: var(--suave);
+}
+
+.pers.liberada .pers-ico {
+    color: var(--acento);
+    border-color: rgba(25,201,138,.45);
+    background: rgba(25,201,138,.1);
+}
+
+.pers-corpo {
+    flex: 1;
+    min-width: 0;
+}
+
+.pers-tag {
+    display: inline-block;
+    padding: .12rem .6rem;
+    border-radius: 6px;
+    background: rgba(255,255,255,.1);
+    font-size: .66rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--texto);
+}
+
+.pers.liberada .pers-tag {
+    background: rgba(25,201,138,.2);
+    color: var(--acento);
+}
+
+.pers-prog {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin-top: .7rem;
+}
+
+.pers-barra {
+    flex: 1;
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.12);
+    overflow: hidden;
+}
+
+.pers-barra > span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--amarelo), #ffb300);
+    }
+
+.pers.liberada .pers-barra > span {
+    background: var(--acento);
+}
+
+.pers-prog small {
+    flex: none;
+    font-size: .8rem;
+    color: var(--suave);
+}
+
+@media (max-width: 560px) {
+.pers-ico {
+        width: 52px;
+        height: 52px;
+    }
+}
+
+/* ===== Meu clube: personalizações recolhidas (abrem ao tocar) ===== */
+.pers {
+    position: relative;
+    cursor: pointer;
+    margin-bottom: 0;
+    padding-right: 3rem;
+    user-select: none;
+}
+
+.pers:hover {
+        border-color: rgba(255,255,255,.2);
+    }
+
+.pers:focus-visible {
+        outline: 2px solid var(--acento);
+    }
+
+.pers.aberto {
+        border-color: rgba(25,201,138,.45);
+    }
+
+.pers-chev {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    display: grid;
+    color: var(--suave);
+}
+
+.grupo-corpo {
+    margin-top: .9rem;
+}
+
+.lista-previa {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    font-size: .9rem;
+    color: var(--suave);
+}
+
+.prev-anim small {
+        opacity: .75;
+        font-size: .68rem;
+        color: var(--branco);
+    }
+
+.prev-forma small {
+        opacity: .75;
+        font-size: .68rem;
+    }
+
+.adm2-stat small {
+        display: block;
+        font-size: .72rem;
+        line-height: 1.25;
+        color: #93a39a;
+    }
+
+.chg2-nome small {
+        font-size: .8rem;
+        color: rgba(232,239,235,.65);
+    }
+
+.chg2-rodape small {
+        color: rgba(232,239,235,.6);
+        font-size: .78rem;
+    }
+
+@media (min-width: 900px) {
+.chg2-nome small {
+        font-size: .88rem;
+    }
+}
+
+.previa-reserv-txt small {
+        font-size: .8rem;
+        opacity: .75;
+    }
+
+.sm2-campo small {
+        color: rgba(232,239,235,.75);
+        font-size: .8rem;
+    }
+
+.sm2-rodada small {
+        font-size: .7rem;
+        color: var(--menta);
+        margin-top: .15rem;
+    }
+
+/* número ainda não preenchido: camisa vazia que pulsa para chamar atenção */
+.sm2-camisa.vazio svg {
+        stroke: #ffd24a;
+        stroke-width: 2.5;
+        animation: sm2-pulso 1.4s ease-in-out infinite;
+    }

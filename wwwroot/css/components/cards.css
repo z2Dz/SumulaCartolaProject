@@ -1,0 +1,15 @@
+/* Cartões genéricos
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+/* Componentes */
+.cartao {
+    background: var(--cartao);
+    border-radius: var(--raio);
+    padding: 1rem;
+    margin-bottom: .8rem;
+}
+
+.cartao {
+    border: 1px solid rgba(255,255,255,.07);
+    box-shadow: 0 8px 24px rgba(0,0,0,.28);
+}

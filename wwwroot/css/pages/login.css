@@ -1,0 +1,94 @@
+/* Página Login
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.login {
+    width: 100%;
+    max-width: 420px;
+    padding: calc(2rem + env(safe-area-inset-top, 0px)) 1.25rem 2rem;
+}
+
+.login-marca {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.login-marca h1 {
+        margin: .5rem 0 .25rem;
+    }
+
+.login-marca p {
+        margin: 0;
+        color: var(--suave);
+    }
+
+.login-bola {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto;
+    display: grid;
+    place-items: center;
+    font-size: 2.2rem;
+    border-radius: 50%;
+    background: var(--amarelo);
+}
+
+.regras-valor p {
+        margin: .5rem 0 0;
+        color: var(--suave);
+    }
+
+.fixa h1 {
+        margin: 0;
+        font-size: 1.4rem;
+    }
+
+.home-vazio p {
+        margin: 0;
+        max-width: 32ch;
+        font-size: 1rem;
+    }
+
+.esc-cab-titulo h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        letter-spacing: .02em;
+    }
+
+.esc-cab-titulo p {
+        margin: .15rem 0 0;
+        font-size: .9rem;
+        color: var(--suave);
+    }
+
+.regras-modal-corpo p {
+        margin: 0 0 .7rem;
+    }
+
+.pers-corpo p {
+    margin: 0;
+    font-size: .85rem;
+    color: var(--suave);
+}
+
+.ed-topo h1 {
+        flex: 1;
+        margin: 0;
+        font-size: 1.5rem;
+        line-height: 1.15;
+    }
+
+.adm2-topo h1 {
+        margin: 0;
+        font-size: 1.9rem;
+    }
+
+.chg2-cab-txt p {
+        margin: .15rem 0 0;
+        font-size: .8rem;
+        color: rgba(232,239,235,.65);
+    }
+
+.sm2 h1 {
+    font-size: 1.6rem;
+    color: var(--branco);
+}

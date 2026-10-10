@@ -1,0 +1,148 @@
+/* Cartão do jogador (visual interno)
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.carta-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible; /* a borda é desenhada metade para fora do viewBox */
+    pointer-events: none;
+}
+
+.carta-forma {
+    fill: var(--carta-fundo);
+    stroke: var(--carta-borda);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.carta-linha {
+    fill: none;
+    stroke: var(--carta-linha);
+    stroke-width: 1px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    opacity: .85;
+}
+
+/* textos do cartão: média no canto, posição logo abaixo, foto no centro */
+.carta-nota,
+.carta-pos {
+    position: absolute;
+    left: 13%;
+    z-index: 1;
+    line-height: 1;
+    font-weight: 800;
+    color: var(--preto-suave);
+    pointer-events: none;
+}
+
+.carta-nota {
+    top: 12%;
+    font-size: calc(var(--slot) * .24);
+}
+
+.carta-foto,
+.carta-ini,
+.carta-mais {
+    position: absolute;
+    left: 36%;
+    top: 15%;
+    width: 58%;
+    height: 52%;
+    pointer-events: none;
+}
+
+.carta-foto {
+    object-fit: cover;
+    object-position: center top;
+    border-radius: 12% 12% 0 0;
+    -webkit-mask-image: linear-gradient(#000 72%, transparent);
+    mask-image: linear-gradient(#000 72%, transparent);
+}
+
+.carta-ini,
+.carta-mais {
+    display: grid;
+    place-items: center;
+}
+
+.carta-ini {
+    font-weight: 800;
+    font-size: calc(var(--slot) * .38);
+    color: rgba(20,20,20,.3);
+}
+
+.foto {
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    object-fit: cover;
+    color: var(--branco);
+    font-weight: 800;
+}
+
+@keyframes camisa-pulso {
+    0%, 100% {
+        filter: drop-shadow(0 0 0 rgba(255, 213, 74, 0));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 7px rgba(255, 213, 74, .95));
+    }
+}
+
+@keyframes camisa-pulso-badge {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.25);
+    }
+}
+
+/* ---------- Silhuetas de jogador (no lugar da foto) ---------- */
+.silhueta {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* avatar redondo: silhueta clara sobre o fundo colorido do nome */
+.foto.foto-sil {
+    overflow: hidden;
+    color: rgba(255,255,255,.88);
+}
+
+.foto.foto-sil .silhueta {
+        width: 88%;
+        height: 88%;
+    }
+
+/* cartão do campo: silhueta escura na mesma área onde ficaria a foto */
+.carta-sil {
+    position: absolute;
+    left: 20%;
+    top: 20%;
+    width: 92%;
+    height: 58.7%; /* quadrado (98 x 98 unidades do cartão): a silhueta usa quase toda a largura */
+    pointer-events: none;
+    color: rgba(20,20,20,.78);
+}
+
+/* =====================================================================
+   Moldura "Ornamentada": topo recortado com coroa, bisel, painel interno escuro
+   e placa de nome metálica. Só vale quando a moldura escolhida é "ornado".
+   ===================================================================== */
+.carta-orn {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}

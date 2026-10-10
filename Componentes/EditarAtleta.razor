@@ -1,0 +1,131 @@
+@inject ServicoSumula Servico
+
+<div class="previa-fundo" @onclick="Fechar">
+    <div class="previa" role="dialog" aria-modal="true" aria-label="Editar atleta" @onclick:stopPropagation="true">
+        <div class="previa-topo">
+            <h3>Editar atleta</h3>
+            <button type="button" class="adm-icone" @onclick="Fechar" aria-label="Fechar">✕</button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(erro)) { <p class="erro">@erro</p> }
+
+        <div class="chg-rola">
+            <label class="adm-rotulo" for="editar-nome">Nome</label>
+            <input id="editar-nome" class="adm-campo" @bind="nome" @bind:event="oninput" maxlength="40" autocomplete="off" />
+
+            <span class="adm-rotulo">Posições que joga</span>
+            <div class="adm-chips">
+                @foreach (var (sigla, rotulo) in PosicoesAtleta.Todas)
+                {
+                    var s = sigla;
+                    <button type="button" class="adm-chip @(posicoes.Contains(s) ? "on" : "")" aria-pressed="@posicoes.Contains(s)"
+                            @onclick="() => Alternar(s)">@sigla <small>@rotulo</small></button>
+                }
+            </div>
+
+            <span class="adm-rotulo">Foto</span>
+            <div class="adm-foto-form">
+                @if (fotoPrevia is not null)
+                {
+                    <img class="foto" src="@fotoPrevia" alt="Prévia" style="width:72px;height:72px" />
+                }
+                else if (!removerFoto)
+                {
+                    <FotoJogador Nome="@(string.IsNullOrWhiteSpace(nome) ? "?" : nome)" FotoUrl="@Atleta.FotoUrl" Posicoes="@posicoes" Tamanho="72" />
+                }
+                else
+                {
+                    <FotoJogador Nome="@(string.IsNullOrWhiteSpace(nome) ? "?" : nome)" Posicoes="@posicoes" Tamanho="72" />
+                }
+
+                <div class="edt-foto-acoes">
+                    <label class="botao-sec adm-arquivo">
+                        📷 Tirar foto
+                        <InputFile OnChange="AoEscolherFoto" accept="image/*" capture="environment" hidden />
+                    </label>
+                    <label class="botao-sec adm-arquivo">
+                        Galeria
+                        <InputFile OnChange="AoEscolherFoto" accept="image/*" hidden />
+                    </label>
+                    @if (fotoPrevia is not null || (!removerFoto && !string.IsNullOrWhiteSpace(Atleta.FotoUrl)))
+                    {
+                        <button type="button" class="botao-sec adm-perigo" @onclick="RemoverFoto">Remover foto</button>
+                    }
+                </div>
+            </div>
+
+            <button type="button" class="botao adm-topo-gap" disabled="@salvando" @onclick="Salvar">
+                @(salvando ? "Salvando…" : "Salvar alterações")
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public AtletaResumo Atleta { get; set; } = default!;
+    [Parameter] public EventCallback<AtletaResumo> OnSalvo { get; set; }
+    [Parameter] public EventCallback OnFechar { get; set; }
+
+    private string nome = "";
+    private HashSet<string> posicoes = new();
+    private byte[]? fotoBytes;
+    private string? fotoPrevia, erro;
+    private bool removerFoto, salvando;
+
+    protected override void OnInitialized()
+    {
+        nome = Atleta.Nome;
+        posicoes = new HashSet<string>(Atleta.Posicoes);
+    }
+
+    private Task Fechar() => OnFechar.InvokeAsync();
+
+    private void Alternar(string sigla)
+    {
+        if (!posicoes.Remove(sigla)) posicoes.Add(sigla);
+    }
+
+    private void RemoverFoto()
+    {
+        fotoBytes = null; fotoPrevia = null; removerFoto = true;
+    }
+
+    private async Task AoEscolherFoto(InputFileChangeEventArgs e)
+    {
+        erro = null;
+        try
+        {
+            // O navegador reduz a foto antes de ler: câmera de celular gera arquivos de vários MB
+            var reduzida = await e.File.RequestImageFileAsync("image/jpeg", 400, 400);
+            using var origem = reduzida.OpenReadStream(2 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await origem.CopyToAsync(ms);
+            fotoBytes = ms.ToArray();
+            fotoPrevia = "data:image/jpeg;base64," + Convert.ToBase64String(fotoBytes);
+            removerFoto = false;
+        }
+        catch (Exception)
+        {
+            erro = "Não consegui ler essa foto. Tente outra imagem.";
+            return;
+        }
+    }
+
+    private async Task Salvar()
+    {
+        erro = null;
+        if (string.IsNullOrWhiteSpace(nome)) { erro = "Informe o nome do atleta."; return; }
+        if (posicoes.Count == 0) { erro = "Escolha ao menos uma posição."; return; }
+
+        salvando = true;
+        try
+        {
+            string? url = fotoBytes is null ? null : await Servico.EnviarFotoAsync(fotoBytes);
+            var ordenadas = PosicoesAtleta.Todas.Select(p => p.Sigla).Where(posicoes.Contains);
+            var atualizado = await Servico.EditarAtletaAsync(Atleta.Id, nome.Trim(), ordenadas, url, removerFoto && url is null);
+            await OnSalvo.InvokeAsync(atualizado);
+        }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+        salvando = false;
+    }
+}

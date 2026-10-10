@@ -1,0 +1,703 @@
+/* Página Home
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+/* ===== Home: escudo | última escalação | pontuação e patrimônio ===== */
+.pagina.home {
+    max-width: 1500px;
+}
+
+.home-grade {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr) minmax(0, 1fr);
+    grid-template-areas: "time meio pontos";
+    gap: 1.1rem;
+    align-items: stretch;
+    min-height: calc(100vh - 11rem); /* preenche a tela: cabeçalho + menu inferior */
+    min-height: calc(100dvh - 11rem);
+}
+
+.home-grade > .cartao {
+        margin-bottom: 0;
+    }
+
+.home-time {
+    grid-area: time;
+}
+
+.home-meio {
+    grid-area: meio;
+}
+
+.home-pontos {
+    grid-area: pontos;
+}
+
+/* esquerda */
+.home-time {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .7rem;
+    text-align: center;
+    padding: 2rem 1.2rem;
+}
+
+.home-lapis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--verde-2);
+    color: var(--branco);
+    text-decoration: none;
+}
+
+.home-lapis:focus-visible {
+        outline: 2px solid var(--amarelo);
+        outline-offset: 2px;
+    }
+
+.home-nome {
+    font-size: 1.5rem;
+    overflow-wrap: anywhere;
+}
+
+/* meio */
+.home-meio {
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+}
+
+.home-meio-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+}
+
+.home-meio-topo h3 {
+        margin: 0;
+    }
+
+.home-tatica {
+    font-size: .8rem;
+    font-weight: 700;
+    padding: .2rem .6rem;
+    border-radius: 999px;
+    background: var(--verde-2);
+    color: var(--branco);
+}
+
+.home-campo {
+    width: 100%;
+    pointer-events: none; /* só visualização; para mudar, use "Montar outra escalação" */
+}
+
+.home-editar {
+    align-self: center;
+    text-decoration: none;
+}
+
+.home-vazio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .8rem;
+    text-align: center;
+    flex: 1;
+    padding: 1rem 0;
+}
+
+.home-vazio h3 {
+        margin: .6rem 0 0;
+        font-size: 1.4rem;
+    }
+
+.home-vazio .botao {
+        text-decoration: none;
+        margin-top: .4rem;
+    }
+
+/* o desenho do juiz é preto e transparente: sem painel de fundo, só um contorno claro em volta da silhueta */
+.home-juiz {
+    width: min(300px, 70%);
+}
+
+.home-juiz img {
+        display: block;
+        width: 100%;
+        height: auto;
+        filter: drop-shadow(2px 0 0 var(--branco)) drop-shadow(-2px 0 0 var(--branco)) drop-shadow(0 2px 0 var(--branco)) drop-shadow(0 -2px 0 var(--branco)) drop-shadow(1.5px 1.5px 0 var(--branco)) drop-shadow(-1.5px -1.5px 0 var(--branco)) drop-shadow(1.5px -1.5px 0 var(--branco)) drop-shadow(-1.5px 1.5px 0 var(--branco));
+    }
+
+/* direita */
+.home-pontos {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.8rem;
+    text-align: center;
+    padding: 2rem 1.2rem;
+}
+
+.home-bloco {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .2rem;
+}
+
+.home-bloco + .home-bloco {
+        padding-top: 1.8rem;
+        border-top: 1px solid rgba(128,128,128,.25);
+    }
+
+.home-grande {
+    font-size: 2.8rem;
+    line-height: 1.1;
+}
+
+.home-var {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.home-var.sobe {
+        color: #1f9d5b;
+    }
+
+.home-var.desce {
+        color: #d64545;
+    }
+
+.home-var.igual {
+        color: var(--suave);
+    }
+
+@media (max-width: 899px) {
+/* celular e tablet: escudo e pontuação lado a lado; a escalação ocupa a largura toda embaixo */
+.home-grade {
+        min-height: 0;
+        gap: .8rem;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas:
+            "time pontos"
+            "meio meio";
+    }
+}
+
+@media (max-width: 420px) {
+.home-grande {
+        font-size: 1.6rem;
+    }
+
+.home-time {
+        padding: 1rem .6rem;
+    }
+
+.home-var {
+        font-size: .78rem;
+    }
+}
+
+/* ===== Torcida e personalização do clube ===== */
+/* decoração do escudo */
+.escudo-deco {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.escudo-deco.dourado .escudo,
+.escudo-deco.dourado .escudo-coroa {
+    filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 12px rgba(245,197,24,.75));
+    animation: brilho-ouro 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+.escudo-deco.dourado .escudo,
+    .escudo-deco.dourado .escudo-coroa {
+        animation: none;
+    }
+}
+
+/* fundos da Home */
+.pagina.home[class*="home-fundo-"] {
+    border-radius: 18px;
+}
+
+.home-fundo-noite {
+    background: linear-gradient(180deg, #0b1230, #1b2a5c);
+}
+
+.home-fundo-aurora {
+    background: linear-gradient(135deg, #0f2a3d, #1b6b5a 55%, #5b2a86);
+}
+
+.home-fundo-gramado {
+    background: repeating-linear-gradient(180deg, #2f8f4a 0 40px, #2a8142 40px 80px);
+}
+
+.home-fundo-arquibancada {
+    background: linear-gradient(180deg, rgba(255,255,255,.12), transparent 40%), repeating-linear-gradient(90deg, #3b3f46 0 14px, #2e3238 14px 28px);
+}
+
+/* Home: apelido, camisa, mascote, estádio, faixas, grito */
+.home-apelido {
+    font-size: .8rem;
+    font-weight: 700;
+    padding: .2rem .65rem;
+    border-radius: 999px;
+    background: var(--amarelo);
+    color: #1b1b1b;
+}
+
+.home-extras {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: .8rem;
+    margin-top: .4rem;
+}
+
+.home-estadio {
+    margin: 0;
+    text-align: center;
+    font-size: .95rem;
+}
+
+.home-grito {
+    margin: 0;
+    text-align: center;
+    font-style: italic;
+    font-weight: 600;
+}
+
+.home-campo-faixas {
+    display: flex;
+    gap: .5rem;
+    align-items: stretch;
+}
+
+.home-campo-faixas .home-campo {
+        flex: 1;
+        min-width: 0;
+        width: auto;
+    }
+
+.home-faixa {
+    writing-mode: vertical-rl;
+    background: var(--f1, #0b3d2e);
+    color: var(--f2, var(--amarelo));
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    font-size: .85rem;
+    padding: .8rem .35rem 1.4rem;
+    clip-path: polygon(0 0, 100% 0, 100% 90%, 50% 100%, 0 90%);
+    align-self: flex-start;
+    max-height: 100%;
+    overflow: hidden;
+    text-align: center;
+}
+
+.home-faixa.oculta {
+        display: none;
+    }
+
+.home-campo-faixas .home-faixa:first-child {
+    transform: rotate(180deg);
+}
+
+.home-torcida {
+    gap: .45rem;
+}
+
+@media (max-width: 560px) {
+.home-faixa {
+        font-size: .7rem;
+        padding: .6rem .25rem 1.1rem;
+    }
+}
+
+/* painel da Home */
+.dash {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 350px;
+    gap: 1.1rem;
+    align-items: start;
+}
+
+.dash-elenco {
+    padding: 0;
+    overflow: hidden;
+    margin: 0;
+}
+
+.dash-elenco-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem;
+    padding: 1rem 1.3rem;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.dash-elenco-topo h2 {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        margin: 0;
+        font-size: 1.35rem;
+    }
+
+.dash-campo-ico {
+    display: inline-flex;
+    color: var(--acento);
+}
+
+.chip-tatica {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .5rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+    color: var(--texto);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.dash-espaco {
+    margin: 1.2rem;
+}
+
+.dash-campo {
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+}
+
+.dash-campo .home-campo {
+        pointer-events: none;
+    }
+
+.dash-lado {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.dash-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: .9rem;
+    align-items: center;
+    padding: 1.1rem;
+    margin: 0;
+}
+
+.dash-ico {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    align-self: start;
+}
+
+.dash-ico.moeda, .dash-ico.estrela, .dash-ico.torcida {
+        background: rgba(245,197,24,.14);
+        color: var(--amarelo);
+    }
+
+.dash-corpo {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    min-width: 0;
+}
+
+.dash-corpo h3 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+.dash-valor {
+    font-size: 2.1rem;
+    line-height: 1.1;
+}
+
+.dash-deco {
+    opacity: .85;
+}
+
+.dash-deco.sobe {
+        color: var(--acento);
+    }
+
+.dash-deco.desce {
+        color: #e05555;
+    }
+
+.dash-deco.igual {
+        color: rgba(255,255,255,.2);
+    }
+
+.dash-deco.estadio {
+        color: rgba(255,255,255,.28);
+    }
+
+.dash-torcida .dash-extras,
+.dash-torcida .dash-link {
+    grid-column: 1 / -1;
+}
+
+.dash-extras {
+    justify-content: flex-start;
+    margin: 0;
+}
+
+.dash-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .6rem;
+    padding: .65rem 1.2rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.04);
+    color: var(--texto);
+    text-decoration: none;
+    font-weight: 600;
+    justify-self: center;
+}
+
+@media (max-width: 1099px) {
+.dash {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+}
+
+/* ===== Home: campo maior e painel do elenco mais transparente ===== */
+.cartao.dash-elenco {
+    background: rgba(6,16,12,.28);
+    border-color: rgba(255,255,255,.06);
+    box-shadow: none;
+}
+
+.cartao.dash-elenco .dash-elenco-topo {
+        border-bottom-color: rgba(255,255,255,.05);
+    }
+
+/* o brilho cinza dos refletores atrás do campo fica quase invisível */
+.cartao.dash-elenco .campo-cena::before {
+        opacity: .18;
+    }
+
+.dash-campo {
+    padding: .4rem 1rem 1.2rem;
+}
+
+/* ===== Home: tamanho do campo =====
+   A geometria (cartões, inclinação, perspectiva) vem de features/escalacao/campo-3d.css.
+   Aqui só o espaço que a Home reserva para o campo. */
+@media (min-width: 900px) {
+/* computador: a cena ocupa a altura que a janela deixa; o campo cabe nela */
+.dash-campo .campo-cena {
+        --altura: max(340px, calc(100dvh - 17rem));   /* o que sobra depois do título, do botão e das margens */
+        height: var(--altura);
+    }
+}
+
+@media (max-width: 899px) {
+/* celular e tablet: sem sidebar, a página rola; a altura da cena é a do campo */
+.dash-campo {
+        padding-inline: .4rem;
+    }
+
+/* faixas "MAIOR DE TODOS" mais finas, para o campo ganhar largura */
+.dash-campo .home-campo-faixas {
+        gap: .2rem;
+    }
+
+.dash-campo .home-faixa {
+        font-size: .58rem;
+        letter-spacing: .04em;
+        padding: .45rem .15rem .9rem;
+    }
+}
+
+/* ===== Home: cartões nítidos (sem sombra desfocada nem profundidade que rasteriza mole) ===== */
+.dash-campo .slot-btn,
+.dash-campo .slot-btn.vazia {
+    filter: none;
+}
+
+/* ===== Sombra dos cartões (deslocada e sem desfoque, para a borda continuar nítida) ===== */
+.dash-campo .slot-btn.cheio {
+    filter: drop-shadow(2px 4px 0 rgba(0,0,0,.5)) drop-shadow(0 6px 0 rgba(0,0,0,.18));
+}
+
+/* ===== Home: painel do elenco com cor uniforme (sem faixa mais clara sob o título) ===== */
+.cartao.dash-elenco .dash-elenco-topo {
+    background: transparent;
+}
+
+.cartao.dash-elenco .campo-cena::before {
+    display: none;
+}
+
+.regras-modal-topo h2 {
+        margin: 0;
+        font-size: 1.05rem;
+    }
+
+.pers-corpo h3 {
+    margin: .35rem 0 .1rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+@media (max-width: 860px) {
+/* camadas (coluna da direita) */
+.ed-camadas h3 {
+        border-bottom: 0;
+        padding-bottom: 0;
+        margin: .2rem .3rem .5rem;
+    }
+}
+
+/* Prévia da moldura do card (Meu clube) */
+.campo.prev-moldura {
+    --slot: 64px;
+    display: block;
+    position: static;
+    width: auto;
+    max-width: none;
+    margin: 0 auto .35rem;
+    background: none !important;
+    clip-path: none;
+    box-shadow: none;
+    border-radius: 0;
+    pointer-events: none;
+}
+
+.hist-cab h2 {
+    margin: 0;
+}
+
+.hist-bloco h3 {
+    margin: 0 0 .5rem;
+}
+
+.adm2-vidro h3 {
+        margin: 0 0 .3rem;
+    }
+
+.adm2-ico.cartao {
+    width: 20px;
+    height: 28px;
+    flex: none;
+    border-radius: 3px;
+}
+
+.chg2-cab-txt h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: var(--branco);
+    }
+
+/* ===== Chegada: cartão da partida em vidro e listas sem corte ===== */
+.chg2 > .cartao {
+    background: rgba(6,18,13,.62);
+    border: 1px solid rgba(31,227,160,.28);
+    border-radius: 20px;
+    padding: .8rem 1rem;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.35) inset, 0 10px 30px rgba(0,0,0,.35);
+}
+
+@media (min-width: 900px) {
+.chg2-cab-txt h3 {
+        font-size: 1.35rem;
+    }
+}
+
+.previa-topo h3 {
+    font-size: 1.5rem;
+}
+
+.previa-campo .campo {
+        --slot: clamp(46px, 5.6vw, 84px);
+        max-width: 100%;
+        aspect-ratio: 300 / 370;
+    }
+
+@media (max-width: 640px) {
+.previa-campo .campo {
+        --slot: clamp(40px, 12vw, 64px);
+        aspect-ratio: 300 / 400;
+    }
+}
+
+@media (min-width: 900px) and (min-height: 620px) {
+.previa-campo .campo {
+            --slot: clamp(30px, calc(var(--h) / 8.6), 70px);
+            height: var(--h);
+            width: calc(var(--h) * 0.81);
+            max-width: 100%;
+            aspect-ratio: auto;
+            margin-inline: auto;
+        }
+}
+
+@media (max-width: 899px) {
+.chg2-pop-cab h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--branco);
+        }
+}
+
+.sm2-placar img {
+        width: 58px;
+        height: 58px;
+        object-fit: contain;
+        filter: drop-shadow(0 3px 6px rgba(0,0,0,.4));
+    }
+
+@media (max-width: 899px) {
+.sm2-placar img {
+            width: 44px;
+            height: 44px;
+        }
+}
+
+/* ===== Molduras dos cartões sem blur: brilhos e sombras desfocadas removidos ===== */
+.campo .slot-btn,
+.campo .slot-btn.cheio,
+.campo.gala .carta-svg,
+.campo.gala .slot-btn.cheio .carta-sil,
+.campo.moldura-cristal .carta-coroinha,
+.campo .slot-btn.cheio .carta-svg {
+    filter: none;
+}
+
+.pc2-moldura .campo.prev-moldura {
+        margin: 0 auto;
+        --slot: 58px;
+    }
+
+.rk-campo-faixas .home-faixa:first-child { transform: rotate(180deg); }
+
+.rk-personalizacao .home-estadio,
+    .rk-personalizacao .home-grito { margin: 0; }

@@ -1,0 +1,15 @@
+<div class="adm-passo">
+    <button type="button" disabled="@(Valor <= Min)" @onclick="Menos" aria-label="Diminuir">−</button>
+    <span>@Valor</span>
+    <button type="button" disabled="@(Valor >= Max)" @onclick="Mais" aria-label="Aumentar">+</button>
+</div>
+
+@code {
+    [Parameter] public int Valor { get; set; }
+    [Parameter] public EventCallback<int> ValorChanged { get; set; }
+    [Parameter] public int Min { get; set; } = 0;
+    [Parameter] public int Max { get; set; } = 99;
+
+    private Task Menos() => ValorChanged.InvokeAsync(Valor - 1);
+    private Task Mais() => ValorChanged.InvokeAsync(Valor + 1);
+}

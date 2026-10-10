@@ -1,0 +1,146 @@
+/* Formulários e opções
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.formulario {
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+}
+
+    .formulario label {
+        display: flex;
+        flex-direction: column;
+        gap: .3rem;
+        font-size: .85rem;
+        color: var(--suave);
+    }
+
+    .formulario input {
+        font-size: 1rem; /* 16px evita zoom automático no iOS */
+        padding: .8rem;
+        border-radius: 10px;
+        border: 1px solid rgba(128,128,128,.4);
+        background: var(--cartao);
+        color: var(--texto);
+    }
+
+        .formulario input:focus {
+            outline: 2px solid var(--verde-2);
+            border-color: transparent;
+        }
+
+.opcao.mini {
+    min-width: 56px;
+    padding: .35rem .3rem;
+}
+
+.opcao {
+    min-width: 72px;
+}
+
+    .opcao small {
+        font-size: .68rem;
+        line-height: 1.1;
+        text-align: center;
+        color: var(--suave);
+    }
+
+.cores {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .7rem;
+    margin-top: .9rem;
+}
+
+    .cores label {
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+        font-size: .85rem;
+        color: var(--suave);
+    }
+
+.opcao {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .3rem;
+    padding: .45rem .7rem;
+    border-radius: 12px;
+    border: 2px solid rgba(128,128,128,.35);
+    background: transparent;
+    color: var(--texto);
+    font-size: .82rem;
+    cursor: pointer;
+}
+
+    .opcao:disabled {
+        cursor: not-allowed;
+    }
+
+    /* opção só de prévia (Recompensas): não é clicável */
+    .opcao.fixa {
+        cursor: default;
+    }
+
+    .opcao.fixa.bloq {
+        opacity: .55;
+    }
+
+.marcar {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: .4rem 0;
+}
+
+/* Switch "Ativo para o Cartola" (Admin > chegada > Adicionar atleta) */
+.cartola-status {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1.25rem;
+}
+
+.cartola-status-info {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    min-width: 0;
+}
+
+.cartola-seg {
+    order: -1; /* o seletor vem antes do texto */
+    flex: none;
+    display: inline-flex;
+    padding: 3px;
+    gap: 3px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.14);
+}
+
+    .cartola-seg button {
+        padding: .4rem .9rem;
+        border: 0;
+        border-radius: 999px;
+        background: none;
+        box-shadow: none;
+        color: rgba(255,255,255,.7);
+        font: inherit;
+        font-weight: 700;
+        font-size: .85rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .2s ease, color .2s ease;
+    }
+
+        .cartola-seg button.sel {
+            background: var(--acento);
+            color: #05231a;
+        }
+
+        .cartola-seg button:focus-visible {
+            outline: 2px solid var(--branco);
+            outline-offset: 1px;
+        }

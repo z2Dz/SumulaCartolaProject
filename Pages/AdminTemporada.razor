@@ -1,0 +1,583 @@
+@page "/admin/temporada"
+@attribute [Authorize(Roles = "admin")]
+@using Microsoft.AspNetCore.Authorization
+@using SumulaCartolaProject.Models
+@using SumulaCartolaProject.Servicos
+@inject ServicoTemporada Servico
+@inject ServicoHistorico ServicoHist
+@inject IJSRuntime JS
+
+<PageTitle>Temporada @ano</PageTitle>
+
+<div class="tp">
+    <div class="tp-topo">
+        <div>
+            <h1>Temporada @ano</h1>
+            <p>Gols, cartões e jogos de cada atleta no ano</p>
+        </div>
+        @if (!editando)
+        {
+            <div class="tp-acoes">
+                <button class="tp-btn" @onclick="Conferir" disabled="@(ocupado || carregando)">Conferir histórico</button>
+                <button class="tp-btn" @onclick="Imprimir" disabled="@(ocupado || carregando || resumo.Count == 0)">Imprimir / PDF</button>
+                <button class="tp-btn ver" @onclick="NovoJogo">+ Lançar jogo</button>
+            </div>
+        }
+    </div>
+
+    @if (msg is not null) { <p class="tp-msg @(msgErro ? "erro" : "ok")">@msg</p> }
+
+    @if (carregando)
+    {
+        <p class="tp-vazio">Carregando…</p>
+    }
+    else if (editando)
+    {
+        <section class="tp-ed">
+            <button class="tp-voltar" @onclick="Cancelar">← Voltar</button>
+            <h2>@(jogoId is null ? "Lançar jogo" : "Editar jogo")</h2>
+
+            <div class="tp-cab">
+                <label>Data do jogo
+                    <input type="date" @bind="data" @bind:format="yyyy-MM-dd" max="@MaxData" />
+                </label>
+                <label class="obs">Observação (opcional)
+                    <input type="text" @bind="obs" maxlength="80" placeholder="Ex.: súmula do dia 04/01" />
+                </label>
+            </div>
+
+            <div class="tp-placar">
+                <span class="v">Vermelho</span>
+                <b>@PlacarV</b><i>x</i><b>@PlacarA</b>
+                <span class="a">Amarelo</span>
+            </div>
+
+            <div class="tp-times">
+                @foreach (var lado in new[] { "vermelho", "amarelo" })
+                {
+                    var l = lado;
+                    <div class="tp-time @l">
+                        <h3>@(l == "vermelho" ? "Vermelho" : "Amarelo") <small>(@Linhas(l).Count())</small></h3>
+
+                        @foreach (var j in Linhas(l))
+                        {
+                            var jj = j;
+                            <div class="tp-jog">
+                                <div class="tp-jog-nome">
+                                    <span>@NomeAtleta(jj.AtletaId)</span>
+                                    <button class="x" title="Remover" @onclick="() => Remover(jj)">✕</button>
+                                </div>
+                                <div class="tp-nums">
+                                    <label><span>Gols</span><input type="number" min="0" max="99" @bind="jj.Gols" /></label>
+                                    <label><span>G.C.</span><input type="number" min="0" max="99" @bind="jj.GolsContra" /></label>
+                                    <label><span>AM</span><input type="number" min="0" max="9" @bind="jj.Amarelos" /></label>
+                                    <label><span>AZ</span><input type="number" min="0" max="9" @bind="jj.Azuis" /></label>
+                                    <label><span>VER</span><input type="number" min="0" max="9" @bind="jj.Vermelhos" /></label>
+                                </div>
+                            </div>
+                        }
+
+                        <select value="" @onchange="e => Adicionar(l, e)">
+                            <option value="">+ Adicionar jogador…</option>
+                            @foreach (var a in Disponiveis)
+                            {
+                                <option value="@a.Id">@a.Nome</option>
+                            }
+                        </select>
+                    </div>
+                }
+            </div>
+
+            <div class="tp-rodape">
+                <button class="tp-btn ver" @onclick="Salvar" disabled="@ocupado">@(ocupado ? "Salvando…" : "Salvar jogo")</button>
+                <button class="tp-btn" @onclick="Cancelar" disabled="@ocupado">Cancelar</button>
+            </div>
+        </section>
+    }
+    else
+    {
+        <div class="tp-cards">
+            <div><b>@TotalJogos</b><span>jogos</span></div>
+            <div><b>@resumo.Sum(r => r.Gols)</b><span>gols</span></div>
+            <div class="am"><b>@resumo.Sum(r => r.Amarelos)</b><span>amarelos</span></div>
+            <div class="az"><b>@resumo.Sum(r => r.Azuis)</b><span>azuis</span></div>
+            <div class="vm"><b>@resumo.Sum(r => r.Vermelhos)</b><span>vermelhos</span></div>
+        </div>
+
+        <div class="tp-abas">
+            <button class="@(aba == "resumo" ? "on" : "")" @onclick='() => aba = "resumo"'>Por jogador</button>
+            <button class="@(aba == "jogos" ? "on" : "")" @onclick='() => aba = "jogos"'>Jogos (@jogos.Count)</button>
+            <button class="@(aba == "totais" ? "on" : "")" @onclick='() => aba = "totais"'>Lançar totais</button>
+            @if (comparacao is not null)
+            {
+                <button class="@(aba == "conf" ? "on" : "")" @onclick='() => aba = "conf"'>Conferência</button>
+            }
+        </div>
+
+        @if (aba == "resumo")
+        {
+            <div class="tp-filtros">
+                <input type="search" placeholder="Buscar jogador" @bind="busca" @bind:event="oninput" />
+                <select @bind="ordem">
+                    <option value="gols">Mais gols</option>
+                    <option value="jogos">Mais jogos</option>
+                    <option value="amarelos">Mais amarelos</option>
+                    <option value="azuis">Mais azuis</option>
+                    <option value="vermelhos">Mais vermelhos</option>
+                    <option value="nome">Nome</option>
+                </select>
+            </div>
+            <div class="tp-tab">
+                <div class="tp-tab-cab tp-r6"><span class="n">Jogador</span><span>J</span><span>Gols</span><span title="Gols contra">GC</span><span>AM</span><span>AZ</span><span>VER</span></div>
+                <div class="tp-tab-corpo">
+                    @foreach (var r in Resumo)
+                    {
+                        <div class="tp-lin tp-r6">
+                            <span class="n">@r.Nome</span><span>@r.Jogos</span><span class="g">@r.Gols</span><span>@r.GolsContra</span>
+                            <span>@r.Amarelos</span><span>@r.Azuis</span><span>@r.Vermelhos</span>
+                        </div>
+                    }
+                    @if (!Resumo.Any()) { <p class="tp-vazio">Nenhum jogador encontrado.</p> }
+                </div>
+            </div>
+        }
+        else if (aba == "totais")
+        {
+            <div class="tp-totais-cab">
+                <label class="jp">Jogos da pelada no ano
+                    <input type="number" min="0" max="500" @bind="jogosPelada" />
+                </label>
+                <input class="busca" type="search" placeholder="Buscar atleta" @bind="buscaTot" @bind:event="oninput" />
+                <label class="chk"><input type="checkbox" @bind="soPreenchidos" /> Só com dados</label>
+                <button class="tp-btn" @onclick="() => mostrarNovo = !mostrarNovo">+ Adicionar atleta</button>
+            </div>
+            @if (mostrarNovo)
+            {
+                <div class="tp-novo">
+                    <input type="text" placeholder="Nome do atleta" maxlength="40" @bind="novoNome" />
+                    <button class="tp-btn ver" @onclick="CriarAtleta" disabled="@ocupado">Criar</button>
+                    <small>Entra como inativo. Ajuste as posições na tela de atletas, se precisar.</small>
+                </div>
+            }
+            <div class="tp-tab">
+                <div class="tp-tab-cab tp-g">
+                    <span class="n">Atleta</span><span class="hv">Vermelho</span><span class="ha">Amarelo</span><span>Jogos</span><span>Gols</span><span>GC</span><span>AM</span><span>AZ</span><span>VER</span>
+                </div>
+                <div class="tp-tab-corpo">
+                    @foreach (var l in LinhasTotais)
+                    {
+                        var ll = l;
+                        <div class="tp-lin tp-g @(ll.Preenchida ? "pre" : "")">
+                            <span class="n">@ll.Nome @if (!ll.Ativo){<em>inativo</em>}</span>
+                            <label class="c"><span>Vermelho</span><CampoNumero Classe="v" Rotulo="Jogos no Vermelho" Max="500" @bind-Valor="ll.JogosVermelho" /></label>
+                            <label class="c"><span>Amarelo</span><CampoNumero Classe="a" Rotulo="Jogos no Amarelo" Max="500" @bind-Valor="ll.JogosAmarelo" /></label>
+                            <label class="c"><span>Jogos</span><b class="tot">@ll.Jogos</b></label>
+                            <label class="c"><span>Gols</span><CampoNumero Rotulo="Gols" Max="999" @bind-Valor="ll.Gols" /></label>
+                            <label class="c"><span>Gol contra</span><CampoNumero Rotulo="Gols contra" Max="99" @bind-Valor="ll.GolsContra" /></label>
+                            <label class="c"><span>AM</span><CampoNumero Rotulo="Amarelos" Max="99" @bind-Valor="ll.Amarelos" /></label>
+                            <label class="c"><span>AZ</span><CampoNumero Rotulo="Azuis" Max="99" @bind-Valor="ll.Azuis" /></label>
+                            <label class="c"><span>VER</span><CampoNumero Rotulo="Vermelhos" Max="99" @bind-Valor="ll.Vermelhos" /></label>
+                        </div>
+                    }
+                    @if (!LinhasTotais.Any()) { <p class="tp-vazio">Nenhum atleta encontrado.</p> }
+                </div>
+            </div>
+            <div class="tp-rodape">
+                <button class="tp-btn ver" @onclick="SalvarTotais" disabled="@ocupado">@(ocupado ? "Salvando…" : "Salvar totais")</button>
+                <small class="tp-aviso">Jogos = Vermelho + Amarelo. Os totais somam com os jogos lançados um a um e com os do app. Salvar substitui todos os totais de @ano.</small>
+            </div>
+        }
+        else if (aba == "conf" && comparacao is not null)
+        {
+            <div class="tp-tab">
+                <div class="tp-acoes">
+                    <button class="tp-btn ver" @onclick="Sincronizar" disabled="@ocupado">Atualizar histórico</button>
+                </div>
+                <p class="tp-nota">Gols de @ano no histórico (planilha, até maio) x temporada (papel + app). "Atualizar histórico" copia a temporada para o histórico. Quem aparece só no histórico mantém o valor da planilha.</p>
+                <div class="tp-tab-cab tp3"><span class="n">Jogador</span><span>Histórico</span><span>Temporada</span></div>
+                <div class="tp-tab-corpo">
+                    @foreach (var c in comparacao.OrderByDescending(x => Math.Abs(x.NaTemporada - x.NoHistorico)).ThenBy(x => x.Nome))
+                    {
+                        <div class="tp-lin tp3 @(c.NaTemporada == c.NoHistorico ? "" : "dif")">
+                            <span class="n">@c.Nome</span><span>@c.NoHistorico</span><span class="g">@c.NaTemporada</span>
+                        </div>
+                    }
+                    @if (comparacao.Count == 0) { <p class="tp-vazio">Nada para comparar ainda.</p> }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="tp-tab">
+                <div class="tp-tab-corpo">
+                    @foreach (var j in jogos.OrderByDescending(x => x.Data).ThenByDescending(x => x.Id))
+                    {
+                        var jj = j;
+                        <div class="tp-jogo">
+                            <span class="d">@jj.Data.ToString("dd/MM")</span>
+                            <span class="p"><i class="v">Vermelho</i> <b>@jj.PlacarVermelho x @jj.PlacarAmarelo</b> <i class="a">Amarelo</i></span>
+                            <span class="m">@jj.Jogadores jogadores @(jj.Origem == "app" ? "· lançado no app" : "· papel")@(string.IsNullOrWhiteSpace(jj.Obs) ? "" : " · " + jj.Obs)</span>
+                            @if (jj.Origem == "papel")
+                            {
+                                <span class="b">
+                                    <button class="tp-btn peq" @onclick="() => EditarJogo(jj)">Editar</button>
+                                    <button class="tp-btn peq perigo" @onclick="() => ExcluirJogo(jj)">Excluir</button>
+                                </span>
+                            }
+                        </div>
+                    }
+                    @if (jogos.Count == 0) { <p class="tp-vazio">Nenhum jogo na temporada. Use "+ Lançar jogo".</p> }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@* Relatório de impressão / PDF (oculto na tela) *@
+<RelatorioImpressao Titulo="Estatísticas dos atletas" Subtitulo="@($"Gols e cartões • Temporada {ano}")">
+    <Gols>
+        <section class="rel-bloco">
+            <h2 class="rel-bloco-tit"><span class="rel-ico"><IconeUi Nome="bola" Tamanho="30" /></span> Todos os gols</h2>
+            <table class="rel-tab">
+                <thead><tr><th>#</th><th>Atleta</th><th>Jogos</th><th>Gols</th></tr></thead>
+                <tbody>
+                    @foreach (var (pos, r) in RelClassificacao)
+                    {
+                        <tr><td class="rel-pos">@pos</td><td class="rel-n">@r.Nome</td><td>@r.Jogos</td><td class="rel-g">@r.Gols</td></tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+    </Gols>
+    <Cartoes>
+        <section class="rel-bloco">
+            <h2 class="rel-bloco-tit"><span class="rel-ico rel-carta"></span> Todos os cartões</h2>
+            <table class="rel-tab">
+                <thead><tr><th>#</th><th>Atleta</th><th>Jogos</th><th class="rel-am">AM</th><th class="rel-az">AZ</th><th class="rel-ve">VER</th></tr></thead>
+                <tbody>
+                    @foreach (var (pos, r) in RelClassificacao)
+                    {
+                        <tr><td class="rel-pos">@pos</td><td class="rel-n">@r.Nome</td><td>@r.Jogos</td><td class="rel-am">@r.Amarelos</td><td class="rel-az">@r.Azuis</td><td class="rel-ve">@r.Vermelhos</td></tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+    </Cartoes>
+</RelatorioImpressao>
+
+@code {
+    readonly int ano = DateTime.Now.Year;
+    List<ResumoTemporada> resumo = new();
+    List<JogoTemporada> jogos = new();
+    List<TemporadaJogoDb> manuais = new();
+    List<TemporadaJogoAtletaDb> manuaisAtl = new();
+    List<AtletaBasico> atletas = new();
+    List<LinhaJogoEd> linhas = new();
+    List<ComparacaoHistorico>? comparacao;
+    List<LinhaTotalEd> totaisLinhas = new();
+    int jogosPelada, jogosSalvo;
+    string buscaTot = "", novoNome = "";
+    bool soPreenchidos, mostrarNovo;
+
+    int TotalJogos => jogosSalvo + jogos.Count;
+
+    IEnumerable<LinhaTotalEd> LinhasTotais => totaisLinhas
+        .Where(l => !soPreenchidos || l.Preenchida)
+        .Where(l => string.IsNullOrWhiteSpace(buscaTot) || l.Nome.Contains(buscaTot.Trim(), StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(l => l.Ativo).ThenBy(l => l.Nome);
+
+    bool carregando = true, ocupado, editando, msgErro;
+    string? msg;
+    string aba = "resumo", busca = "", ordem = "gols", obs = "";
+    DateTime data = DateTime.Today;
+    long? jogoId;
+    string MaxData => DateTime.Today.ToString("yyyy-MM-dd");
+
+    // Placar: gols do time + gols contra do adversário.
+    int PlacarV => linhas.Where(l => l.Lado == "vermelho").Sum(l => l.Gols) + linhas.Where(l => l.Lado == "amarelo").Sum(l => l.GolsContra);
+    int PlacarA => linhas.Where(l => l.Lado == "amarelo").Sum(l => l.Gols) + linhas.Where(l => l.Lado == "vermelho").Sum(l => l.GolsContra);
+
+    IEnumerable<LinhaJogoEd> Linhas(string lado) => linhas.Where(l => l.Lado == lado);
+    IEnumerable<AtletaBasico> Disponiveis => atletas.Where(a => linhas.All(l => l.AtletaId != a.Id));
+    string NomeAtleta(Guid id) => atletas.FirstOrDefault(a => a.Id == id)?.Nome ?? "(atleta removido)";
+
+    IEnumerable<ResumoTemporada> Resumo
+    {
+        get
+        {
+            var q = resumo.Where(r => string.IsNullOrWhiteSpace(busca) || r.Nome.Contains(busca.Trim(), StringComparison.OrdinalIgnoreCase));
+            return ordem switch
+            {
+                "jogos" => q.OrderByDescending(r => r.Jogos).ThenBy(r => r.Nome),
+                "amarelos" => q.OrderByDescending(r => r.Amarelos).ThenBy(r => r.Nome),
+                "azuis" => q.OrderByDescending(r => r.Azuis).ThenBy(r => r.Nome),
+                "vermelhos" => q.OrderByDescending(r => r.Vermelhos).ThenBy(r => r.Nome),
+                "nome" => q.OrderBy(r => r.Nome),
+                _ => q.OrderByDescending(r => r.Gols).ThenByDescending(r => r.Jogos).ThenBy(r => r.Nome)
+            };
+        }
+    }
+
+    // Ordem do relatório: mais gols primeiro (nome desempata); empate em gols repete a posição (1, 2, 2, 4…).
+    IEnumerable<(int Pos, ResumoTemporada R)> RelClassificacao
+    {
+        get
+        {
+            var l = resumo.OrderByDescending(r => r.Gols).ThenBy(r => r.Nome).ToList();
+            int pos = 0;
+            for (int i = 0; i < l.Count; i++)
+            {
+                if (i == 0 || l[i].Gols != l[i - 1].Gols) pos = i + 1;
+                yield return (pos, l[i]);
+            }
+        }
+    }
+
+    Task Imprimir() => JS.InvokeVoidAsync("print").AsTask();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { atletas = await ServicoHist.CarregarAtletasAsync(); }
+        catch (Exception ex) { Aviso("Não foi possível carregar os atletas: " + ex.Message, true); }
+        await Recarregar();
+    }
+
+    async Task Recarregar()
+    {
+        carregando = true;
+        try
+        {
+            resumo = await Servico.ResumoAsync(ano);
+            jogos = await Servico.JogosAsync(ano);
+            (manuais, manuaisAtl) = await Servico.ManualAsync();
+            var (jp, tot) = await Servico.TotaisAsync(ano);
+            jogosSalvo = jogosPelada = jp;
+            MontarTotais(tot);
+        }
+        catch (Exception ex) { Aviso("Não foi possível carregar a temporada: " + ex.Message, true); }
+        carregando = false;
+    }
+
+    void MontarTotais(List<TemporadaTotalDb> tot)
+    {
+        var mapa = tot.ToDictionary(t => t.AtletaId);
+        totaisLinhas = atletas.Select(a =>
+        {
+            mapa.TryGetValue(a.Id, out var t);
+            return new LinhaTotalEd
+            {
+                AtletaId = a.Id, Nome = a.Nome, Ativo = a.Ativo,
+                JogosVermelho = t?.JogosVermelho ?? 0, JogosAmarelo = t?.JogosAmarelo ?? 0, Gols = t?.Gols ?? 0, GolsContra = t?.GolsContra ?? 0, Amarelos = t?.Amarelos ?? 0,
+                Azuis = t?.Azuis ?? 0, Vermelhos = t?.Vermelhos ?? 0
+            };
+        }).ToList();
+    }
+
+    async Task SalvarTotais()
+    {
+        var acima = totaisLinhas.Where(l => jogosPelada > 0 && l.Jogos > jogosPelada).Select(l => l.Nome).ToList();
+        if (acima.Count > 0)
+        {
+            Aviso($"Estes atletas têm mais jogos que o total da pelada ({jogosPelada}): {string.Join(", ", acima)}.", true);
+            return;
+        }
+        ocupado = true; msg = null;
+        try
+        {
+            await Servico.SalvarTotaisAsync(ano, jogosPelada, totaisLinhas);
+            await Recarregar();
+            Aviso("Totais salvos.", false);
+        }
+        catch (Exception ex) { Aviso("Erro ao salvar os totais: " + ex.Message, true); }
+        ocupado = false;
+    }
+
+    async Task CriarAtleta()
+    {
+        if (string.IsNullOrWhiteSpace(novoNome)) { Aviso("Informe o nome do atleta.", true); return; }
+        ocupado = true; msg = null;
+        try
+        {
+            var id = await Servico.CriarAtletaAsync(novoNome.Trim());
+            if (id is null) { Aviso("Não foi possível criar o atleta.", true); }
+            else
+            {
+                atletas = await ServicoHist.CarregarAtletasAsync();
+                var a = atletas.FirstOrDefault(x => x.Id == id);
+                if (a is not null) totaisLinhas.Add(new LinhaTotalEd { AtletaId = a.Id, Nome = a.Nome, Ativo = a.Ativo });
+                buscaTot = novoNome.Trim(); novoNome = ""; mostrarNovo = false;
+                Aviso("Atleta criado como inativo. Preencha os dados dele na lista.", false);
+            }
+        }
+        catch (Exception ex) { Aviso("Erro ao criar o atleta: " + ex.Message, true); }
+        ocupado = false;
+    }
+
+    void Aviso(string t, bool erro) { msg = t; msgErro = erro; }
+
+    void NovoJogo()
+    {
+        jogoId = null; data = DateTime.Today; obs = ""; linhas = new(); editando = true; msg = null;
+    }
+
+    void EditarJogo(JogoTemporada j)
+    {
+        if (!long.TryParse(j.Id, out var id)) return;
+        var m = manuais.FirstOrDefault(x => x.Id == id);
+        if (m is null) { Aviso("Jogo não encontrado.", true); return; }
+        jogoId = id; data = m.Data; obs = m.Obs ?? "";
+        linhas = manuaisAtl.Where(a => a.JogoId == id).Select(a => new LinhaJogoEd
+        {
+            AtletaId = a.AtletaId, Lado = a.Lado, Gols = a.Gols, GolsContra = a.GolsContra,
+            Amarelos = a.Amarelos, Azuis = a.Azuis, Vermelhos = a.Vermelhos
+        }).ToList();
+        editando = true; msg = null;
+    }
+
+    void Adicionar(string lado, ChangeEventArgs e)
+    {
+        if (Guid.TryParse(e.Value?.ToString(), out var id) && linhas.All(l => l.AtletaId != id))
+            linhas.Add(new LinhaJogoEd { AtletaId = id, Lado = lado });
+    }
+
+    void Remover(LinhaJogoEd l) => linhas.Remove(l);
+
+    async Task Conferir()
+    {
+        ocupado = true; msg = null;
+        try { comparacao = await Servico.CompararAsync(ano); aba = "conf"; }
+        catch (Exception ex) { Aviso("Erro ao conferir: " + ex.Message, true); }
+        ocupado = false;
+    }
+
+    async Task Sincronizar()
+    {
+        var ok = await JS.InvokeAsync<bool>("confirm",
+            $"Copiar os gols de {ano} da temporada para o histórico (tela Artilheiros)? " +
+            "Os gols de {ano} de quem está na temporada serão substituídos. Faça isso depois de lançar todos os jogos.".Replace("{ano}", ano.ToString()));
+        if (!ok) return;
+        ocupado = true; msg = null;
+        try
+        {
+            var r = await Servico.SincronizarAsync(ano);
+            comparacao = await Servico.CompararAsync(ano);
+            var mant = r.Mantidos.Count == 0 ? "" : $" Mantidos da planilha (não estão na temporada): {string.Join(", ", r.Mantidos)}.";
+            Aviso($"Histórico atualizado: {r.Atualizados} jogador(es), {r.Criados} novo(s).{mant}", false);
+        }
+        catch (Exception ex) { Aviso("Erro ao atualizar o histórico: " + ex.Message, true); }
+        ocupado = false;
+    }
+
+    void Cancelar() { editando = false; msg = null; }
+
+    async Task Salvar()
+    {
+        if (linhas.Count == 0) { Aviso("Adicione ao menos um jogador.", true); return; }
+        if (data.Date > DateTime.Today) { Aviso("A data não pode ser futura.", true); return; }
+        ocupado = true; msg = null;
+        try
+        {
+            await Servico.SalvarJogoAsync(jogoId, data, obs, linhas);
+            editando = false;
+            await Recarregar();
+            Aviso("Jogo salvo.", false);
+        }
+        catch (Exception ex) { Aviso("Erro ao salvar: " + ex.Message, true); }
+        ocupado = false;
+    }
+
+    async Task ExcluirJogo(JogoTemporada j)
+    {
+        if (!long.TryParse(j.Id, out var id)) return;
+        if (!await JS.InvokeAsync<bool>("confirm", $"Excluir o jogo de {j.Data:dd/MM/yyyy} com todos os gols e cartões?")) return;
+        try { await Servico.ExcluirJogoAsync(id); await Recarregar(); Aviso("Jogo excluído.", false); }
+        catch (Exception ex) { Aviso("Erro ao excluir: " + ex.Message, true); }
+    }
+}
+
+<style>
+    .tp { --tp-h: calc(100dvh - 8.5rem); max-width: 1000px; margin: 0 auto; padding: 1rem; box-sizing: border-box; height: var(--tp-h); display: flex; flex-direction: column; overflow: hidden; }
+    @@media (min-width: 900px) { .tp { --tp-h: 100dvh; } }
+    .tp > * { flex: none; }
+    .tp h1 { margin: 0; font-size: 1.5rem; } .tp h2 { margin: .2rem 0 .8rem; font-size: 1.15rem; } .tp h3 { margin: 0 0 .6rem; font-size: 1rem; }
+    .tp-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: .8rem; flex-wrap: wrap; }
+    .tp-topo p { margin: .2rem 0 .8rem; opacity: .7; }
+    .tp-btn { padding: .5rem .9rem; border-radius: 10px; border: 1px solid rgba(80,200,180,.4); background: rgba(10,25,25,.6); color: inherit; cursor: pointer; }
+    .tp-btn.ver { background: #1fa37a; border-color: #1fa37a; color: #fff; font-weight: 600; }
+    .tp-acoes { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .tp-nota { margin: 0; padding: .6rem .8rem; font-size: .8rem; opacity: .75; }
+    .tp-tab-cab.tp3, .tp-lin.tp3 { grid-template-columns: 1fr 5rem 5rem; }
+    .tp-lin.dif { background: rgba(255,210,74,.12) !important; }
+    .tp-totais-cab { display: flex; gap: .6rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: .6rem; }
+    .tp-totais-cab label.jp { display: flex; flex-direction: column; gap: .2rem; font-size: .8rem; } .tp-totais-cab label.jp input { width: 7rem; }
+    .tp-totais-cab .busca { flex: 1; min-width: 150px; } .tp-totais-cab .chk { display: flex; align-items: center; gap: .35rem; font-size: .85rem; padding-bottom: .5rem; }
+    .tp-novo { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-bottom: .6rem; } .tp-novo input { flex: 1; min-width: 160px; } .tp-novo small, .tp-aviso { opacity: .7; font-size: .78rem; }
+    .tp-tab-cab.tp-g, .tp-lin.tp-g { grid-template-columns: minmax(8rem, 1fr) repeat(8, 6.6rem); }
+    .tp-tab-cab.tp-r6, .tp-lin.tp-r6 { grid-template-columns: 1fr repeat(6, 3.2rem); }
+    .tp-lin.tp-g { text-align: left; } .tp-lin.pre { background: rgba(31,163,122,.1) !important; }
+    .tp-lin.tp-g .n em { font-style: normal; font-size: .65rem; margin-left: .4rem; padding: .1rem .4rem; border-radius: 999px; background: rgba(255,255,255,.12); }
+    .tp-g .hv { color: #ff8a86; } .tp-g .ha { color: #ffd24a; }
+    .tp-g .c { display: block; margin: 0; } .tp-g .c span { display: none; }
+    .tp-g .tot { display: block; text-align: center; font-size: 1rem; }
+    .cn { display: flex; align-items: stretch; gap: .15rem; }
+    .cn input { flex: 1 1 auto; min-width: 0; width: 100%; padding: .3rem .1rem; text-align: center; -moz-appearance: textfield; appearance: textfield; }
+    .cn input::-webkit-outer-spin-button, .cn input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .cn button { flex: 0 0 1.55rem; border-radius: 8px; border: 1px solid rgba(80,200,180,.35); background: rgba(5,15,15,.6); color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; }
+    .cn button:hover:not(:disabled) { background: rgba(31,163,122,.35); } .cn button:disabled { opacity: .35; cursor: default; }
+    .cn.v input { border-color: #e5484d; } .cn.a input { border-color: #f5c542; }
+    .tp-btn.perigo { border-color: #d9534f; color: #ff8a86; } .tp-btn.peq { padding: .3rem .6rem; font-size: .8rem; }
+    .tp-btn:disabled { opacity: .5; cursor: default; }
+    .tp-msg { margin: 0 0 .6rem; padding: .5rem .8rem; border-radius: 10px; }
+    .tp-msg.ok { background: rgba(31,163,122,.2); } .tp-msg.erro { background: rgba(217,83,79,.2); color: #ffb3b0; }
+    .tp-vazio { opacity: .7; padding: .5rem; }
+    .tp-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: .5rem; margin-bottom: .8rem; }
+    .tp-cards div { background: rgba(10,25,25,.6); border: 1px solid rgba(80,200,180,.3); border-radius: 12px; padding: .6rem .7rem; display: flex; flex-direction: column; }
+    .tp-cards b { font-size: 1.3rem; } .tp-cards span { font-size: .75rem; opacity: .7; }
+    .tp-cards .am b { color: #ffd24a; } .tp-cards .az b { color: #5aa9ff; } .tp-cards .vm b { color: #ff6b6b; }
+    .tp-abas { display: flex; gap: .4rem; margin-bottom: .6rem; }
+    .tp-abas button { padding: .4rem .9rem; border-radius: 999px; border: 1px solid rgba(80,200,180,.35); background: rgba(10,25,25,.6); color: inherit; cursor: pointer; }
+    .tp-abas button.on { background: #1fa37a; border-color: #1fa37a; color: #fff; font-weight: 600; }
+    .tp-filtros { display: flex; gap: .5rem; margin-bottom: .6rem; }
+    .tp input, .tp select { padding: .45rem .6rem; border-radius: 8px; border: 1px solid rgba(80,200,180,.35); background: rgba(5,15,15,.7); color: inherit; box-sizing: border-box; }
+    .tp-filtros input { flex: 1; min-width: 0; }
+    .tp-tab { flex: 1 1 auto !important; min-height: 0; display: flex; flex-direction: column; background: rgba(10,25,25,.55); border: 1px solid rgba(80,200,180,.3); border-radius: 14px; overflow: hidden; }
+    .tp-tab-corpo { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: none; padding: .3rem; } .tp-tab-corpo::-webkit-scrollbar { display: none; }
+    .tp-tab-cab, .tp-lin { display: grid; grid-template-columns: 1fr repeat(5, 3.2rem); align-items: center; padding: .5rem .8rem; gap: .2rem; text-align: center; }
+    .tp-tab-cab { font-size: .75rem; opacity: .75; border-bottom: 1px solid rgba(80,200,180,.25); }
+    .tp-lin { border-radius: 8px; } .tp-lin:nth-child(odd) { background: rgba(255,255,255,.04); }
+    .tp .n { text-align: left; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tp-lin .g { font-weight: 700; color: #ffd24a; }
+    .tp-jogo { display: grid; grid-template-columns: 3.2rem 1fr auto; gap: .2rem .8rem; align-items: center; padding: .6rem .8rem; border-radius: 10px; border: 1px solid rgba(80,200,180,.18); margin-bottom: .35rem; }
+    .tp-jogo .d { font-weight: 700; grid-row: span 2; } .tp-jogo .m { grid-column: 2; font-size: .78rem; opacity: .7; }
+    .tp-jogo .b { grid-row: span 2; grid-column: 3; display: flex; gap: .4rem; }
+    .tp-jogo i { font-style: normal; } .tp-jogo .v { color: #ff8a86; } .tp-jogo .a { color: #ffd24a; }
+    .tp-ed { flex: 1 1 auto !important; min-height: 0; overflow-y: auto; scrollbar-width: none; background: rgba(10,25,25,.55); border: 1px solid rgba(80,200,180,.3); border-radius: 14px; padding: .9rem; }
+    .tp-ed::-webkit-scrollbar { display: none; }
+    .tp-voltar { background: none; border: 0; color: inherit; cursor: pointer; padding: 0; margin-bottom: .4rem; }
+    .tp-cab { display: flex; gap: .7rem; flex-wrap: wrap; margin-bottom: .8rem; }
+    .tp-cab label { display: flex; flex-direction: column; gap: .25rem; font-size: .85rem; } .tp-cab .obs { flex: 1; min-width: 180px; }
+    .tp-placar { display: flex; justify-content: center; align-items: center; gap: .8rem; margin-bottom: .9rem; font-size: 1.2rem; }
+    .tp-placar b { font-size: 1.6rem; } .tp-placar i { font-style: normal; opacity: .6; } .tp-placar span { font-size: .85rem; } .tp-placar .v { color: #ff8a86; } .tp-placar .a { color: #ffd24a; }
+    .tp-times { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+    .tp-time { border: 1px solid rgba(80,200,180,.25); border-radius: 12px; padding: .7rem; display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+    .tp-time.vermelho { border-top: 3px solid #e5484d; } .tp-time.amarelo { border-top: 3px solid #f5c542; }
+    .tp-time h3 small { opacity: .6; font-weight: 400; }
+    .tp-time select { width: 100%; }
+    .tp-jog { background: rgba(255,255,255,.04); border-radius: 10px; padding: .5rem .6rem; }
+    .tp-jog-nome { display: flex; justify-content: space-between; align-items: center; gap: .4rem; margin-bottom: .35rem; font-weight: 600; }
+    .tp-jog-nome span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tp-jog-nome .x { background: none; border: 0; color: #ff8a86; cursor: pointer; font-size: 1rem; }
+    .tp-nums { display: grid; grid-template-columns: repeat(5, 1fr); gap: .35rem; }
+    .tp-nums label { display: flex; flex-direction: column; gap: .15rem; font-size: .7rem; opacity: .9; }
+    .tp-nums input { width: 100%; padding: .3rem .35rem; text-align: center; }
+    .tp-rodape { display: flex; gap: .5rem; margin-top: 1rem; }
+    @@media (max-width: 899px) {
+        .tp-times { grid-template-columns: 1fr; }
+        .tp-cards { grid-template-columns: repeat(3, 1fr); }
+        .tp-tab-cab.tp-g { display: none; }
+        .tp-lin.tp-g { grid-template-columns: repeat(3, 1fr); gap: .45rem; padding: .6rem; }
+        .tp-lin.tp-g .n { grid-column: 1 / -1; font-weight: 600; }
+        .tp-g .c span { display: block; font-size: .65rem; opacity: .7; text-align: center; }
+        .tp-jogo { grid-template-columns: 3rem 1fr; } .tp-jogo .b { grid-column: 2; grid-row: auto; }
+    }
+</style>

@@ -1,0 +1,88 @@
+/* Página Ranking
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+/* ranking */
+.pagina.ranking {
+    max-width: 780px;
+}
+
+.rk-abas {
+    display: inline-flex;
+    gap: .3rem;
+    padding: .25rem;
+    border-radius: 999px;
+    background: rgba(128,128,128,.18);
+    margin-bottom: .8rem;
+}
+
+.rk-abas button {
+        border: 0;
+        background: transparent;
+        color: var(--texto);
+        padding: .4rem 1.1rem;
+        border-radius: 999px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+.rk-abas button.sel {
+            background: var(--verde-2);
+            color: var(--branco);
+        }
+
+/* =====================================================================
+   Tela Escalar (novo visual): cabeçalho, campo largo e painel em linhas
+   ===================================================================== */
+.pagina.escalar {
+    max-width: 1500px;
+}
+
+@media (min-width: 900px) {
+.pagina.escalar {
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+        max-height: 100dvh;
+        padding: .8rem 1.2rem .8rem;
+        overflow: hidden;
+    }
+
+.pagina.clube {
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+        padding-bottom: 0;
+    }
+
+.pagina.clube {
+        max-width: 1280px;
+    }
+}
+
+.previa-modo button {
+        padding: .4rem .9rem;
+        border: 0;
+        border-radius: 8px;
+        background: none;
+        color: inherit;
+        font: inherit;
+        font-size: .95rem;
+        cursor: pointer;
+    }
+
+.sm2-abas button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .6rem;
+        min-height: 2.9rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,.14);
+        background: rgba(6,18,13,.55);
+        color: var(--texto-claro);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+    }

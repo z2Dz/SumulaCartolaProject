@@ -1,0 +1,22 @@
+/* Personalização dos cartões
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+/* janela Personalizar campo: cartões individuais */
+.pc-abas {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+    margin: .3rem 0 .5rem;
+}
+
+.pc-lista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-bottom: .5rem;
+}
+
+.pc-lista .opcao.atual::after {
+        content: " ●";
+        color: var(--amarelo);
+    }

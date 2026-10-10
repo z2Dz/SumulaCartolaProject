@@ -1,0 +1,13 @@
+@* Prévia de uma moldura de card: um atleta de exemplo com a moldura aplicada. *@
+<div class="campo prev-moldura moldura-@Chave @(Gala ? "gala" : "")" style="--campo-linhas:#fff">
+    <SlotCampo UsaMolde="!Gala" Ornado='@(Chave == "ornado")' Rubro='@(Chave == "rubro")' Tema='@(CardsConfig.EhTema(Chave) ? Chave : null)' Posicao="PosicaoCampo.Atacante" Atleta="Exemplo" />
+</div>
+
+@code {
+    [Parameter] public string Chave { get; set; } = "nenhuma";
+
+    private static readonly AtletaEscalavel Exemplo =
+        new("exemplo", "Craque", new[] { PosicaoCampo.Atacante }, Valor: 20m, Media: 9.2m, Jogos: 5);
+
+    private bool Gala => Chave == "esmeralda";
+}

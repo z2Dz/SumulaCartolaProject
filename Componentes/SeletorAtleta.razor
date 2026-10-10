@@ -1,0 +1,98 @@
+@* Painel de atletas: ao lado do campo no computador, folha deslizante embaixo no celular. *@
+@if (Aberto)
+{
+    <div class="folha-fundo" @onclick="() => OnFechar.InvokeAsync()"></div>
+}
+
+<aside class="painel-atletas @(Aberto ? "aberto" : "")" aria-label="Atletas">
+    @if (!Aberto)
+    {
+        <p class="painel-vazio">Toque numa posição do campo para escolher o atleta.</p>
+    }
+    else
+    {
+        <div class="folha-topo">
+            <h3><IconeUi Nome="chuteira" Tamanho="26" /> @Posicao.Nome()</h3>
+            <button type="button" class="botao-sec esc-fechar" @onclick="() => OnFechar.InvokeAsync()">Fechar <IconeUi Nome="chevron_cima" Tamanho="16" /></button>
+        </div>
+
+        <div class="painel-saldo @(Restante < 0 ? "estourou" : "")">
+            Saldo: <strong>@Formato.Moeda(Restante)</strong>
+        </div>
+
+        @if (Atual is not null)
+        {
+            <div class="folha-atual">
+                <span><strong>@Atual.Nome</strong> está nesta vaga (@Formato.Moeda(Atual.Valor))</span>
+                <div class="folha-acoes">
+                    @if (Posicao != PosicaoCampo.Tecnico)
+                    {
+                        <button type="button" class="botao-sec" @onclick="() => OnCapitao.InvokeAsync()">
+                            @(EhCapitao ? "Tirar capitão" : "Tornar capitão")
+                        </button>
+                    }
+                    <button type="button" class="botao-sec perigo" @onclick="() => OnRemover.InvokeAsync()">Remover</button>
+                </div>
+            </div>
+        }
+
+        <div class="ordem" role="group" aria-label="Ordenar por">
+            <span>Ordenar:</span>
+            @foreach (var (chave, nome) in Ordens)
+            {
+                var k = chave;
+                <button type="button" class="chip @(ordem == k ? "sel" : "")" @onclick="() => ordem = k">@nome</button>
+            }
+        </div>
+
+        <div class="folha-lista">
+            @foreach (var a in Ordenados())
+            {
+                var semSaldo = SemSaldo(a);
+                <button type="button" class="item-atleta @(Atual?.Id == a.Id ? "sel" : "") @(semSaldo ? "sem-saldo" : "")"
+                        disabled="@semSaldo" @onclick="() => OnEscolher.InvokeAsync(a)">
+                    <FotoAtleta Atleta="a" Posicao="Posicao" Tamanho="44" />
+                    <span class="item-nome-col">
+                        <span class="item-nome">@a.Nome</span>
+                        <span class="item-sub"><small>Última</small><b>@Formato.Pontos(a.UltimaPontuacao)</b></span>
+                    </span>
+                    <span class="item-col"><small>Média</small><b>@(a.Jogos > 0 ? Formato.Media(a.Media) : "—")</b></span>
+                    <span class="item-col valor"><small>@(semSaldo ? "Sem saldo" : "Valor")</small><b>@Formato.Moeda(a.Valor)</b></span>
+                    <span class="item-acao">@(Atual?.Id == a.Id ? "Escalado" : "Adicionar")</span>
+                    <span class="item-seta"><IconeUi Nome="seta" Tamanho="16" /></span>
+                </button>
+            }
+            @if (!Disponiveis.Any())
+            {
+                <p class="suave">Nenhum atleta disponível para esta posição.</p>
+            }
+        </div>
+    }
+</aside>
+
+@code {
+    [Parameter] public bool Aberto { get; set; }
+    [Parameter] public PosicaoCampo Posicao { get; set; }
+    [Parameter] public AtletaEscalavel? Atual { get; set; }
+    [Parameter] public bool EhCapitao { get; set; }
+    [Parameter] public decimal Restante { get; set; }
+    [Parameter] public IEnumerable<AtletaEscalavel> Disponiveis { get; set; } = Enumerable.Empty<AtletaEscalavel>();
+    [Parameter] public EventCallback OnFechar { get; set; }
+    [Parameter] public EventCallback OnRemover { get; set; }
+    [Parameter] public EventCallback OnCapitao { get; set; }
+    [Parameter] public EventCallback<AtletaEscalavel> OnEscolher { get; set; }
+
+    private static readonly (string, string)[] Ordens = { ("media", "Média"), ("valor", "Valor"), ("ultima", "Última") };
+    private string ordem = "media";
+
+    // O ocupante atual da vaga devolve o valor dele ao saldo ao ser trocado
+    private bool SemSaldo(AtletaEscalavel a) =>
+        a.Id != Atual?.Id && a.Valor - (Atual?.Valor ?? 0) > Restante;
+
+    private IEnumerable<AtletaEscalavel> Ordenados() => ordem switch
+    {
+        "valor" => Disponiveis.OrderByDescending(a => a.Valor),
+        "ultima" => Disponiveis.OrderByDescending(a => a.UltimaPontuacao ?? decimal.MinValue),
+        _ => Disponiveis.OrderByDescending(a => a.Media)
+    };
+}

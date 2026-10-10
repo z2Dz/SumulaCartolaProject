@@ -1,0 +1,26 @@
+/* Abas
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.abas {
+    display: flex;
+    background: rgba(128,128,128,.15);
+    border-radius: var(--raio);
+    padding: 4px;
+    margin-bottom: 1rem;
+}
+
+.abas button {
+        flex: 1;
+        border: 0;
+        background: transparent;
+        color: var(--texto);
+        padding: .6rem;
+        border-radius: 10px;
+        font-size: .95rem;
+    }
+
+.abas button.ativa {
+            background: var(--cartao);
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0,0,0,.15);
+        }

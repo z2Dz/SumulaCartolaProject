@@ -1,0 +1,104 @@
+/* Cartão do jogador: molde com quatro zonas
+   - balão estilo Cartola (laranja do molde): pontuação, acima do cartão
+   - foto (roxo): lado direito, alta
+   - posição (azul): lado esquerdo
+   - nome (vermelho): faixa na parte de baixo
+   As medidas vêm do molde, em % da largura/altura do cartão (.slot-btn, proporção 100 x 156,6).
+   Este arquivo vem DEPOIS das molduras e temas (ver app.css) e usa seletores reforçados
+   (classe repetida) para valer em qualquer moldura. Só afeta cartões preenchidos (.cheio). */
+
+/* ---- balão da pontuação (laranja) ---- */
+.slot .slot-btn.cheio.cheio.cheio .carta-nota {
+    left: 50%;
+    top: 0;
+    z-index: 4;
+    transform: translate(-50%, -118%);
+    min-width: calc(var(--slot) * .56);
+    padding: calc(var(--slot) * .06) calc(var(--slot) * .1);
+    border-radius: calc(var(--slot) * .12);
+    background: var(--branco);
+    color: #1b1b1b;
+    text-align: center;
+    font-size: calc(var(--slot) * .2);
+    font-weight: 800;
+    line-height: 1.1;
+    box-shadow: 0 1px 0 rgba(0,0,0,.35);   /* sombra seca, sem desfoque */
+}
+
+    /* biquinho do balão, apontando para o cartão */
+    .slot .slot-btn.cheio.cheio.cheio .carta-nota::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 100%;
+        width: 0;
+        height: 0;
+        transform: translateX(-50%);
+        border: calc(var(--slot) * .07) solid transparent;
+        border-top-color: var(--branco);
+        border-bottom: 0;
+    }
+
+/* ---- foto (roxo) ---- */
+.slot .slot-btn.cheio.cheio.cheio .carta-foto,
+.slot .slot-btn.cheio.cheio.cheio .carta-sil,
+.slot .slot-btn.cheio.cheio.cheio .carta-ini {
+    left: 39%;
+    top: 9%;
+    width: 64%;
+    height: 66%;
+}
+
+/* silhueta bem visível sobre qualquer moldura: quase preta, com contorno branco nítido (traço no desenho, sem desfoque) */
+.slot .slot-btn.cheio.cheio.cheio .carta-sil {
+    color: #0a0a0a;
+}
+
+.slot .slot-btn.cheio.cheio.cheio .carta-sil path {
+    stroke: var(--branco);
+    stroke-width: 2px;
+    stroke-linejoin: round;
+    paint-order: stroke fill;
+    vector-effect: non-scaling-stroke;
+}
+
+/* ---- posição (azul) ---- */
+.slot .slot-btn.cheio.cheio.cheio .carta-pos {
+    left: 6.5%;
+    top: 31%;
+    width: 38%;
+    height: 18.3%;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    text-align: center;
+    font-size: calc(var(--slot) * .19);
+    line-height: 1;
+}
+
+/* fonte da posição no cartão Rubro Ouro: condensada e pesada (fontes do sistema, sem baixar nada) */
+.slot .slot-btn.cheio.cheio.rubro .carta-pos {
+    font-family: Impact, "Haettenschweiler", "Arial Narrow Bold", "Franklin Gothic Medium", sans-serif;
+    font-weight: 400;
+    letter-spacing: .05em;
+    font-size: calc(var(--slot) * .21);
+}
+
+/* ---- nome (vermelho) ---- */
+.slot .slot-btn.cheio ~ .slot-rotulo.nome.nome.nome.nome {
+    top: auto;
+    width: calc(var(--slot) * .84);
+    min-width: 0;
+    height: calc(var(--slot) * .25);
+    margin-top: calc(var(--slot) * -.532 - 3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* A faixa do capitão não é mexida aqui: volta a valer a regra original (ponta direita do cartão). */

@@ -1,0 +1,518 @@
+/* Molduras dos cartões
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.carta-mais {
+    font-weight: 300;
+    font-size: calc(var(--slot) * .6);
+    color: var(--branco);
+}
+
+/* miniatura em formato de cartão (lista de atletas) */
+.foto-carta {
+    flex: none;
+    display: block;
+    overflow: visible;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.45));
+}
+
+.fc-forma {
+    fill: #f4f4f0;
+    stroke: var(--amarelo);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.fc-contorno {
+    fill: none;
+    stroke: var(--amarelo);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.fc-linha {
+    fill: none;
+    stroke: var(--preto-suave);
+    stroke-width: 1px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    opacity: .85;
+}
+
+.fc-sil {
+    fill: rgba(20,20,20,.78);
+}
+
+@keyframes brilho-ouro {
+    50% {
+        filter: drop-shadow(0 0 8px #fff1a8) drop-shadow(0 0 20px rgba(245,197,24,.95));
+    }
+}
+
+/* molduras dos cartões */
+.campo.moldura-dourada .slot-btn.cheio {
+    --carta-borda: #d4a017;
+    --carta-linha: #8a6a00;
+}
+
+.campo.moldura-prata .slot-btn.cheio {
+    --carta-borda: #c3c9cf;
+    --carta-linha: #5d6770;
+}
+
+.campo.moldura-neon .slot-btn.cheio {
+    --carta-borda: #39ff14;
+    --carta-linha: #0b6b00;
+}
+
+.campo.moldura-dourada .slot-btn.cheio .carta-svg {
+    filter: drop-shadow(0 0 3px rgba(255,200,50,.85));
+}
+
+.campo.moldura-neon .slot-btn.cheio .carta-svg {
+    filter: drop-shadow(0 0 5px #39ff14) drop-shadow(0 0 9px rgba(57,255,20,.6));
+}
+
+.amostra-moldura {
+    display: block;
+    width: 26px;
+    height: 36px;
+    border-radius: 6px;
+    border: 3px solid var(--amarelo);
+    background: #f4f4f0;
+}
+
+    .amostra-moldura.moldura-dourada {
+        border-color: #d4a017;
+        box-shadow: 0 0 6px rgba(255,200,50,.8);
+    }
+
+    .amostra-moldura.moldura-prata {
+        border-color: #c3c9cf;
+    }
+
+    .amostra-moldura.moldura-neon {
+        border-color: #39ff14;
+        box-shadow: 0 0 8px #39ff14;
+    }
+
+.slot-btn.vazia .carta-mais {
+    left: 0;
+    top: 12%;
+    width: 100%;
+    height: 50%;
+    font-size: calc(var(--slot) * .5);
+    font-weight: 300;
+    color: var(--branco);
+}
+
+.carta-coroa {
+    position: absolute;
+    left: 50%;
+    top: calc(var(--slot) * -.3);
+    width: calc(var(--slot) * .42);
+    height: calc(var(--slot) * .42);
+    transform: translateX(-50%);
+    fill: #f6c53a;
+    filter: drop-shadow(0 0 4px rgba(255,210,70,.9));
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* =====================================================================
+   Molduras de gala dos cartões: Esmeralda -> Esmeralda Ouro -> Cristal
+   ===================================================================== */
+.carta-cristais,
+.carta-coroinha,
+.carta-ico-campo {
+    display: none;
+}
+
+/* cores de cada degrau da escada */
+.campo.moldura-esmeralda {
+    --g-borda: #2de3a0;
+    --g-linha: rgba(45,227,160,.5);
+    --g-acento: #2de3a0;
+    --g-brilho: rgba(45,227,160,.55);
+}
+
+.campo.moldura-esmeralda_ouro {
+    --g-borda: #e8c35a;
+    --g-linha: #2de3a0;
+    --g-acento: #2de3a0;
+    --g-brilho: rgba(232,195,90,.6);
+}
+
+.campo.moldura-cristal {
+    --g-borda: #ffd75e;
+    --g-linha: #ffe9a6;
+    --g-acento: #ffd75e;
+    --g-brilho: rgba(255,215,94,.85);
+}
+
+/* cartão verde-escuro com a borda do degrau */
+.campo.gala .slot-btn.cheio {
+    --carta-fundo: url(#cg-gala);
+    --carta-borda: var(--g-borda);
+    --carta-linha: var(--g-linha);
+}
+
+    .campo.gala .slot-btn.cheio .carta-forma {
+        stroke-width: 3px;
+    }
+
+    .campo.gala .slot-btn.cheio .carta-linha {
+        stroke-width: 1.5px;
+        opacity: 1;
+    }
+
+    /* nota grande, posição e silhueta */
+    .campo.gala .slot-btn.cheio .carta-nota {
+        top: 15%;
+        left: 12%;
+        font-size: calc(var(--slot) * .34);
+        font-weight: 900;
+        color: var(--branco);
+    }
+
+.campo.moldura-cristal .slot-btn.cheio .carta-nota {
+    color: #ffe08a;
+}
+
+.campo.gala .slot-btn.cheio .carta-pos {
+    top: 44%;
+    left: 12%;
+    font-size: calc(var(--slot) * .17);
+    color: var(--branco);
+}
+
+.campo.gala .slot-btn.cheio .carta-sil {
+    color: rgba(0,0,0,.82);
+}
+
+/* ícone de campo sob a posição */
+.campo.gala .carta-ico-campo {
+    display: block;
+    position: absolute;
+    left: 12%;
+    top: 56%;
+    width: calc(var(--slot) * .22);
+    height: calc(var(--slot) * .22);
+    fill: none;
+    stroke: var(--g-acento);
+    stroke-width: 1.6;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* coroinha no topo (cada degrau mais brilhante) */
+.campo.gala .carta-coroinha {
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: 1%;
+    width: calc(var(--slot) * .2);
+    height: calc(var(--slot) * .2);
+    transform: translateX(-50%);
+    fill: var(--g-acento);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.campo.moldura-esmeralda_ouro .carta-coroinha {
+    fill: #f1cd62;
+}
+
+.campo.moldura-cristal .carta-coroinha {
+    fill: #ffd75e;
+}
+
+/* capitão nas molduras de gala: "C" num quadradinho no canto superior direito */
+.campo.gala .carta-capitao {
+    top: 14%;
+    right: 8%;
+    width: calc(var(--slot) * .27);
+    height: calc(var(--slot) * .27);
+    min-width: 16px;
+    min-height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid var(--g-acento);
+    background: rgba(2,18,13,.85);
+    color: var(--g-acento);
+    font-size: calc(var(--slot) * .19);
+    transform: none;
+    box-shadow: none;
+}
+
+/* cristais verdes ao redor: só no Cristal */
+.campo.moldura-cristal .carta-cristais {
+    display: block;
+    position: absolute;
+    left: -10%;
+    top: -4%;
+    width: 120%;
+    height: 108%;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 0;
+}
+
+    .campo.moldura-cristal .carta-cristais polygon {
+        fill: rgba(46,227,160,.6);
+        stroke: #b8ffe3;
+        stroke-width: .8;
+        stroke-linejoin: round;
+        vector-effect: non-scaling-stroke;
+    }
+
+.campo.moldura-cristal .carta-svg {
+    filter: drop-shadow(0 0 6px rgba(255,215,94,.9)) drop-shadow(0 0 12px rgba(255,200,60,.45));
+}
+
+/* etiqueta do nome: verde-escuro com traço de destaque embaixo */
+.campo.gala .slot-rotulo.nome {
+    background: linear-gradient(#0b2b21, #04120d);
+    color: var(--branco);
+    border-bottom: 2px solid var(--g-acento);
+}
+
+/* amostras na tela Meu clube */
+.amostra-moldura.moldura-esmeralda,
+.amostra-moldura.moldura-esmeralda_ouro,
+.amostra-moldura.moldura-cristal {
+    background: radial-gradient(circle at 50% 40%, #14684f, #031610);
+}
+
+.amostra-moldura.moldura-esmeralda {
+    border-color: #2de3a0;
+    box-shadow: 0 0 6px rgba(45,227,160,.6);
+}
+
+.amostra-moldura.moldura-esmeralda_ouro {
+    border-color: #e8c35a;
+    box-shadow: 0 0 0 2px #0a3b2d, 0 0 0 3px #2de3a0, 0 0 8px rgba(232,195,90,.6);
+}
+
+.amostra-moldura.moldura-cristal {
+    border-color: #ffd75e;
+    box-shadow: -4px 2px 0 -1px rgba(46,227,160,.8), 4px -2px 0 -1px rgba(46,227,160,.8), 0 0 10px rgba(255,215,94,.9);
+}
+
+.campo.prev-moldura::after {
+    display: none;
+}
+
+.prev-moldura .slot {
+    width: var(--slot);
+}
+
+.prev-moldura .slot-rotulo {
+    display: none;
+}
+
+.opcao:has(.prev-moldura) {
+    flex-direction: column;
+    height: auto;
+    padding: .6rem .8rem;
+}
+
+.orn-painel {
+    fill: var(--carta-fundo);
+}
+
+.orn-painel-borda {
+    fill: none;
+    stroke: #140a03;
+    stroke-width: 2.5px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.orn-coroa {
+    fill: #2a1606;
+}
+
+.slot-btn.prata .orn-coroa {
+    fill: #3a4249;
+}
+
+.slot-btn.ouro .orn-coroa {
+    fill: #5a4200;
+}
+
+.slot-btn.orn.bronze {
+    --carta-fundo: url(#cg-bronze-orn);
+    --carta-borda: #3a1d05;
+    --carta-linha: rgba(255,200,130,.85);
+}
+
+.slot-btn.orn .carta-forma {
+    stroke-width: 2.5px;
+}
+
+.slot-btn.orn .carta-linha {
+    stroke-width: 1.5px;
+    opacity: 1;
+}
+
+.slot-btn.orn .carta-nota {
+    top: 20.5%;
+    left: 16%;
+    font-weight: 900;
+}
+
+.slot-btn.orn .carta-pos {
+    left: 16%;
+    top: 35%;
+    padding-bottom: calc(var(--slot) * .035);
+    font-size: calc(var(--slot) * .21);
+    font-weight: 900;
+    border-bottom: 1.5px solid currentColor;
+}
+
+.campo.moldura-ornado .slot-rotulo.nome {
+    margin-top: calc(var(--slot) * -.42);
+    width: calc(var(--slot) * .84);
+    padding: 3px 4px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background: linear-gradient(#202020, #070707) padding-box, linear-gradient(#ffd9a0, #b4691c 50%, #ffd9a0) border-box;
+    color: #ffe9c2;
+    font-weight: 800;
+}
+
+.campo.moldura-ornado .slot-rotulo.nome {
+    text-shadow: 0 1px 1px rgba(0,0,0,.8);
+}
+
+/* ===== Nome do jogador colado no cartão (dentro do botão) e marca da posição livre embaixo ===== */
+.campo .slot-btn .slot-rotulo.nome {
+    position: absolute;
+    left: 50%;
+    top: 68%;
+    margin: 0;
+    transform: translateX(-50%);
+    z-index: 3;
+    box-sizing: border-box;
+    text-align: center;
+    pointer-events: none;
+}
+
+.campo.moldura-ornado .slot-btn .slot-rotulo.nome {
+    top: 73%;
+}
+
+/* ===== Nome no cartão: sem reticências; nomes longos diminuem a letra e a placa pode alargar um pouco ===== */
+.campo .slot-btn .slot-rotulo.nome {
+    width: auto;
+    min-width: calc(var(--slot) * .84);
+    max-width: calc(var(--slot) * 1.12);
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+}
+
+/* =====================================================================
+   Moldura "Rubro Ouro": cartão claro, riscos vermelhos/amarelos/pretos,
+   borda dourada e placa de nome escura com taça
+   ===================================================================== */
+.slot-btn.rubro,
+.slot-btn.rubro.bronze,
+.slot-btn.rubro.prata,
+.slot-btn.rubro.ouro {
+    --carta-fundo: #101010;
+    --carta-borda: #f0b81c;
+    --carta-linha: rgba(214,31,31,.9);
+}
+
+    .slot-btn.rubro .carta-forma {
+        stroke-width: 2.5px;
+    }
+
+    .slot-btn.rubro .carta-linha {
+        stroke-width: 1px;
+        opacity: 1;
+    }
+
+.rub-painel {
+    fill: #f6f4ef;
+}
+
+.rub-painel-borda {
+    fill: none;
+    stroke: #d61f1f;
+    stroke-width: 1.4px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.rub-lado {
+    fill: #f0b81c;
+}
+
+.rub-coroa {
+    fill: var(--preto-suave);
+}
+
+.rub-taca {
+    fill: #f0b81c;
+}
+
+.rub-fio {
+    fill: none;
+    stroke: #f0b81c;
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+}
+
+.slot-btn.rubro .carta-nota,
+.slot-btn.rubro .carta-pos {
+    color: var(--preto-suave);
+    left: 16%;
+    font-weight: 900;
+}
+
+.slot-btn.rubro .carta-nota {
+    top: 20.5%;
+}
+
+.slot-btn.rubro .carta-pos {
+    top: 35%;
+    padding-bottom: calc(var(--slot) * .035);
+    font-size: calc(var(--slot) * .21);
+    border-bottom: 1.5px solid #c9961a;
+    /* borda branca em volta das letras (por fora, sem engordar o preenchimento) */
+    -webkit-text-stroke: calc(var(--slot) * .05) var(--branco);
+    paint-order: stroke fill;
+}
+
+.slot-btn.rubro .carta-sil {
+    color: rgba(20,10,0,.9);
+}
+
+.campo.moldura-rubro .slot-btn .slot-rotulo.nome {
+    top: 74%;
+    min-width: calc(var(--slot) * .8);
+    background: none;
+    border: 0;
+    color: #f4d68a;
+    font-weight: 800;
+    text-shadow: 0 1px 1px rgba(0,0,0,.9);
+}
+
+.pc2-moldura {
+    --slot: 58px;
+    padding: .6rem .35rem .5rem;
+}
+
+    .pc2-moldura small {
+        font-size: .68rem;
+        opacity: .7;
+        text-align: center;
+    }
+
+    .pc2-moldura.herdar {
+        justify-content: center;
+        min-height: 100px;
+    }

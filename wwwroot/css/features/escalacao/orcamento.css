@@ -1,0 +1,115 @@
+/* Escalação: orçamento e saldo
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.saldo {
+    text-align: center;
+    line-height: 1.1;
+}
+
+.saldo strong {
+        font-size: 1.15rem;
+        color: #2fbf71;
+        white-space: nowrap;
+    }
+
+.saldo.estourou strong {
+        color: var(--erro);
+    }
+
+.barra-orc {
+    height: 6px;
+    margin: -.2rem 0 .8rem;
+    border-radius: 999px;
+    background: rgba(128,128,128,.25);
+    overflow: hidden;
+}
+
+.barra-orc span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: #2fbf71;
+        transition: width .2s;
+    }
+
+.barra-orc span.estourou {
+            background: var(--erro);
+        }
+
+.painel-saldo {
+    margin-bottom: .6rem;
+    font-size: .85rem;
+    color: var(--suave);
+}
+
+.painel-saldo strong {
+        color: #2fbf71;
+    }
+
+.painel-saldo.estourou strong {
+        color: var(--erro);
+    }
+
+.item-atleta.sem-saldo .valor small,
+.item-atleta.sem-saldo .valor b {
+    color: var(--erro);
+}
+
+.esc-numeros {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    padding: .55rem 1.6rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.03);
+}
+
+.pagina.escalar > .barra-orc {
+    margin: 0 .4rem .8rem;
+}
+
+.painel-atletas .painel-saldo {
+    font-size: 1.15rem;
+    margin: .2rem 0 .8rem;
+}
+
+.item-atleta.sem-saldo .item-acao {
+    background: rgba(255,255,255,.05);
+    border-color: transparent;
+    color: var(--suave);
+}
+
+.esc-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    border-radius: 14px 14px 0 0;
+    border: 1px solid rgba(255,255,255,.1);
+    background: rgba(8,20,15,.78);
+}
+
+.esc-stat {
+    padding: .55rem .4rem .5rem;
+    text-align: center;
+    line-height: 1.2;
+    min-width: 0;
+}
+
+.esc-stat + .esc-stat {
+        border-left: 1px solid rgba(255,255,255,.1);
+    }
+
+.esc-barra {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .6rem .7rem;
+    border: 1px solid rgba(255,255,255,.1);
+    border-top: 0;
+    border-radius: 0 0 14px 14px;
+    background: rgba(8,20,15,.62);
+}
+
+.esc-espaco {
+    flex: 1;
+}

@@ -1,0 +1,335 @@
+@page "/escalar"
+@attribute [Authorize]
+@inject ServicoMercado Mercado
+@inject ServicoEscalacao Escalacoes
+@inject ServicoTorcida Torcidas
+@inject ProvedorEstadoAutenticacao Provedor
+@inject NavigationManager Nav
+
+<PageTitle>Escalar · Cartola dos Amigos</PageTitle>
+
+<div class="pagina escalar">
+    <header class="esc-topo">
+        <div class="esc-stats">
+            <div class="esc-stat">
+                <small>Preço do time</small>
+                <strong>@Formato.Moeda(Gasto)</strong>
+            </div>
+            <div class="esc-stat @(Restante < 0 ? "estourou" : "")">
+                <small>Você ainda tem</small>
+                <strong>@Formato.Moeda(Restante)</strong>
+            </div>
+        </div>
+
+        <div class="esc-barra">
+            <label class="esc-select" aria-label="Esquema tático">
+                <select value="@escalacao.Tatica.Nome" @onchange="AoMudarTatica" disabled="@(!mercadoAberto)">
+                    @foreach (var t in Tatica.Todas)
+                    {
+                        <option value="@t.Nome">@t.Nome</option>
+                    }
+                </select>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9L12 15L18 9" /></svg>
+            </label>
+            <span class="esc-espaco"></span>
+            <button type="button" class="esc-vista @(!verLista ? "ativa" : "")" title="Ver no campo" aria-label="Ver no campo" aria-pressed="@(!verLista)" @onclick="() => verLista = false">
+                <IconeUi Nome="campo" Tamanho="24" />
+            </button>
+            <button type="button" class="esc-vista @(verLista ? "ativa" : "")" title="Ver em lista" aria-label="Ver em lista" aria-pressed="@verLista" @onclick="() => { verLista = true; slot = null; }">
+                <IconeUi Nome="prancheta" Tamanho="24" />
+            </button>
+            <button type="button" class="esc-vista esc-ajuda-btn" title="Como o valor dos atletas muda?" aria-label="Como o valor dos atletas muda?" @onclick="() => mostrarRegras = true">
+                <span aria-hidden="true">?</span>
+            </button>
+            <div class="esc-pop-ancora">
+                <button type="button" class="esc-vista @(personalizando ? "ativa" : "")" title="Personalizar clube" aria-label="Personalizar clube" aria-expanded="@personalizando" @onclick="() => personalizando = !personalizando">
+                    <IconeUi Nome="detalhes" Tamanho="24" />
+                </button>
+                @if (personalizando)
+                {
+                    <PersonalizarCampo Clube="clube" Torc="@(Torcidas.Cache?.Torcida ?? 0)" Cards="cards" Escalacao="escalacao"
+                                       OnCards="c => { cards = c; StateHasChanged(); }"
+                                       OnMudou="c => { clube = c; StateHasChanged(); }"
+                                       OnFechar="() => personalizando = false" />
+                }
+            </div>
+        </div>
+    </header>
+
+    <div class="escalar-grade">
+        <div class="escalar-campo @(verLista ? "com-lista" : "")">
+            <p class="esc-dica">
+                <IconeUi Nome="lampada" Tamanho="16" />
+                @if (CapitaoNome is not null)
+                {
+                    <span>Capitão: <strong>@CapitaoNome</strong></span>
+                }
+                else
+                {
+                    <span>Toque num atleta escalado para definir o capitão.</span>
+                }
+            </p>
+
+            @if (!mercadoAberto)
+            {
+                <div class="erro" role="status">
+                    Mercado fechado. Você pode ver a sua escalação, mas não dá para alterar até o admin abrir de novo.
+                </div>
+            }
+
+            @if (Restante < 0)
+            {
+                <div class="erro" role="alert">
+                    O time passou @Formato.Moeda(-Restante) do orçamento. Troque ou remova atletas.
+                </div>
+            }
+
+            @if (verLista)
+            {
+                @* celular: a lista substitui o campo (no computador ela abre ao lado dele) *@
+                <div class="esc-lista esc-lista-mob">
+                    <ListaEscalacao Escalacao="escalacao" OnSlot="AbrirSlot" />
+                </div>
+            }
+            <CampoTatico Escalacao="escalacao" Selecionado="slot" OnSlot="AbrirSlot" Cards="cards"
+                         Estilo="@clube.Campo" Moldura="@clube.Moldura" LinhasCor="@clube.CampoLinhas" Estadio="@clube.EstadioModelo"
+                         CorGrama1="@clube.CampoCor1" CorGrama2="@clube.CampoCor2" CorMoldura="@clube.MolduraCor"
+                         CorEstadio1="@clube.EstadioCor1" CorEstadio2="@clube.EstadioCor2"
+                         FaixaEsq="@(FaixasLiberadas ? clube.Esquerda() : null)" FaixaDir="@(FaixasLiberadas ? clube.Direita() : null)"
+                         FaixaCor1="@clube.FaixaCor1" FaixaCor2="@clube.FaixaCor2" EscudoFaixa="Provedor.Perfil?.Escudo" EscudoCard="Provedor.Perfil?.Escudo" />
+
+            @if (carregando)
+            {
+                <p class="suave centro">Carregando atletas…</p>
+            }
+            else if (erro is not null)
+            {
+                <div class="erro" role="alert">
+                    @erro
+                    <button type="button" class="botao-sec" @onclick="Carregar">Tentar de novo</button>
+                </div>
+            }
+            @if (erroSalvar is not null)
+            {
+                <div class="erro" role="alert">@erroSalvar</div>
+            }
+            <button class="botao esc-salvar" type="button" disabled="@(!PodeSalvar)" @onclick="Salvar">
+                <IconeUi Nome="troca" Tamanho="22" />
+                @(salvando ? "Salvando…" : "Salvar escalação")
+            </button>
+            @if (!PodeSalvar && !salvando)
+            {
+                <p class="suave centro esc-ajuda">
+                    @if (!mercadoAberto) { <span>Mercado fechado: a escalação não pode ser alterada.</span> }
+                    else if (escalacao.Preenchidos < escalacao.TotalVagas) { <span>Preencha as @escalacao.TotalVagas vagas para salvar.</span> }
+                    else { <span>Reduza o valor do time para caber no orçamento.</span> }
+                </p>
+            }
+        </div>
+
+        @if (verLista && slot is null)
+        {
+            <aside class="painel-atletas aberto esc-painel-lista" aria-label="Escalação em lista">
+                <div class="folha-topo">
+                    <h3><IconeUi Nome="prancheta" Tamanho="26" /> Escalação</h3>
+                    <button type="button" class="botao-sec esc-fechar" @onclick="() => verLista = false">Fechar <IconeUi Nome="chevron_cima" Tamanho="16" /></button>
+                </div>
+                <div class="painel-saldo @(Restante < 0 ? "estourou" : "")">
+                    Saldo: <strong>@Formato.Moeda(Restante)</strong> · @escalacao.Preenchidos/@escalacao.TotalVagas escalados
+                </div>
+                <div class="esc-lista-painel">
+                    <ListaEscalacao Escalacao="escalacao" OnSlot="AbrirSlot" />
+                </div>
+            </aside>
+        }
+
+        <SeletorAtleta Aberto="slot is not null"
+                       Posicao="slot?.Pos ?? PosicaoCampo.Atacante"
+                       Atual="Atual"
+                       EhCapitao="Atual is not null && Atual.Id == escalacao.CapitaoId"
+                       Restante="Restante"
+                       Disponiveis="Disponiveis"
+                       OnFechar="Fechar"
+                       OnEscolher="Escolher"
+                       OnRemover="Remover"
+                       OnCapitao="AlternarCapitao" />
+    </div>
+    @if (mostrarRegras)
+    {
+        <div class="regras-fundo" @onclick="() => mostrarRegras = false"></div>
+        <div class="regras-modal" role="dialog" aria-modal="true" aria-label="Como o valor dos atletas muda?">
+            <div class="regras-modal-topo">
+                <h2>Como o valor dos atletas muda?</h2>
+                <button type="button" class="regras-fechar" aria-label="Fechar" @onclick="() => mostrarRegras = false">✕</button>
+            </div>
+            <div class="regras-modal-corpo">
+                <p>
+                    Você tem <strong>@Formato.Moeda(Valorizacao.Orcamento)</strong> para montar o time.
+                    Depois de cada rodada, quem faz mais pontos que a própria média por jogo valoriza;
+                    quem faz menos desvaloriza; quem faz exatamente a média não muda.
+                </p>
+                <p>
+                    A variação é de <strong>@Formato.Moeda(Valorizacao.ReaisPorPonto)</strong> por ponto de diferença,
+                    no máximo @((Valorizacao.LimitePorRodada * 100).ToString("0"))% do valor do atleta por rodada,
+                    e nenhum atleta fica abaixo de @Formato.Moeda(Valorizacao.ValorMinimo).
+                </p>
+
+                <h4>Preço inicial</h4>
+                <ul>
+                    <li>Zagueiro: R$ 6,00 · Lateral: R$ 7,00 · Meia: R$ 10,00 · Atacante: R$ 20,00.</li>
+                    <li>Goleiros e técnicos são grátis.</li>
+                    <li>Quem joga em mais de uma posição fica com o preço da mais barata.</li>
+                </ul>
+
+                <h4>Pontos de cada jogo</h4>
+                <ul>
+                    <li>Todos começam com <strong>7 pontos</strong>. O goleiro começa com <strong>12</strong>. Técnicos não pontuam.</li>
+                    <li><strong>Time fez gol:</strong> jogadores de linha ganham +2 e o goleiro +1. Quem fez o gol ganha +4 a mais.</li>
+                    <li><strong>Time tomou gol:</strong> jogadores de linha perdem 4 e o goleiro perde 2.</li>
+                    <li><strong>Cartões:</strong> amarelo −2, azul −3 e vermelho −5.</li>
+                    <li>Faltas e assistências ainda não pontuam.</li>
+                </ul>
+                        </div>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly EscalacaoMontada escalacao = new();
+    private List<AtletaEscalavel> elenco = new();
+    private bool carregando = true;
+    private string? erro;
+    private SlotRef? slot;
+    private bool verLista;
+    private bool mostrarRegras;
+    private bool personalizando;
+    private bool salvando;
+    private bool mercadoAberto = true;
+    private string? erroSalvar;
+
+    private bool PodeSalvar => !salvando && !carregando && mercadoAberto
+        && escalacao.Preenchidos == escalacao.TotalVagas && Restante >= 0;
+
+    private ClubeConfig clube = new();
+    private bool FaixasLiberadas => (Torcidas.Cache?.Torcida ?? 0) >= Torcida.MinTextos;
+    private CardsConfig cards = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Estilo do campo e moldura dos cartões vêm das recompensas da torcida (falha aqui não impede de escalar)
+        try { clube = Torcidas.Cache?.Clube ?? (await Torcidas.CarregarAsync(false)).Clube; } catch { }
+        try { cards = Torcidas.CardsCache ?? await Torcidas.CarregarCardsAsync(); } catch { }
+        mercadoAberto = await Mercado.EstaAbertoAsync();
+        await Carregar();
+    }
+
+    private async Task Carregar()
+    {
+        carregando = true;
+        erro = null;
+        try
+        {
+            var tarefaSalva = BuscarSalvaAsync();
+            elenco = await Mercado.ObterElencoAsync();
+            var salva = await tarefaSalva;
+            if (salva is not null && escalacao.Preenchidos == 0) AplicarSalva(salva);
+        }
+        catch (ErroMercadoException ex)
+        {
+            erro = ex.Message;
+        }
+        finally
+        {
+            carregando = false;
+        }
+    }
+
+    // Última escalação salva (falha aqui não impede de escalar do zero)
+    private async Task<EscalacaoSalva?> BuscarSalvaAsync()
+    {
+        try { return await Escalacoes.UltimaAsync(); }
+        catch (ErroEscalacaoException) { return null; }
+    }
+
+    // Já escalado: o time salvo aparece no campo, pronto para ajustar e salvar de novo
+    private void AplicarSalva(EscalacaoSalva salva)
+    {
+        if (salva.Slots.Count == 0) return;
+
+        var porId = elenco.ToDictionary(a => a.Id);
+        escalacao.AplicarTatica(Tatica.Todas.FirstOrDefault(t => t.Nome == salva.Tatica) ?? Tatica.Padrao);
+        foreach (var s in salva.Slots)
+        {
+            // atleta que saiu do mercado (inativo ou apagado) fica de fora
+            if (!porId.TryGetValue(s.AtletaId, out var a) || s.Indice is < 0 or > 5) continue;
+            escalacao.Definir(s.Pos, s.Indice, a);
+        }
+        if (salva.CapitaoId is not null && escalacao.EstaNoCampo(salva.CapitaoId)) escalacao.AlternarCapitao(salva.CapitaoId);
+    }
+
+    private AtletaEscalavel? Atual => slot is null ? null : escalacao.Obter(slot.Pos, slot.Indice);
+
+    private decimal Gasto => escalacao.EmCampo().Sum(a => a.Valor);
+    private decimal Restante => Valorizacao.Orcamento - Gasto;
+    private int PercentualGasto => (int)Math.Clamp(Gasto / Valorizacao.Orcamento * 100, 0, 100);
+
+    private string? CapitaoNome => escalacao.EmCampo().FirstOrDefault(a => a.Id == escalacao.CapitaoId)?.Nome;
+
+    // Só atletas da posição da vaga e que ainda não estão em campo (mais o ocupante atual)
+    private IEnumerable<AtletaEscalavel> Disponiveis => slot is null
+        ? Enumerable.Empty<AtletaEscalavel>()
+        : elenco.Where(a => a.Posicoes.Contains(slot.Pos) && (!escalacao.EstaNoCampo(a.Id) || a.Id == Atual?.Id));
+
+    private void AoMudarTatica(ChangeEventArgs e)
+    {
+        if (!mercadoAberto) return;
+        var t = Tatica.Todas.FirstOrDefault(x => x.Nome == e.Value?.ToString());
+        if (t is null) return;
+        escalacao.AplicarTatica(t);
+        slot = null;
+    }
+
+    private void AbrirSlot(SlotRef s) { if (mercadoAberto) slot = s; }
+    private void Fechar() => slot = null;
+
+    private void Escolher(AtletaEscalavel a)
+    {
+        if (slot is null) return;
+        escalacao.Definir(slot.Pos, slot.Indice, a);
+        slot = null;
+    }
+
+    private void Remover()
+    {
+        if (slot is null) return;
+        escalacao.Limpar(slot.Pos, slot.Indice);
+        slot = null;
+    }
+
+    private void AlternarCapitao()
+    {
+        if (Atual is null) return;
+        escalacao.AlternarCapitao(Atual.Id);
+        slot = null;
+    }
+
+    private async Task Salvar()
+    {
+        if (!PodeSalvar) return;
+        salvando = true;
+        erroSalvar = null;
+        try
+        {
+            await Escalacoes.SalvarAsync(escalacao);
+            Nav.NavigateTo("");   // volta para a Home, que mostra a escalação salva
+        }
+        catch (ErroEscalacaoException ex)
+        {
+            erroSalvar = ex.Message;
+        }
+        finally
+        {
+            salvando = false;
+        }
+    }
+}

@@ -1,0 +1,66 @@
+/* Botões e chips
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.botao-sair {
+    background: transparent;
+    color: var(--branco);
+    border: 1px solid rgba(255,255,255,.4);
+    border-radius: 999px;
+    padding: .35rem .9rem;
+    font-size: .85rem;
+}
+
+.botao {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    text-decoration: none;
+    background: var(--verde);
+    color: var(--branco);
+    border: 0;
+    border-radius: var(--raio);
+    padding: .85rem 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.botao:disabled {
+        opacity: .6;
+    }
+
+.botao-sec {
+    background: transparent;
+    color: var(--texto);
+    border: 1px solid rgba(128,128,128,.45);
+    border-radius: 999px;
+    padding: .45rem 1rem;
+    font-size: .9rem;
+    cursor: pointer;
+}
+
+.botao-sec.largo {
+        display: block;
+        width: 100%;
+        margin-top: .6rem;
+        border-radius: var(--raio);
+        padding: .8rem;
+    }
+
+.pagina > .botao, .pagina > .erro {
+    margin-top: .4rem;
+}
+
+.botao-sec.perigo {
+    color: var(--erro);
+    border-color: var(--erro);
+}
+
+.chip {
+    padding: .25rem .7rem;
+    border-radius: 999px;
+    border: 1px solid rgba(128,128,128,.4);
+    background: transparent;
+    color: var(--texto);
+    font-size: .8rem;
+    cursor: pointer;
+}

@@ -1,0 +1,20 @@
+@* Vaga a vaga da escalação em linhas. Tocar numa linha abre a lista de atletas daquela posição. *@
+@foreach (var pos in Enum.GetValues<PosicaoCampo>())
+{
+    foreach (var i in Enumerable.Range(0, Escalacao.Tatica.Qtd(pos)))
+    {
+        var vaga = new SlotRef(pos, i);
+        var at = Escalacao.Obter(pos, i);
+        <button type="button" class="esc-lista-item @(at is null ? "vazio" : "") @(Selecionado == vaga ? "sel" : "")" @onclick="() => OnSlot.InvokeAsync(vaga)">
+            <span class="esc-lista-pos">@pos.Sigla()</span>
+            <span class="esc-lista-nome">@(at?.Nome ?? "Escolher " + pos.Nome().ToLowerInvariant())@(at is not null && at.Id == Escalacao.CapitaoId ? " (C)" : "")</span>
+            <span class="esc-lista-valor">@(at is null ? "+" : Formato.Moeda(at.Valor))</span>
+        </button>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public EscalacaoMontada Escalacao { get; set; } = default!;
+    [Parameter] public SlotRef? Selecionado { get; set; }
+    [Parameter] public EventCallback<SlotRef> OnSlot { get; set; }
+}

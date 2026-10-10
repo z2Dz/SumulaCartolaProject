@@ -1,0 +1,13 @@
+@* Silhueta vetorial de jogador no lugar da foto. A cor vem do CSS (currentColor). *@
+<svg class="silhueta" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+    <path fill="currentColor" fill-rule="evenodd" d="@Caminho" />
+</svg>
+
+@code {
+    /// <summary>GOL, LAT, ZAG, MEI, ATA ou TEC.</summary>
+    [Parameter] public string? Sigla { get; set; }
+    /// <summary>Define qual dos 2 modelos da posição será usado.</summary>
+    [Parameter] public string? Nome { get; set; }
+
+    private string Caminho => SilhuetasAtleta.Caminho(Sigla, Nome);
+}

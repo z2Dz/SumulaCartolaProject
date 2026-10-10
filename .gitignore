@@ -1,0 +1,26 @@
+## Arquivos gerados pela compilação (não vão para o GitHub)
+bin/
+obj/
+release/
+[Bb]in/
+[Oo]bj/
+
+## Visual Studio / editores
+.vs/
+*.user
+*.suo
+.vscode/
+.idea/
+
+## Sistema
+Thumbs.db
+.DS_Store
+
+## Pacotes e arquivos gerados do Blazor
+node_modules/
+wwwroot/_framework/
+wwwroot/service-worker-assets.js
+
+## Compactados
+*.7z
+*.zip

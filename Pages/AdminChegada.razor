@@ -1,0 +1,553 @@
+@page "/admin/chegada"
+@attribute [Authorize(Roles = "admin")]
+@inject ServicoSumula Servico
+@inject NavigationManager Nav
+
+<PageTitle>Ordem de chegada · Cartola dos Amigos</PageTitle>
+
+<div class="pagina adm fixa chg2">
+    <a class="adm-voltar" href="admin/cartola">‹ Partidas</a>
+    <h1>Ordem de chegada</h1>
+
+    @if (carregando)
+    {
+        <p class="suave">Carregando…</p>
+    }
+    else if (partidas.Count == 0)
+    {
+        <div class="cartao"><p class="suave">Nenhuma partida cadastrada. Crie uma na tela Admin.</p></div>
+    }
+    else
+    {
+        <div class="cartao">
+            <label class="adm-rotulo" for="partida">Partida</label>
+            <select id="partida" class="adm-campo" disabled="@sujo" @onchange="AoTrocarPartida">
+                @foreach (var p in partidas)
+                {
+                    <option value="@p.Id" selected="@(p.Id == partidaId)">@p.Titulo</option>
+                }
+            </select>
+            @if (sujo) { <p class="suave adm-dica">Salve ou descarte as alterações para trocar de partida.</p> }
+            @if (Finalizada) { <p class="erro">Partida finalizada. Reabra na tela Admin para alterar.</p> }
+        </div>
+
+        @if (!string.IsNullOrEmpty(erro)) { <p class="erro">@erro</p> }
+        @if (!string.IsNullOrEmpty(aviso)) { <p class="adm-ok">@aviso @if (salvoOk) { <a href="admin/sumula?partida=@partidaId">Abrir súmula</a> }</p> }
+
+        <div class="chg-grid">
+            @if (!Finalizada)
+            {
+                @if (popupAdd) { <div class="chg2-pop-fundo" @onclick="() => popupAdd = false"></div> }
+                <div class="cartao chg-col chg2-card chg-add @(popupAdd ? "pop-aberto" : "")" role="@(popupAdd ? "dialog" : null)" aria-label="Adicionar atleta">
+                    <div class="chg2-pop-cab">
+                        <h3>Adicionar atleta <span>(@ordem.Count na chegada)</span></h3>
+                        <button type="button" class="adm-icone" @onclick="() => popupAdd = false" aria-label="Fechar">✕</button>
+                    </div>
+                    <div class="adm-abas">
+                        <button type="button" class="@(aba == "lista" ? "ativa" : "")" @onclick="@(() => aba = "lista")"><IconeUi Nome="pessoas" Tamanho="20" /> Atletas</button>
+                        <button type="button" class="@(aba == "novo" ? "ativa" : "")" @onclick="@(() => aba = "novo")"><IconeUi Nome="mais" Tamanho="18" /> Adicionar atleta</button>
+                    </div>
+
+                    @if (aba == "lista")
+                    {
+                        <div class="chg2-busca">
+                            <IconeUi Nome="lupa" Tamanho="20" />
+                            <input type="search" placeholder="Buscar pelo nome ou posição…" @bind="busca" @bind:event="oninput" />
+                        </div>
+                        <p class="chg2-dica">Toque no atleta para marcar a chegada. Ele entra sem time: escolha Verm. ou Amar. na lista ao lado.</p>
+                        <ul class="chg-nomes">
+                            @foreach (var a in Faltando)
+                            {
+                                var atl = a;
+                                <li>
+                                    <button type="button" class="chg-editar" title="Editar @atl.Nome" aria-label="Editar @atl.Nome" @onclick="() => editando = atl"><IconeUi Nome="lapis" Tamanho="16" /></button>
+                                    <button type="button" class="chg-nome" @onclick="() => Adicionar(atl)">
+                                        <FotoJogador Nome="@atl.Nome" FotoUrl="@atl.FotoUrl" Posicoes="@atl.Posicoes" Tamanho="42" />
+                                        <span class="chg-nome-txt">
+                                            <strong>@atl.Nome</strong>
+                                            <small>@atl.PosicoesTexto</small>
+                                        </span>
+                                        <span class="chg-mais" aria-hidden="true"><IconeUi Nome="mais" Tamanho="18" /></span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                        @if (Faltando.Count == 0)
+                        {
+                            <p class="suave">@(string.IsNullOrWhiteSpace(busca) ? "Todos os atletas já chegaram." : "Nenhum atleta encontrado. Use a aba Registrar novo.")</p>
+                        }
+                    }
+                    else
+                    {
+                    <div class="chg-rola">
+                    <label class="adm-rotulo" for="nome">Nome</label>
+                    <input id="nome" class="adm-campo" @bind="novoNome" @bind:event="oninput" maxlength="40" autocomplete="off" />
+
+                    <span class="adm-rotulo">Posições que joga</span>
+                    <div class="adm-chips">
+                        @foreach (var (sigla, nome) in PosicoesAtleta.Todas)
+                        {
+                            var s = sigla;
+                            <button type="button" class="adm-chip @(novasPosicoes.Contains(s) ? "on" : "")" aria-pressed="@novasPosicoes.Contains(s)"
+                                    @onclick="() => AlternarPosicao(s)">@sigla <small>@nome</small></button>
+                        }
+                    </div>
+
+                    <span class="adm-rotulo">Foto</span>
+                    <div class="adm-foto-form">
+                        @if (fotoPrevia is not null)
+                        {
+                            <img class="foto" src="@fotoPrevia" alt="Prévia" style="width:64px;height:64px" />
+                        }
+                        else
+                        {
+                            <FotoJogador Nome="@(string.IsNullOrWhiteSpace(novoNome) ? "?" : novoNome)" Tamanho="64" />
+                        }
+                        <label class="botao-sec adm-arquivo">
+                            @(fotoPrevia is null ? "Escolher foto" : "Trocar foto")
+                            <InputFile OnChange="AoEscolherFoto" accept="image/*" hidden />
+                        </label>
+                    </div>
+
+                    <div class="cartola-status adm-topo-gap">
+                        <div class="cartola-status-info">
+                            <strong>Ativo para o Cartola</strong>
+                            <small>
+                                @(novoAtivo
+                                ? "Aparece no mercado para os usuários escalarem."
+                                : "Não aparece no mercado para os usuários escalarem.")
+                            </small>
+                        </div>
+
+                    <div class="cartola-seg" role="radiogroup" aria-label="Ativo para o Cartola">
+                        <button type="button" role="radio" aria-checked="@novoAtivo"
+                                class="@(novoAtivo ? "sel" : "")" @onclick="() => novoAtivo = true">Ativo</button>
+                        <button type="button" role="radio" aria-checked="@(!novoAtivo)"
+                                class="@(!novoAtivo ? "sel" : "")" @onclick="() => novoAtivo = false">Não ativo</button>
+                    </div>
+                    </div>
+
+                    <button type="button" class="botao adm-topo-gap" disabled="@registrando" @onclick="RegistrarEAdicionar">
+                        @(registrando ? "Registrando…" : "Registrar e adicionar à chegada")
+                    </button>
+                    </div>
+                    }
+                    <button type="button" class="botao chg2-pop-ok" @onclick="() => popupAdd = false">Concluir (@ordem.Count na chegada)</button>
+                </div>
+            }
+
+            <div class="cartao chg-col chg2-card">
+                <div class="chg2-cab">
+                    <span class="chg2-cab-ico"><IconeUi Nome="pessoas" Tamanho="30" /></span>
+                    <div class="chg2-cab-txt">
+                        <h3>Ordem de chegada (@ordem.Count)</h3>
+                        <p><span class="so-desk">Toque nos atletas da lista ao lado, na ordem em que chegaram.</span><span class="so-mob">Na ordem em que chegaram.</span></p>
+                    </div>
+                    <span class="chg2-times">
+                        <span class="adm-bolinha vermelho"></span> @Contar(TimePelada.Vermelho)
+                        <span class="adm-bolinha amarelo"></span> @Contar(TimePelada.Amarelo)
+                        @if (SemTime > 0) { <span class="suave" title="Atletas sem time marcado"> · sem time @SemTime</span> }
+                    </span>
+                </div>
+
+                @if (!Finalizada)
+                {
+                    <button type="button" class="chg2-abrir-add" @onclick="() => popupAdd = true"><IconeUi Nome="mais" Tamanho="20" /> Adicionar atleta</button>
+                }
+                <div class="chg-rola">
+                @if (ordem.Count == 0)
+                {
+                    <p class="suave chg2-vazio">Ninguém chegou ainda.</p>
+                }
+                @if (ordem.Count > 0)
+                {
+                    <ol class="chg2-ordem">
+                        @for (var i = 0; i < ordem.Count; i++)
+                        {
+                            var idx = i;
+                            var a = ordem[i];
+                            <li @key="a.Id" class="chg2-item @TimePelada.Css(a.Lado) @(arrastando == idx ? "arrastando" : "")"
+                                draggable="@(Finalizada ? "false" : "true")"
+                                @ondragstart="() => arrastando = idx"
+                                @ondragend="() => arrastando = -1"
+                                @ondragover="() => { }" @ondragover:preventDefault
+                                @ondrop="() => Soltar(idx)" @ondrop:preventDefault>
+                                <span class="chg2-num">@(idx + 1)</span>
+                                <FotoJogador Nome="@a.Nome" FotoUrl="@a.FotoUrl" Posicoes="@a.Posicoes" Tamanho="42" />
+                                <div class="chg2-nome">
+                                    <strong>@a.Nome</strong>
+                                    <small>@(a.Posicoes.Count == 0 ? "sem posição" : a.PosicoesTexto)</small>
+                                    @if (PapelNoJogo(a) is { } papel)
+                                    {
+                                        <small class="chg2-tempo @(papel.StartsWith("2º") ? "entra" : papel.StartsWith("1º") ? "sai" : "")">@papel</small>
+                                    }
+                                </div>
+                                <div class="adm-seg" role="group" aria-label="Time de @a.Nome">
+                                    <button type="button" class="vermelho @(a.Lado == TimePelada.Vermelho ? "on" : "")" disabled="@Finalizada"
+                                            @onclick="() => MudarLado(a, TimePelada.Vermelho)">Verm.</button>
+                                    <button type="button" class="amarelo @(a.Lado == TimePelada.Amarelo ? "on" : "")" disabled="@Finalizada"
+                                            @onclick="() => MudarLado(a, TimePelada.Amarelo)">Amar.</button>
+                                </div>
+                                <div class="chg2-mover">
+                                    <button type="button" class="adm-icone" disabled="@(idx == 0 || Finalizada)" @onclick="() => Mover(idx, -1)" aria-label="Subir">▲</button>
+                                    <button type="button" class="adm-icone" disabled="@(idx == ordem.Count - 1 || Finalizada)" @onclick="() => Mover(idx, 1)" aria-label="Descer">▼</button>
+                                    <button type="button" class="adm-icone adm-perigo" disabled="@Finalizada" @onclick="() => Remover(idx)" aria-label="Remover">✕</button>
+                                </div>
+                            </li>
+                        }
+                    </ol>
+                }
+                </div>
+            </div>
+        </div>
+
+        <div class="adm-barra chg2-barra">
+            <a class="chg2-btn" href="admin/cartola"><IconeUi Nome="voltar" Tamanho="22" /> Voltar</a>
+            <span class="chg2-barra-gap"></span>
+            <button type="button" class="chg2-btn destaque" disabled="@(salvando || Finalizada)" @onclick="Salvar">
+                <IconeUi Nome="documento" Tamanho="22" /> Salvar e enviar para a súmula
+            </button>
+            <button type="button" class="chg2-btn" disabled="@(ordem.Count == 0)" @onclick="() => previa = true">
+                <IconeUi Nome="olho" Tamanho="22" /> Prévia dos times
+            </button>
+            <button type="button" class="chg2-btn" disabled="@(!sujo)" @onclick="Descartar">
+                <IconeUi Nome="desfazer" Tamanho="22" /> Descartar
+            </button>
+        </div>
+
+        @if (editando is not null)
+        {
+            <EditarAtleta Atleta="editando" OnSalvo="AplicarEdicao" OnFechar="() => editando = null" />
+        }
+
+        @if (previa)
+        {
+            <div class="previa-fundo" @onclick="() => previa = false">
+                <div class="previa @(previaCampo ? "previa-larga" : "")" role="dialog" aria-modal="true" aria-label="Prévia dos times" @onclick:stopPropagation="true">
+                    <div class="previa-topo">
+                        <h3>Prévia dos times</h3>
+                        <div class="previa-acoes">
+                            <button type="button" class="previa-troca" disabled="@(Goleiros.Count == 0)" title="Troca o goleiro de um time pelo do outro, só nesta prévia" @onclick="() => trocaGoleiros = !trocaGoleiros">⇄ Trocar goleiros</button>
+                            <div class="previa-modo" role="tablist" aria-label="Tempo de jogo">
+                                <button type="button" class="@(tempo == 1 ? "ativa" : "")" @onclick="() => tempo = 1">1º tempo</button>
+                                <button type="button" class="@(tempo == 2 ? "ativa" : "")" @onclick="() => tempo = 2">2º tempo</button>
+                            </div>
+                            <div class="previa-modo" role="tablist">
+                                <button type="button" class="@(previaCampo ? "" : "ativa")" @onclick="() => previaCampo = false">Lista</button>
+                                <button type="button" class="@(previaCampo ? "ativa" : "")" @onclick="() => previaCampo = true">No campo</button>
+                            </div>
+                            <button type="button" class="adm-icone" @onclick="() => previa = false" aria-label="Fechar">✕</button>
+                        </div>
+                    </div>
+                    <div class="previa-times">
+                        @foreach (var lado in new[] { TimePelada.Vermelho, TimePelada.Amarelo })
+                        {
+                            var todos = DoLado(lado).Where(j => !AnaliseTime.EhSoGoleiro(j)).ToList(); // goleiros vêm do botão de goleiros, não da chegada
+                            var plano = PlanoTempos.Montar(todos);
+                            var jogadores = tempo == 1 ? plano.Primeiro : plano.Segundo; // 1º tempo: os 10 primeiros; 2º: com as trocas
+                            var goleiro = GoleiroDe(lado);
+                            var an = AnaliseTime.Analisar(jogadores, TecnicoFixo(lado), goleiro);
+                            var reservaIds = an.Reservas.Select(r => r.Id).ToHashSet();
+                            <section class="previa-time @TimePelada.Css(lado)">
+                                <h4>
+                                    <span class="adm-bolinha @TimePelada.Css(lado)"></span> @TimePelada.Rotulo(lado) (@todos.Count)
+                                    <span class="previa-pos">
+                                        @foreach (var sg in AnaliseTime.Siglas.Where(x => an.Contagem[x] > 0))
+                                        {
+                                            <span class="previa-chip"><b>@sg</b> @an.Contagem[sg]</span>
+                                        }
+                                    </span>
+                                </h4>
+                                @if (goleiro is not null)
+                                {
+                                    <p class="previa-goleiro">
+                                        <FotoJogador Nome="@goleiro.Nome" FotoUrl="@goleiro.FotoUrl" Posicoes="@goleiro.Posicoes" Tamanho="40" />
+                                        <span><b>Goleiro:</b> @goleiro.Nome</span>
+                                    </p>
+                                }
+                                else
+                                {
+                                    <p class="previa-goleiro sem"><span><b>Sem goleiro.</b> Quem tiver GOL cadastrado pode ocupar a vaga.</span></p>
+                                }
+                                @if (jogadores.Count == 0)
+                                {
+                                    <p class="suave">Ninguém ainda.</p>
+                                }
+                                else if (previaCampo)
+                                {
+                                    <p class="previa-tatica">Melhor esquema: <b>@an.Tatica.Nome</b> · @an.Preenchidas/@an.Vagas vagas preenchidas</p>
+                                    <div class="previa-campo">
+                                        <CampoTatico Escalacao="an.ParaCampo()" />
+                                    </div>
+                                    <ReservasPrevia Reservas="an.Reservas" />
+                                    <SubstituicoesPrevia Plano="plano" />
+                                }
+                                else
+                                {
+                                    <ol>
+                                        @foreach (var a in jogadores.Where(j => !reservaIds.Contains(j.Id)))
+                                        {
+                                            <li>
+                                                <FotoJogador Nome="@a.Nome" FotoUrl="@a.FotoUrl" Posicoes="@a.Posicoes" Tamanho="46" />
+                                                <span class="previa-nome">@a.Nome</span>
+                                                <small>@a.PosicoesTexto</small>
+                                            </li>
+                                        }
+                                    </ol>
+                                    <ReservasPrevia Reservas="an.Reservas" />
+                                    <SubstituicoesPrevia Plano="plano" />
+                                }
+                            </section>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "partida")] public Guid? PartidaInicial { get; set; }
+
+    private List<PartidaResumo> partidas = new();
+    private List<AtletaResumo> atletas = new();
+    private List<ChegadaItem> ordem = new();
+    private Guid partidaId;
+    private string aba = "lista", busca = "";
+    private bool popupAdd;
+    private string? erro, aviso;
+    private bool carregando = true, sujo, salvando, registrando, salvoOk;
+
+    // Cadastro de atleta novo
+    private string novoNome = "";
+    private HashSet<string> novasPosicoes = new();
+    private bool novoAtivo;   // padrão: fora do mercado do Cartola
+    private byte[]? fotoBytes;
+    private string? fotoPrevia;
+
+    private bool Finalizada => partidas.FirstOrDefault(p => p.Id == partidaId)?.Finalizada == true;
+    private bool previa;
+    private bool previaCampo;
+    private int tempo = 1; // tempo mostrado na prévia: 1 ou 2
+
+    // Substituições: o 1º tempo é dos 10 primeiros de cada time; do 11º em diante entram no 2º tempo, saindo de baixo para cima
+    private PlanoTempos PlanoDe(string lado) =>
+        PlanoTempos.Montar(DoLado(lado).Where(j => !AnaliseTime.EhSoGoleiro(j)));
+    private string? PapelNoJogo(ChegadaItem a) => AnaliseTime.EhSoGoleiro(a) ? null : PlanoDe(a.Lado).Papel(a.Id);
+
+    // Técnicos permanentes: Eduardo no Vermelho e Nilson no Amarelo
+    private AtletaResumo TecnicoFixo(string lado)
+    {
+        var nome = lado == TimePelada.Vermelho ? "Eduardo" : "Nilson";
+        return atletas.FirstOrDefault(a => a.Nome.Equals(nome, StringComparison.OrdinalIgnoreCase)
+                                           && a.Posicoes.Any(x => AnaliseTime.Normalizar(x) == "TEC"))
+               ?? new AtletaResumo { Id = Guid.Empty, Nome = nome, Posicoes = new() { "TEC" } };
+    }
+    private AtletaResumo? editando;
+
+    // Goleiros ficam fora da chegada: o 1º (por nome) joga no Vermelho e o 2º no Amarelo; "Trocar goleiros" inverte (só na prévia)
+    private bool trocaGoleiros;
+    private List<AtletaResumo> Goleiros => atletas.Where(AnaliseTime.EhSoGoleiro)
+        .OrderBy(a => a.Nome, StringComparer.CurrentCultureIgnoreCase).Take(2).ToList();
+    private AtletaResumo? GoleiroDe(string lado)
+    {
+        var g = Goleiros;
+        var indice = (lado == TimePelada.Vermelho) != trocaGoleiros ? 0 : 1;
+        return indice < g.Count ? g[indice] : null;
+    }
+
+    private void AplicarEdicao(AtletaResumo novo)
+    {
+        void Copiar(AtletaResumo alvo) { alvo.Nome = novo.Nome; alvo.FotoUrl = novo.FotoUrl; alvo.Posicoes = novo.Posicoes; }
+        foreach (var a in atletas.Where(x => x.Id == novo.Id)) Copiar(a);
+        foreach (var o in ordem.Where(x => x.Id == novo.Id)) Copiar(o);
+        editando = null;
+        aviso = $"{novo.Nome} atualizado.";
+    }
+    // Técnico (só a posição TEC) não aparece na chegada nem na súmula
+    private static bool EhTecnico(AtletaResumo a) =>
+        a.Posicoes.Count > 0 && a.Posicoes.All(x => AnaliseTime.Normalizar(x) == "TEC");
+
+    // Goleiros não aparecem na lista, mas continuam gravados na chegada (senão sairiam da súmula ao salvar)
+    private List<ChegadaItem> goleirosOcultos = new();
+
+    private void Receber(List<ChegadaItem> lista)
+    {
+        goleirosOcultos = lista.Where(AnaliseTime.EhSoGoleiro).ToList();
+        ordem = lista.Where(o => !EhTecnico(o) && !AnaliseTime.EhSoGoleiro(o)).ToList();
+    }
+
+    private void Organizar() => ordem = ordem.Where(o => !EhTecnico(o)).ToList();
+
+    private IEnumerable<ChegadaItem> DoLado(string lado) => ordem.Where(o => o.Lado == lado);
+    private int Contar(string lado) => ordem.Count(o => o.Lado == lado);
+
+    private int SemTime => ordem.Count(o => o.Lado == TimePelada.SemTime);
+
+    private List<AtletaResumo> Faltando => atletas
+        .Where(a => ordem.All(o => o.Id != a.Id))
+        .Where(a => !AnaliseTime.EhSoGoleiro(a)) // goleiros ficam fora da chegada
+        .Where(a => !EhTecnico(a))               // técnicos nunca entram na chegada
+        .Where(a => string.IsNullOrWhiteSpace(busca)
+                    || a.Nome.Contains(busca.Trim(), StringComparison.OrdinalIgnoreCase)
+                    || a.PosicoesTexto.Contains(busca.Trim(), StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            partidas = await Servico.ListarPartidasAsync();
+            atletas = await Servico.ListarAtletasAsync();
+            if (partidas.Count > 0)
+            {
+                var alvo = partidas.FirstOrDefault(p => p.Id == PartidaInicial)
+                           ?? partidas.Where(p => p.Status is "agendada" or "em_andamento")
+                                      .OrderBy(p => p.DataHora).FirstOrDefault()
+                           ?? partidas[0];
+                partidaId = alvo.Id;
+                Receber(await Servico.ObterChegadaAsync(partidaId));
+            }
+        }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+        carregando = false;
+    }
+
+    private async Task AoTrocarPartida(ChangeEventArgs e)
+    {
+        if (!Guid.TryParse(e.Value?.ToString(), out var id)) return;
+        partidaId = id;
+        await Carregar();
+    }
+
+    private async Task Carregar()
+    {
+        erro = aviso = null;
+        salvoOk = false;
+        try { Receber(await Servico.ObterChegadaAsync(partidaId)); sujo = false; }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+    }
+
+    private Task Descartar() => Carregar();
+
+    // Quem acabou de chegar entra sem time; o admin marca Verm. ou Amar. na lista
+    private void Adicionar(AtletaResumo a)
+    {
+        ordem.Add(Para(a, TimePelada.SemTime));
+        Marcar();
+    }
+
+    private static ChegadaItem Para(AtletaResumo a, string lado) =>
+        new() { Id = a.Id, Nome = a.Nome, FotoUrl = a.FotoUrl, Posicoes = a.Posicoes, Lado = lado };
+
+    private void MudarLado(ChegadaItem a, string lado)
+    {
+        if (a.Lado == lado) return;
+        if (Contar(lado) >= LinhaSumula.MaxNumero)
+        {
+            erro = $"O time {TimePelada.Rotulo(lado)} já tem {LinhaSumula.MaxNumero} atletas.";
+            return;
+        }
+        a.Lado = lado;
+        Marcar();
+    }
+
+    private int arrastando = -1;
+
+    private void Soltar(int destino)
+    {
+        var origem = arrastando;
+        arrastando = -1;
+        if (Finalizada || origem < 0 || origem >= ordem.Count || origem == destino) return;
+        var item = ordem[origem];
+        ordem.RemoveAt(origem);
+        ordem.Insert(destino, item);
+        Marcar();
+    }
+
+    private void Remover(int i) { ordem.RemoveAt(i); Marcar(); }
+
+    private void Mover(int i, int delta)
+    {
+        var j = i + delta;
+        if (j < 0 || j >= ordem.Count) return;
+        (ordem[i], ordem[j]) = (ordem[j], ordem[i]);
+        Marcar();
+    }
+
+    private void Marcar() { Organizar(); sujo = true; salvoOk = false; aviso = null; erro = null; }
+
+    private async Task Salvar()
+    {
+        erro = aviso = null; salvoOk = false;
+        var semTime = ordem.Where(o => o.Lado == TimePelada.SemTime).Select(o => o.Nome).ToList();
+        if (semTime.Count > 0)
+        {
+            erro = "Marque o time (Verm. ou Amar.) de: " + string.Join(", ", semTime) + ".";
+            return;
+        }
+        salvando = true;
+        try
+        {
+            await Servico.SalvarChegadaAsync(partidaId, goleirosOcultos.Concat(ordem).ToList());
+            sujo = false;
+            salvoOk = true;
+            aviso = "Ordem de chegada salva. Os atletas já estão na súmula.";
+        }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+        salvando = false;
+    }
+
+    // ----- Cadastro de atleta novo -----
+    private void AlternarPosicao(string sigla)
+    {
+        if (!novasPosicoes.Remove(sigla)) novasPosicoes.Add(sigla);
+    }
+
+    private async Task AoEscolherFoto(InputFileChangeEventArgs e)
+    {
+        erro = null;
+        try
+        {
+            // O navegador reduz a foto antes de ler: celular costuma gerar arquivos de vários MB
+            var reduzida = await e.File.RequestImageFileAsync("image/jpeg", 400, 400);
+            using var origem = reduzida.OpenReadStream(2 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await origem.CopyToAsync(ms);
+            fotoBytes = ms.ToArray();
+            fotoPrevia = "data:image/jpeg;base64," + Convert.ToBase64String(fotoBytes);
+        }
+        catch (Exception)
+        {
+            fotoBytes = null; fotoPrevia = null;
+            erro = "Não consegui ler essa foto. Tente outra imagem.";
+            return;
+        }
+    }
+
+    private async Task RegistrarEAdicionar()
+    {
+        erro = aviso = null;
+        if (string.IsNullOrWhiteSpace(novoNome)) { erro = "Informe o nome do atleta."; return; }
+        if (novasPosicoes.Count == 0) { erro = "Escolha ao menos uma posição."; return; }
+        registrando = true;
+        try
+        {
+            string? url = fotoBytes is null ? null : await Servico.EnviarFotoAsync(fotoBytes);
+            var ordemPosicoes = PosicoesAtleta.Todas.Select(p => p.Sigla).Where(novasPosicoes.Contains);
+            var novo = await Servico.RegistrarAtletaAsync(novoNome.Trim(), ordemPosicoes, url, novoAtivo);
+
+            atletas.Add(novo);
+            atletas = atletas.OrderBy(a => a.Nome, StringComparer.CurrentCultureIgnoreCase).ToList();
+            ordem.Add(Para(novo, TimePelada.SemTime));
+            Organizar();
+            sujo = true;
+
+            aviso = $"{novo.Nome} registrado ({(novoAtivo ? "ativo" : "inativo")} no Cartola) e adicionado à chegada. Marque o time e salve.";
+            novoNome = ""; novoAtivo = false; novasPosicoes = new(); fotoBytes = null; fotoPrevia = null;
+            aba = "lista";
+        }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+        registrando = false;
+    }
+}

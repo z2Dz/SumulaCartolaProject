@@ -1,0 +1,183 @@
+/* Escalação: painel de atletas
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.item-atleta {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .7rem .8rem;
+    font-size: 1rem;
+    text-align: left;
+    border-radius: 12px;
+    border: 1px solid rgba(128,128,128,.3);
+    background: transparent;
+    color: var(--texto);
+    cursor: pointer;
+}
+
+.item-atleta .num {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--verde);
+        color: var(--branco);
+        font-size: .8rem;
+        font-weight: 700;
+    }
+
+/* painel de atletas */
+.painel-atletas {
+    display: none;
+}
+
+.painel-atletas.aberto {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 30;
+        max-width: 640px;
+        max-height: 75dvh;
+        margin: 0 auto;
+        overflow-y: auto;
+        padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+        background: var(--cartao);
+        border-radius: 18px 18px 0 0;
+        box-shadow: 0 -6px 24px rgba(0,0,0,.3);
+    }
+
+.painel-vazio {
+    margin: 0;
+    color: var(--suave);
+    font-size: .9rem;
+    text-align: center;
+}
+
+.item-atleta {
+    width: 100%;
+}
+
+.item-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+}
+
+.item-nome {
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.item-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .4rem;
+}
+
+.item-stats b {
+        font-size: .9rem;
+    }
+
+.item-stats .valor b {
+        color: #2fbf71;
+    }
+
+.item-atleta:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.painel-atletas.aberto > * {
+        flex: none;
+    }
+
+/* ----- painel de atletas ----- */
+.painel-atletas .folha-topo h3 {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    margin: 0;
+    font-size: 1.35rem;
+}
+
+.painel-atletas .folha-topo h3 svg {
+        color: var(--texto);
+    }
+
+.painel-atletas .chip.sel {
+        background: #14b57f;
+        border-color: #14b57f;
+        font-weight: 700;
+    }
+
+.painel-atletas .item-atleta:hover:not(:disabled) {
+        border-color: rgba(25,201,138,.55);
+        background: rgba(25,201,138,.07);
+    }
+
+.painel-atletas .item-atleta.sel {
+        border-color: var(--acento);
+        background: rgba(25,201,138,.12);
+    }
+
+.item-nome-col {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    min-width: 0;
+}
+
+.item-nome-col .item-nome {
+        font-size: 1.02rem;
+        font-weight: 800;
+    }
+
+.item-sub {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+
+.item-sub b {
+        font-size: .88rem;
+        color: var(--suave);
+    }
+
+.item-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.2;
+}
+
+.item-col b {
+        font-size: .95rem;
+    }
+
+.item-col.valor b {
+        color: var(--acento);
+        font-weight: 800;
+    }
+
+.item-acao {
+    padding: .5rem 1.1rem;
+    border-radius: 999px;
+    background: rgba(25,201,138,.16);
+    border: 1px solid rgba(25,201,138,.25);
+    color: var(--texto);
+    font-size: .88rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.item-seta {
+    display: grid;
+    place-items: center;
+    color: var(--acento);
+}

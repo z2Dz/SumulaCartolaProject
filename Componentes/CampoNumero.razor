@@ -1,0 +1,22 @@
+<div class="cn @Classe">
+    <button type="button" tabindex="-1" disabled="@(Valor <= Min)" @onclick="Menos" aria-label="Diminuir">−</button>
+    <input type="number" min="@Min" max="@Max" value="@Valor" @onchange="Digitou" aria-label="@Rotulo" />
+    <button type="button" tabindex="-1" disabled="@(Valor >= Max)" @onclick="Mais" aria-label="Aumentar">+</button>
+</div>
+
+@code {
+    [Parameter] public int Valor { get; set; }
+    [Parameter] public EventCallback<int> ValorChanged { get; set; }
+    [Parameter] public int Min { get; set; } = 0;
+    [Parameter] public int Max { get; set; } = 999;
+    [Parameter] public string? Rotulo { get; set; }
+    [Parameter] public string? Classe { get; set; }
+
+    private Task Menos() => ValorChanged.InvokeAsync(Math.Max(Min, Valor - 1));
+    private Task Mais() => ValorChanged.InvokeAsync(Math.Min(Max, Valor + 1));
+    private Task Digitou(ChangeEventArgs e)
+    {
+        var n = int.TryParse(e.Value?.ToString(), out var v) ? v : Min;
+        return ValorChanged.InvokeAsync(Math.Clamp(n, Min, Max));
+    }
+}

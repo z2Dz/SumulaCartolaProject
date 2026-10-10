@@ -1,0 +1,22 @@
+@if (Reservas.Count > 0)
+{
+    <div class="previa-reserv">
+        <h5>Reservas (@Reservas.Count)</h5>
+        <ul>
+            @foreach (var r in Reservas)
+            {
+                <li>
+                    <FotoJogador Nome="@r.Nome" FotoUrl="@r.FotoUrl" Posicoes="@r.Posicoes" Tamanho="40" />
+                    <span class="previa-reserv-txt">
+                        <strong>@r.Nome</strong>
+                        <small>@(r.Posicoes.Count == 0 ? "sem posição" : r.PosicoesTexto)</small>
+                    </span>
+                </li>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    [Parameter] public List<AtletaResumo> Reservas { get; set; } = new();
+}

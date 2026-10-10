@@ -1,0 +1,36 @@
+/* Utilitários globais e erro do Blazor
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.suave {
+    color: var(--suave);
+    margin: 0;
+}
+
+.erro {
+    background: rgba(179,38,30,.12);
+    color: var(--erro);
+    padding: .7rem .8rem;
+    border-radius: 10px;
+    font-size: .9rem;
+}
+
+#blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: .75rem;
+        top: .5rem;
+    }
+
+.centro {
+    text-align: center;
+    margin: .8rem 0;
+}
+
+.rolagem-x {
+    overflow-x: auto;
+}
+
+.ok-msg {
+    color: #1f9d5b;
+    font-weight: 600;
+}

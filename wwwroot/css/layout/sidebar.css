@@ -1,0 +1,100 @@
+/* Menu lateral (computador)
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+/* menu lateral */
+.lateral {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 1.4rem 1rem;
+    border-right: 1px solid rgba(255,255,255,.06);
+}
+
+.lateral-time {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin-bottom: 1.8rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.lateral-nome {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.lateral-nav {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.lateral-nav a:hover {
+            background: rgba(255,255,255,.05);
+            color: var(--texto);
+        }
+
+.lateral-rodape {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.lateral-sair {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: transparent;
+    color: var(--suave);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 999px;
+    padding: .45rem 1.1rem;
+    cursor: pointer;
+}
+
+.perfil-btn {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 0;
+    background: rgba(255,255,255,.08);
+    color: var(--suave);
+    cursor: pointer;
+}
+
+/* menu lateral translúcido para a imagem aparecer */
+.lateral {
+    background: rgba(4,12,9,.55);
+    backdrop-filter: blur(6px);
+}
+
+/* Celular: o botão do cabeçalho vira a pílula "Sair" (ícone + texto), igual ao botão do menu lateral */
+.perfil-btn .pb-mob {
+    display: none;
+}
+
+/* Submenu do Admin no menu lateral (computador) */
+.lateral-sub {
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+    margin: -.1rem 0 .1rem 1.6rem;
+    padding-left: .6rem;
+    border-left: 1px solid rgba(255,255,255,.14);
+}
+
+.lateral-nav .lateral-sub a {
+    padding: .55rem .8rem;
+    gap: .65rem;
+    font-size: .88rem;
+    font-weight: 500;
+    border-radius: 10px;
+}

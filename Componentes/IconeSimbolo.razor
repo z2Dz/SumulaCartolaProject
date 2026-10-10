@@ -1,0 +1,12 @@
+<svg viewBox="-24 -24 48 48" width="@Tamanho" height="@Tamanho" aria-hidden="true" class="icone-simbolo">
+    @((MarkupString)_svg)
+</svg>
+
+@code {
+    [Parameter] public string Chave { get; set; } = "";
+    [Parameter] public int Tamanho { get; set; } = 34;
+
+    private string _svg = "";
+
+    protected override void OnParametersSet() => _svg = GeradorEscudoSvg.SimboloIsolado(Chave);
+}

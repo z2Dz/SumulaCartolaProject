@@ -1,0 +1,523 @@
+@page "/escudo"
+@attribute [Authorize]
+@inject ServicoPerfil Perfis
+@inject ProvedorEstadoAutenticacao Provedor
+@inject NavigationManager Nav
+@inject ServicoTorcida Torcidas
+@inject IJSRuntime Js
+
+<PageTitle>Escudo do time · Cartola dos Amigos</PageTitle>
+
+@if (cfg is null)
+{
+    <div class="pagina"><p class="suave">Carregando…</p></div>
+}
+else
+{
+    <div class="pagina larga ed-pagina">
+        <header class="ed-topo">
+            <button type="button" class="ed-voltar" aria-label="Voltar" @onclick="Cancelar"><IconeUi Nome="voltar" Tamanho="26" /></button>
+            <h1>@(editando ? "Editar escudo" : "Criar escudo")</h1>
+            <button type="button" class="ed-salvar-topo" @onclick="Salvar" disabled="@salvando">
+                <IconeUi Nome="check" Tamanho="22" /> @(salvando ? "Salvando…" : "Salvar")
+            </button>
+        </header>
+
+        <div class="ed">
+            <div class="ed-grade">
+
+                @* ---------- Menu de categorias (esquerda) ---------- *@
+                <nav class="ed-painel ed-menu" aria-label="Categorias do escudo">
+                    @foreach (var a in Abas)
+                    {
+                        var chave = a.Chave;
+                        <button type="button" class="ed-aba @(aba == chave ? "ativa" : "")"
+                                aria-expanded="@(aba == chave)" @onclick="() => AlternarAba(chave)">
+                            <IconeUi Nome="@a.Icone" /><span>@a.Titulo</span><IconeUi Nome="seta" Tamanho="16" />
+                        </button>
+
+                        @if (aba == chave)
+                        {
+                            <div class="ed-opcoes">
+                                @switch (chave)
+                                {
+                                    case "forma":
+                                        <div class="ed-miniaturas ed-rolagem">
+                                            @foreach (var f in EscudoConfig.Formas)
+                                            {
+                                                <button type="button" class="ed-mini @(cfg.Forma == f.Chave ? "sel" : "") @(Torcida.FormaBloqueada(f.Chave, torcidaAtual) && cfg.Forma != f.Chave ? "bloqueado" : "")"
+                                                        title="@(Torcida.FormaBloqueada(f.Chave, torcidaAtual) ? f.Nome + " (libera com " + Torcida.Fmt(Torcida.MinEscudo) + " torcedores)" : f.Nome)" aria-label="@f.Nome"
+                                                        disabled="@(Torcida.FormaBloqueada(f.Chave, torcidaAtual) && cfg.Forma != f.Chave)" @onclick="() => cfg.Forma = f.Chave">
+                                                    <Escudo Config="@ComForma(f.Chave)" Tamanho="44" />
+                                                </button>
+                                            }
+                                        </div>
+                                        break;
+
+                                    case "cores":
+                                        <p class="ed-dica">Escolha uma camada à direita e use a paleta lá embaixo, ou comece por um conjunto pronto:</p>
+                                        <div class="paletas">
+                                            @foreach (var p in EscudoConfig.Paletas)
+                                            {
+                                                <button type="button" class="paleta" title="@p.Nome" aria-label="@p.Nome"
+                                                        style="background:linear-gradient(135deg, @p.Cor1 50%, @p.Cor2 50%); border-color:@p.Borda"
+                                                        @onclick="() => AplicarPaleta(p)"></button>
+                                            }
+                                        </div>
+                                        <div class="cores">
+                                            <label><input type="color" @bind="cfg.Cor1" @bind:event="oninput" /> Fundo</label>
+                                            <label><input type="color" @bind="cfg.Cor2" @bind:event="oninput" /> Faixas</label>
+                                            <label><input type="color" @bind="cfg.CorBorda" @bind:event="oninput" /> Contorno</label>
+                                            <label><input type="color" @bind="cfg.CorSimbolo" @bind:event="oninput" /> Elementos</label>
+                                        </div>
+                                        break;
+
+                                    case "elementos":
+                                        <p class="ed-dica">
+                                            Até @EscudoConfig.MaxSimbolos elementos. Toque para adicionar; com @EscudoConfig.MaxSimbolos,
+                                            o toque troca o elemento selecionado. Arraste-os no escudo para posicionar.
+                                        </p>
+                                        <div class="ed-miniaturas ed-rolagem">
+                                            @foreach (var o in Elementos)
+                                            {
+                                                <button type="button" class="ed-mini @(Torcida.SimboloBloqueado(o.Chave, torcidaAtual) ? "bloqueado" : "")"
+                                                        title="@(Torcida.SimboloBloqueado(o.Chave, torcidaAtual) ? o.Nome + " (libera com " + Torcida.Fmt(Torcida.MinEscudo) + " torcedores)" : o.Nome)" aria-label="@o.Nome"
+                                                        disabled="@Torcida.SimboloBloqueado(o.Chave, torcidaAtual)"
+                                                        @onclick="() => AdicionarOuTrocar(o.Chave)">
+                                                    <IconeSimbolo Chave="@o.Chave" Tamanho="30" />
+                                                </button>
+                                            }
+                                        </div>
+                                        <div class="ed-grupo">Texto</div>
+                                        <p class="ed-dica">Sigla do time no escudo (conta como um dos @EscudoConfig.MaxSimbolos elementos).</p>
+                                        <label class="ed-campo">
+                                            Sigla (até 3 letras ou números)
+                                            <input value="@cfg.Sigla" @oninput="AoMudarSigla" maxlength="3"
+                                                   autocapitalize="characters" autocomplete="off" spellcheck="false" />
+                                        </label>
+                                        @if (!TemTexto)
+                                        {
+                                            <button type="button" class="botao-sec largo" @onclick="AdicionarTexto">Adicionar texto ao escudo</button>
+                                        }
+
+                                        break;
+
+                                    case "detalhes":
+                                        <div class="ed-miniaturas ed-rolagem">
+                                            @foreach (var p in EscudoConfig.Padroes)
+                                            {
+                                                <button type="button" class="ed-mini @(cfg.Padrao == p.Chave ? "sel" : "")"
+                                                        title="@p.Nome" aria-label="@p.Nome" @onclick="() => EscolherPadrao(p.Chave)">
+                                                    <Escudo Config="@ComEstampa(p.Chave)" Tamanho="44" />
+                                                </button>
+                                            }
+                                        </div>
+                                        @if (AnimacoesEscudo.TemAnimavel(cfg))
+                                        {
+                                            <div class="ed-anim ed-anim-previa">
+                                                <Escudo Config="@ComAnimacao()" Tamanho="72" />
+                                                <small>Prévia da animação@(Torcida.AnimacaoBloqueada(torcidaAtual) ? " (bloqueada)" : "")</small>
+                                            </div>
+                                            <div class="prev-anim-grade">
+                                                @foreach (var k in cfg.Simbolos!.Where(x => x.Visivel).Select(x => x.Chave).Distinct().Where(k => AnimacoesEscudo.Mapa.ContainsKey(k)))
+                                                {
+                                                    <PreviaAnimacao Chave="@k" Tamanho="44" />
+                                                }
+                                            </div>
+                                        }
+                                        <div class="ed-anim @(Torcida.AnimacaoBloqueada(torcidaAtual) ? "bloqueado" : "")">
+                                            <label>
+                                                <input type="checkbox" @bind="cfg.Animado" disabled="@Torcida.AnimacaoBloqueada(torcidaAtual)" />
+                                                Animar elementos
+                                            </label>
+                                            @if (Torcida.AnimacaoBloqueada(torcidaAtual))
+                                            {
+                                                <small>Libera com @Torcida.Fmt(Torcida.MinAnimacao) torcedores.</small>
+                                            }
+                                            else if (!AnimacoesEscudo.TemAnimavel(cfg))
+                                            {
+                                                <small>Nenhum elemento do escudo tem animação.</small>
+                                            }
+                                            else
+                                            {
+                                                <small>@string.Join(", ", cfg.Simbolos!.Where(x => x.Visivel).Select(x => AnimacoesEscudo.De(x.Chave)?.Nome).Where(n => n is not null).Distinct())</small>
+                                            }
+                                        </div>
+                                        break;
+                                }
+                            </div>
+                        }
+                    }
+                </nav>
+
+                @* ---------- Quadro de edição (centro) ---------- *@
+                <div class="ed-centro">
+                    <section class="ed-painel ed-canvas" aria-label="Prévia do escudo">
+                        <div class="ed-quadro">
+                            <PreviaEscudo Config="cfg" Largura="Largura" Ativo="AtivoNoQuadro"
+                                          AtivoChanged="AoEscolherNoQuadro" Alterado="AoAlterarPosicao" />
+                        </div>
+                        <div class="ed-zoom">
+                            <IconeUi Nome="lupa" Tamanho="18" />
+                            <button type="button" aria-label="Diminuir" @onclick="() => Zoom(-20)"><IconeUi Nome="menos" Tamanho="18" /></button>
+                            <small>@zoom%</small>
+                            <button type="button" aria-label="Aumentar" @onclick="() => Zoom(20)"><IconeUi Nome="mais" Tamanho="18" /></button>
+                            <button type="button" aria-label="Ajustar" @onclick="() => zoom = 100"><IconeUi Nome="expandir" Tamanho="18" /></button>
+                        </div>
+                    </section>
+
+                    @if (camada == "simbolo" && Atual is not null)
+                    {
+                        <div class="ed-painel ed-ajustes">
+                            <label>Tamanho: @Atual.Tamanho%
+                                <input type="range" min="@EscudoConfig.TamanhoMin" max="@EscudoConfig.TamanhoMax" step="1"
+                                       @bind="Atual.Tamanho" @bind:event="oninput" /></label>
+                            <label>Horizontal
+                                <input type="range" min="8" max="92" step="1" @bind="Atual.X" @bind:event="oninput" /></label>
+                            <label>Vertical
+                                <input type="range" min="8" max="112" step="1" @bind="Atual.Y" @bind:event="oninput" /></label>
+                        </div>
+                    }
+                </div>
+
+                @* ---------- Camadas (direita) ---------- *@
+                <aside class="ed-painel ed-camadas" aria-label="Camadas">
+                    <h3>Camadas</h3>
+
+                    @for (var i = cfg.Simbolos!.Count - 1; i >= 0; i--)
+                    {
+                        var idx = i;
+                        var item = cfg.Simbolos[i];
+                        <div class="ed-camada @(camada == "simbolo" && ativo == idx ? "sel" : "") @(item.Visivel ? "" : "oculta")"
+                             role="button" tabindex="0" @onclick="() => SelecionarSimbolo(idx)">
+                            <span class="ed-thumb"><IconeSimbolo Chave="@item.Chave" Tamanho="28" /></span>
+                            <span class="ed-nome">@NomeDe(item.Chave)</span>
+                            <button type="button" class="ed-icone" aria-label="@(item.Visivel ? "Esconder" : "Mostrar") @NomeDe(item.Chave)"
+                                    @onclick="() => item.Visivel = !item.Visivel" @onclick:stopPropagation="true">
+                                <IconeUi Nome="@(item.Visivel ? "olho" : "olho_off")" />
+                            </button>
+                            <button type="button" class="ed-icone" aria-label="Remover @NomeDe(item.Chave)"
+                                    @onclick="() => Remover(idx)" @onclick:stopPropagation="true">
+                                <IconeUi Nome="x" Tamanho="18" />
+                            </button>
+                        </div>
+                    }
+
+                    <div class="ed-camada @(camada == "contorno" ? "sel" : "") @(cfg.Contorno ? "" : "oculta")"
+                         role="button" tabindex="0" @onclick="@(() => camada = "contorno")">
+                        <span class="ed-thumb"><IconeUi Nome="escudo_contorno" Tamanho="28" /></span>
+                        <span class="ed-nome">Contorno</span>
+                        <button type="button" class="ed-icone" aria-label="Mostrar ou esconder o contorno"
+                                @onclick="() => cfg.Contorno = !cfg.Contorno" @onclick:stopPropagation="true">
+                            <IconeUi Nome="@(cfg.Contorno ? "olho" : "olho_off")" />
+                        </button>
+                    </div>
+
+                    <div class="ed-camada @(camada == "faixas" ? "sel" : "") @(cfg.Faixas ? "" : "oculta")"
+                         role="button" tabindex="0" @onclick="@(() => camada = "faixas")">
+                        <span class="ed-thumb"><IconeUi Nome="faixas" Tamanho="28" /></span>
+                        <span class="ed-nome">Faixas</span>
+                        <button type="button" class="ed-icone" aria-label="Mostrar ou esconder as faixas"
+                                @onclick="() => cfg.Faixas = !cfg.Faixas" @onclick:stopPropagation="true">
+                            <IconeUi Nome="@(cfg.Faixas ? "olho" : "olho_off")" />
+                        </button>
+                    </div>
+
+                    <div class="ed-camada @(camada == "fundo" ? "sel" : "") @(cfg.Fundo ? "" : "oculta")"
+                         role="button" tabindex="0" @onclick="@(() => camada = "fundo")">
+                        <span class="ed-thumb"><IconeUi Nome="escudo" Tamanho="28" /></span>
+                        <span class="ed-nome">Fundo</span>
+                        <button type="button" class="ed-icone" aria-label="Mostrar ou esconder o fundo"
+                                @onclick="() => cfg.Fundo = !cfg.Fundo" @onclick:stopPropagation="true">
+                            <IconeUi Nome="@(cfg.Fundo ? "olho" : "olho_off")" />
+                        </button>
+                    </div>
+                </aside>
+
+                @* ---------- Paleta de cores (embaixo) ---------- *@
+                <section class="ed-painel ed-paleta" aria-label="Paleta de cores">
+                    <div class="ed-titulo">Paleta de cores <span>· aplicando em: @NomeCamada</span></div>
+                    <div class="ed-cores">
+                        @foreach (var hex in CoresPaleta)
+                        {
+                            <button type="button" class="ed-cor @(IgualCor(hex) ? "sel" : "")" style="background:@hex"
+                                    aria-label="Cor @hex" @onclick="() => AplicarCor(hex)"></button>
+                        }
+                        <label class="ed-cor ed-cor-livre" title="Outra cor">
+                            <input type="color" value="@CorAtual" @oninput="AoEscolherCor" />
+                            <IconeUi Nome="mais" Tamanho="18" />
+                        </label>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        @if (erro is not null)
+        {
+            <div class="erro" role="alert" style="margin-top:.8rem">@erro</div>
+        }
+
+        <div class="ed-acoes">
+            <button type="button" class="botao-sec" @onclick="Sortear"><IconeUi Nome="dado" Tamanho="18" /> Sortear</button>
+            <button type="button" class="botao-sec" @onclick="Cancelar"><IconeUi Nome="desfazer" Tamanho="18" /> Cancelar</button>
+            <button class="botao" type="button" @onclick="Salvar" disabled="@salvando">
+                @(salvando ? "Salvando…" : "Salvar escudo")
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private record AbaEd(string Chave, string Titulo, string Icone);
+
+    private static readonly AbaEd[] Abas =
+    {
+        new("forma", "Forma", "escudo"),
+        new("detalhes", "Detalhes", "detalhes"),
+        new("cores", "Cores", "paleta"),
+        new("elementos", "Elementos", "estrela")
+    };
+
+    // Elementos disponíveis (a sigla fica na seção Texto, dentro de Elementos)
+    private static readonly IReadOnlyList<Opcao> Elementos = EscudoConfig.SimbolosImportados;
+
+    // Mesma ideia da paleta do editor: neutros primeiro, depois as cores
+    private static readonly string[] CoresPaleta =
+    {
+        "#f4f4f4", "#0b0b0e", "#4a4c50", "#7d8083", "#3e4044",
+        "#a30f0f", "#d03a0f", "#e07d0a", "#ecc40c", "#7ed321", "#2a9a2c",
+        "#1e9e48", "#0e6b3d", "#0aa9a6", "#1b7fc7", "#0f4fb3", "#2a35c0",
+        "#5a2be0", "#8a1fa8", "#b02fc0", "#cf4a8f"
+    };
+
+    private EscudoConfig? cfg;
+    private string nomeTime = "";
+    private bool editando;
+    private bool salvando;
+    private string? erro;
+
+    private int torcidaAtual = Torcida.Inicial;
+    private string aba = "forma";
+    private string camada = "fundo";      // simbolo | contorno | faixas | fundo
+    private int? ativo;                    // índice do símbolo selecionado
+    private int zoom = 100;
+
+    // Largura do escudo no quadro com zoom de 100%. No computador cresce para ocupar o espaço que sobra
+    // (limitada pela altura da janela e pela coluna do meio); no celular fica em 260.
+    private int baseLargura = 260;
+    private int Largura => baseLargura * zoom / 100;
+    private int? AtivoNoQuadro => camada == "simbolo" ? ativo : null;
+    private bool TemTexto => cfg?.Simbolos?.Any(x => x.Chave == "letras") == true;
+
+    private SimboloPosicionado? Atual =>
+        ativo is int i && cfg?.Simbolos is not null && i >= 0 && i < cfg.Simbolos.Count ? cfg.Simbolos[i] : null;
+
+    private static string NomeDe(string chave) => EscudoConfig.NomeSimbolo(chave);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            var w = await Js.InvokeAsync<int>("eval", "window.innerWidth");
+            var h = await Js.InvokeAsync<int>("eval", "window.innerHeight");
+            if (w <= 860) return;                                   // celular e tablet em pé: layout de uma coluna
+            var porAltura = (h - 430) / 1.2;                         // sobra de altura no quadro, menos o que fica em volta
+            var porLargura = Math.Min(w - 250, 1400) - 250 - 270 - 140;  // coluna do meio (menu do app, painéis laterais e folgas)
+            var novo = (int)Math.Clamp(Math.Min(porAltura, porLargura), 260, 520);
+            if (novo != baseLargura) { baseLargura = novo; StateHasChanged(); }
+        }
+        catch { /* sem medida: continua com 260 */ }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Provedor.GetAuthenticationStateAsync();   // garante o perfil carregado
+        try { torcidaAtual = (Torcidas.Cache ?? await Torcidas.CarregarAsync(false)).Torcida; } catch { }
+        var perfil = Provedor.Perfil;
+        nomeTime = perfil?.NomeTime ?? "Meu time";
+
+        if (perfil?.Escudo is not null)
+        {
+            cfg = perfil.Escudo.Copiar();
+            editando = true;
+        }
+        else
+        {
+            cfg = EscudoConfig.Aleatorio(nomeTime, torcidaAtual);
+        }
+
+        cfg.NormalizarSimbolos();               // escudo antigo (um símbolo central) vira lista
+        ativo = cfg.Simbolos!.Count > 0 ? 0 : null;
+        camada = ativo is null ? "fundo" : "simbolo";
+    }
+
+    // ----- miniaturas -----
+    private EscudoConfig Com(Action<EscudoConfig> ajuste)
+    {
+        var c = cfg!.Copiar();
+        ajuste(c);
+        return c;
+    }
+
+    private EscudoConfig ComForma(string chave) => Com(c => { c.Forma = chave; c.Simbolos = new(); });
+
+    private EscudoConfig ComEstampa(string chave) => Com(c =>
+    {
+        c.Padrao = chave;
+        c.Faixas = true;
+        c.Fundo = true;
+        c.Simbolo = "nenhum";
+        c.Simbolos = new();
+    });
+
+    // ----- navegação do editor -----
+    private EscudoConfig ComAnimacao() { var c = cfg!.Copiar(); c.Animado = true; return c; }
+
+    private void AlternarAba(string chave) => aba = aba == chave ? "" : chave;
+    private void Zoom(int passo) => zoom = Math.Clamp(zoom + passo, 60, 160);
+
+    private void SelecionarSimbolo(int idx)
+    {
+        ativo = idx;
+        camada = "simbolo";
+    }
+
+    // O usuário tocou/arrastou um símbolo direto no quadro
+    private void AoEscolherNoQuadro(int? idx)
+    {
+        if (idx is null) return;
+        ativo = idx;
+        camada = "simbolo";
+    }
+
+    private void AoAlterarPosicao() { }
+
+    // ----- elementos -----
+    private static readonly (double x, double y, int t)[] Iniciais = { (50, 60, 28), (28, 40, 18), (72, 40, 18) };
+
+    private void AdicionarOuTrocar(string chave)
+    {
+        var lista = cfg!.Simbolos!;
+        if (chave == "letras" && string.IsNullOrEmpty(cfg.Sigla)) cfg.Sigla = EscudoConfig.SiglaDe(nomeTime);
+
+        if (lista.Count < EscudoConfig.MaxSimbolos)
+        {
+            var p = Iniciais[lista.Count];
+            lista.Add(new SimboloPosicionado { Chave = chave, X = p.x, Y = p.y, Tamanho = p.t });
+            ativo = lista.Count - 1;
+        }
+        else if (Atual is not null)
+        {
+            Atual.Chave = chave;
+            Atual.Visivel = true;
+        }
+        camada = "simbolo";
+    }
+
+    private void AdicionarTexto() => AdicionarOuTrocar("letras");
+
+    private void Remover(int idx)
+    {
+        var lista = cfg!.Simbolos!;
+        if (idx < 0 || idx >= lista.Count) return;
+        lista.RemoveAt(idx);
+        ativo = lista.Count > 0 ? Math.Min(idx, lista.Count - 1) : null;
+        camada = ativo is null ? "fundo" : "simbolo";
+    }
+
+    private void AoMudarSigla(ChangeEventArgs e) =>
+        cfg!.Sigla = EscudoConfig.LimparSigla(e.Value?.ToString());
+
+    private void EscolherPadrao(string chave)
+    {
+        cfg!.Padrao = chave;
+        cfg.Faixas = true;
+        camada = "faixas";
+    }
+
+    // ----- cores -----
+    private string CorAtual => camada switch
+    {
+        "faixas" => cfg!.Cor2,
+        "contorno" => cfg!.CorBorda,
+        "simbolo" => cfg!.CorSimbolo,
+        _ => cfg!.Cor1
+    };
+
+    private string NomeCamada => camada switch
+    {
+        "faixas" => "Faixas",
+        "contorno" => "Contorno",
+        "simbolo" => "Elementos",
+        _ => "Fundo"
+    };
+
+    private bool IgualCor(string hex) => string.Equals(hex, CorAtual, StringComparison.OrdinalIgnoreCase);
+
+    private void AplicarCor(string hex)
+    {
+        switch (camada)
+        {
+            case "faixas": cfg!.Cor2 = hex; break;
+            case "contorno": cfg!.CorBorda = hex; break;
+            case "simbolo": cfg!.CorSimbolo = hex; break;
+            default: cfg!.Cor1 = hex; break;
+        }
+    }
+
+    private void AoEscolherCor(ChangeEventArgs e)
+    {
+        var v = e.Value?.ToString();
+        if (v is { Length: 7 } && v[0] == '#') AplicarCor(v.ToLowerInvariant());
+    }
+
+    private void AplicarPaleta(Paleta p)
+    {
+        cfg!.Cor1 = p.Cor1;
+        cfg.Cor2 = p.Cor2;
+        cfg.CorBorda = p.Borda;
+        cfg.CorSimbolo = p.Simbolo;
+    }
+
+    // ----- ações -----
+    private void Sortear()
+    {
+        cfg = EscudoConfig.Aleatorio(nomeTime, torcidaAtual);
+        ativo = 0;
+        camada = "simbolo";
+    }
+
+    private async Task Salvar()
+    {
+        erro = null;
+        if (cfg!.Simbolos!.Any(x => x.Chave == "letras") && string.IsNullOrEmpty(cfg.Sigla))
+        {
+            erro = "Digite a sigla do time (em Elementos, na opção Texto) ou remova o texto do escudo.";
+            return;
+        }
+
+        if (Torcida.AnimacaoBloqueada(torcidaAtual)) cfg.Animado = false;   // animação só com a torcida necessária
+
+        salvando = true;
+        try
+        {
+            await Perfis.SalvarEscudoAsync(cfg);
+            Nav.NavigateTo("", replace: true);
+        }
+        catch (EscudoNaoGravadoException ex)
+        {
+            erro = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            erro = $"Não foi possível salvar o escudo: {ex.Message}";
+        }
+        finally
+        {
+            salvando = false;
+        }
+    }
+
+    private void Cancelar() => Nav.NavigateTo("", replace: true);
+}

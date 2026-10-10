@@ -1,0 +1,189 @@
+/* Ranking: escalação e personalizações do time
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.rk-escalacao {
+    margin-top: .35rem;
+    padding: .8rem .6rem 1rem;
+    border-radius: var(--raio);
+}
+
+.rk-esc-titulo {
+    margin: 0 0 .4rem;
+    text-align: center;
+    font-size: .9rem;
+    color: var(--suave);
+}
+
+.rk-esc-titulo strong {
+        color: var(--texto);
+    }
+
+.rk-campo {
+    max-width: 440px;
+    margin: 0 auto;
+    pointer-events: none; /* só visualização */
+}
+
+/* Ranking: escalação do time sem holofote, sem sombra borrada e sem blur nos cartões (igual à tela Escalar) */
+.rk-campo .campo-cena::before,
+    .rk-campo .campo-cena::after,
+    .rk-campo .campo-cena .slot::before {
+        display: none;
+    }
+
+.rk-campo .campo-cena .campo {
+        box-shadow: none;
+    }
+
+.rk-campo .slot-btn,
+    .rk-campo .slot-btn.vazia {
+        filter: none;
+    }
+
+@media (min-width: 900px) {
+/* Ranking (computador): escalação do time com zoom (o campo e os cartões crescem juntos, sem esticar).
+   Para mudar o tamanho, ajuste só o valor do zoom. */
+.rk-campo {
+        max-width: 420px;
+        zoom: 1.2;
+    }
+}
+
+/* Ranking: painel atrás do campo em vidro fosco (fundo transparente com blur) */
+.rk-escalacao {
+    background: rgba(10,26,20,.38);
+    border: 1px solid rgba(255,255,255,.12);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+}
+
+/* Ranking: tira o vão que a inclinação do campo deixa embaixo do título */
+.rk-esc-titulo {
+    position: relative;
+    z-index: 2;
+}
+
+.rk-campo .campo-cena {
+    padding-top: 0;
+    margin-top: -2.5rem;
+}
+
+@media (min-width: 900px) {
+.rk-campo .campo-cena {
+        margin-top: -4.5rem;
+    }
+}
+
+/* Ranking (celular): escalação do time com o mesmo campo da Home ("meu elenco"):
+   proporção 3:4, cartões proporcionais à largura e sombra deslocada sem blur */
+.rk-campo {
+    container-type: inline-size;
+}
+
+@media (max-width: 899px) {
+.rk-campo {
+        max-width: 560px;
+    }
+
+.rk-campo .campo-cena .campo {
+            width: 100%;
+            max-width: 100%;
+            aspect-ratio: 300 / 400;
+            --slot: clamp(38px, 12.5cqw, 108px);
+        }
+
+.rk-campo .campo-cena .slot {
+            transform: translateZ(14px) rotateX(calc(var(--tilt) * -1));
+        }
+
+.rk-campo .slot-btn.cheio {
+            filter: drop-shadow(2px 4px 0 rgba(0,0,0,.5)) drop-shadow(0 6px 0 rgba(0,0,0,.18));
+        }
+}
+
+.prev-anim strong {
+        color: inherit;
+        font-size: .78rem;
+        line-height: 1.15;
+    }
+
+.hist-mes-topo strong {
+        font-size: 1.05rem;
+    }
+
+.chg2-nome strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 1rem;
+    }
+
+.chg2-rodape strong {
+        display: block;
+        font-size: .9rem;
+    }
+
+@media (min-width: 900px) {
+.chg2-nome strong {
+        font-size: 1.1rem;
+    }
+}
+
+.previa-reserv-txt strong {
+        font-size: .95rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+.sm2-placar strong {
+        min-width: 1.6ch;
+        text-align: center;
+        font-size: 2.6rem;
+        line-height: 1;
+    }
+
+.sm2-atleta strong {
+        font-size: 1.05rem;
+        color: var(--branco);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+@media (max-width: 899px) {
+.sm2-placar strong {
+            font-size: 2rem;
+        }
+}
+
+/* dá folga para o estádio não ser cortado pelos cartões vizinhos */
+.campo-cena.com-estadio {
+    overflow: visible;
+}
+
+.campo-cena.com-estadio {
+    margin-inline: 2%;
+}
+
+.pc2-topo strong {
+        font-size: 1.15rem;
+        letter-spacing: .03em;
+    }
+
+/* ranking: faixas laterais, nome do estádio e grito, como na Home */
+.rk-campo-faixas {
+    display: flex;
+    gap: .5rem;
+    align-items: stretch;
+}
+
+.rk-campo-faixas .rk-campo { flex: 1; min-width: 0; margin: 0; max-width: none; }
+
+.rk-personalizacao {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    margin-bottom: .5rem;
+    text-align: center;
+}

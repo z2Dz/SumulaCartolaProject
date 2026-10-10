@@ -1,0 +1,32 @@
+{
+  "name": "Cartola dos Amigos",
+  "short_name": "Cartola",
+  "description": "Escale seus atletas e dispute o ranking com os amigos.",
+  "lang": "pt-BR",
+  "id": "/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b3d2e",
+  "theme_color": "#0b3d2e",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,230 @@
+@page "/"
+@attribute [Authorize]
+@inject ProvedorEstadoAutenticacao Provedor
+@inject ServicoMercado Mercado
+@inject ServicoEscalacao Escalacoes
+@inject ServicoTorcida Torcidas
+@inject NavigationManager Nav
+
+<PageTitle>Início · Cartola dos Amigos</PageTitle>
+
+<div class="pagina home home-fundo-@Clube.FundoHome">
+    <div class="dash">
+
+        @* ===== Meu elenco ===== *@
+        <section class="cartao dash-elenco" aria-label="Meu elenco">
+            <div class="dash-elenco-topo">
+                <h2><span class="dash-campo-ico"><IconeUi Nome="campo" Tamanho="28" /></span> Meu elenco</h2>
+                @if (montada is not null)
+                {
+                    <a href="escalar" class="chip-tatica" title="Mudar esquema tático">@montada.Tatica.Nome <IconeUi Nome="seta" Tamanho="14" /></a>
+                }
+            </div>
+
+            @if (carregando)
+            {
+                <p class="suave centro dash-espaco">Carregando…</p>
+            }
+            else if (erro is not null)
+            {
+                <div class="erro dash-espaco" role="alert">
+                    @erro
+                    <button type="button" class="botao-sec" @onclick="Carregar">Tentar de novo</button>
+                </div>
+            }
+            else if (montada is null)
+            {
+                <div class="home-vazio">
+                    <div class="home-juiz"><img src="img/juiz.png" alt="Árbitro mostrando o cartão vermelho" /></div>
+                    <h3>Cartão vermelho para quem não escala!</h3>
+                    <p class="suave">Você ainda não montou seu time. Escale antes da bola rolar.</p>
+                    <a href="escalar" class="botao">Escalar agora</a>
+                </div>
+            }
+            else
+            {
+                <div class="dash-campo">
+                    @if (!string.IsNullOrWhiteSpace(Clube.Estadio) && Torc >= Torcida.MinDourado)
+                    {
+                        <p class="home-estadio">Estádio <strong>@Clube.Estadio</strong></p>
+                    }
+                    <div class="home-campo-faixas">
+                        @if (TemFaixa) { <FaixaLateral Modelo="@Clube.Esquerda()" Cor1="@Clube.FaixaCor1" Cor2="@Clube.FaixaCor2" Escudo="Provedor.Perfil?.Escudo" /> }
+                        <div class="home-campo">
+                            <CampoTatico Escalacao="montada" Cards="cards" Estilo="@Clube.Campo" Moldura="@Clube.Moldura" LinhasCor="@Clube.CampoLinhas" Estadio="@Clube.EstadioModelo"
+                                         CorGrama1="@Clube.CampoCor1" CorGrama2="@Clube.CampoCor2" CorMoldura="@Clube.MolduraCor"
+                                         CorEstadio1="@Clube.EstadioCor1" CorEstadio2="@Clube.EstadioCor2" EscudoCard="Provedor.Perfil?.Escudo" />
+                        </div>
+                        @if (TemFaixa) { <FaixaLateral Modelo="@Clube.Direita()" Cor1="@Clube.FaixaCor1" Cor2="@Clube.FaixaCor2" Escudo="Provedor.Perfil?.Escudo" /> }
+                    </div>
+                    <a href="escalar" class="gerenciar"><IconeUi Nome="troca" Tamanho="22" /><span>Gerenciar escalação</span><IconeUi Nome="seta" Tamanho="18" /></a>
+                </div>
+            }
+        </section>
+
+        @* ===== cartões da direita (embaixo no celular) ===== *@
+        <aside class="dash-lado">
+            <article class="cartao dash-card">
+                <span class="dash-ico moeda"><IconeUi Nome="moedas" Tamanho="26" /></span>
+                <div class="dash-corpo">
+                    <h3>Patrimônio</h3>
+                    <strong class="dash-valor">@Formato.Moeda(patrimonio)</strong>
+                    <span class="home-var @ClasseVariacao">@TextoVariacao</span>
+                </div>
+                <span class="dash-deco @ClasseVariacao"><IconeUi Nome="tendencia" Tamanho="42" /></span>
+            </article>
+
+            <article class="cartao dash-card">
+                <span class="dash-ico estrela"><IconeUi Nome="estrela" Tamanho="26" /></span>
+                <div class="dash-corpo">
+                    <h3>Última pontuação</h3>
+                    <strong class="dash-valor">@Formato.Pontos(pontos)</strong>
+                    <span class="suave">pts do time</span>
+                </div>
+                <span class="dash-deco igual"><IconeUi Nome="barras" Tamanho="42" /></span>
+            </article>
+
+            <article class="cartao dash-card dash-torcida">
+                <span class="dash-ico torcida"><IconeUi Nome="pessoas" Tamanho="26" /></span>
+                <div class="dash-corpo">
+                    <h3>Torcida</h3>
+                    <span class="suave">Nível @Torcida.Numero(Torc) · @Torcida.Atual(Torc).Nome</span>
+                    <strong class="dash-valor">@Torcida.Fmt(Torc)</strong>
+                    <div class="barra-nivel" title="@Torcida.Progresso(Torc)%"><span style="width:@(Torcida.Progresso(Torc))%"></span></div>
+                    <span class="home-var @ClasseTorcida">@TextoTorcida</span>
+                    @if (Torcida.Proximo(Torc) is { } prox)
+                    {
+                        <small class="suave">Faltam @Torcida.Fmt(prox.Minimo - Torc) para @Torcida.Fmt(prox.Minimo) · @prox.Recompensas[0]</small>
+                    }
+                    else
+                    {
+                        <small class="suave">Nível máximo: lenda da pelada!</small>
+                    }
+                    @if (avisoTorcida is not null)
+                    {
+                        <small class="erro">@avisoTorcida</small>
+                    }
+                </div>
+                <span class="dash-deco estadio"><IconeUi Nome="estadio" Tamanho="52" /></span>
+
+                @if (!string.IsNullOrWhiteSpace(Clube.Apelido) || (Clube.Camisa is not null && Torc >= Torcida.MinCamisa) || (!string.IsNullOrEmpty(Clube.Mascote) && Torc >= Torcida.MinMascote))
+                {
+                    <div class="home-extras dash-extras">
+                        @if (!string.IsNullOrWhiteSpace(Clube.Apelido))
+                        {
+                            <span class="home-apelido">Torcida @Clube.Apelido</span>
+                        }
+                        @if (Clube.Camisa is { } c1 && Torc >= Torcida.MinCamisa)
+                        {
+                            <Camisa Padrao="@c1.Padrao" Cor1="@c1.Cor1" Cor2="@c1.Cor2" Cor3="@c1.Cor3" Tamanho="84" />
+                        }
+                        @if (!string.IsNullOrEmpty(Clube.Mascote) && Torc >= Torcida.MinMascote)
+                        {
+                            <Mascote Chave="@Clube.Mascote" Cor="@Clube.MascoteCor" Tamanho="76" />
+                        }
+                    </div>
+                }
+                <a href="clube" class="dash-link"><IconeUi Nome="estadio" Tamanho="18" /> Meu clube <IconeUi Nome="seta" Tamanho="14" /></a>
+            </article>
+        </aside>
+    </div>
+</div>
+
+@code {
+    private EscalacaoMontada? montada;
+    private CardsConfig cards = new();
+    private decimal? pontos;
+    private decimal patrimonio = Valorizacao.Orcamento;
+    private decimal variacao;
+    private ResumoTorcida resumo = new();
+    private string? avisoTorcida;
+    private int Torc => resumo.Torcida;
+    private ClubeConfig Clube => resumo.Clube;
+    private bool TemFaixa => Clube.TemFaixa() && Torc >= Torcida.MinTextos;
+    private bool carregando = true;
+    private string? erro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Provedor.GetAuthenticationStateAsync();
+        // Quem ainda não criou o escudo (conta nova, ou fechou a tela sem salvar) volta para o editor
+        if (Provedor.Perfil is not null && Provedor.Perfil.Escudo is null)
+        {
+            Nav.NavigateTo("escudo", replace: true);
+            return;
+        }
+        await Carregar();
+    }
+
+    private async Task Carregar()
+    {
+        carregando = true;
+        erro = null;
+        try
+        {
+            var tarefaElenco = Mercado.ObterElencoAsync();
+            var tarefaSalva = Escalacoes.UltimaAsync();
+            var tarefaTorcida = CarregarTorcida();
+            var elenco = await tarefaElenco;
+            var salva = await tarefaSalva;
+            await tarefaTorcida;
+            try { cards = Torcidas.CardsCache ?? await Torcidas.CarregarCardsAsync(); } catch { }   // sem a migração 32 a Home continua funcionando
+            Montar(salva, elenco);
+        }
+        catch (ErroMercadoException ex) { erro = ex.Message; }
+        catch (ErroEscalacaoException ex) { erro = ex.Message; }
+        finally { carregando = false; }
+    }
+
+    private async Task CarregarTorcida()
+    {
+        avisoTorcida = null;
+        try { resumo = await Torcidas.CarregarAsync(); }
+        catch (ErroTorcidaException ex) { avisoTorcida = ex.Message; }   // sem a migração 15 o resto da Home continua funcionando
+    }
+
+    private string ClasseTorcida => resumo.Ultima is { Ganho: > 0 } ? "sobe" : "igual";
+
+    private string TextoTorcida => resumo.Ultima switch
+    {
+        null => "Aguardando a primeira rodada",
+        { Ganho: > 0 } u => "▲ +" + Torcida.Fmt(u.Ganho) + " torcedores na última rodada",
+        _ => "Sem ganho na última rodada"
+    };
+
+    private void Montar(EscalacaoSalva? salva, List<AtletaEscalavel> elenco)
+    {
+        montada = null;
+        pontos = null;
+        variacao = 0;
+        patrimonio = Valorizacao.Orcamento;
+        if (salva is null || salva.Slots.Count == 0) return;
+
+        var porId = elenco.ToDictionary(a => a.Id);
+        var m = new EscalacaoMontada();
+        m.AplicarTatica(Tatica.Todas.FirstOrDefault(t => t.Nome == salva.Tatica) ?? Tatica.Padrao);
+
+        decimal? somaPontos = null;
+        foreach (var s in salva.Slots)
+        {
+            // atleta que saiu do mercado (inativo ou apagado) fica de fora do desenho e das contas
+            if (!porId.TryGetValue(s.AtletaId, out var a) || s.Indice is < 0 or > 5) continue;
+            m.Definir(s.Pos, s.Indice, a);
+
+            if (a.UltimaPontuacao is { } p) somaPontos = (somaPontos ?? 0) + p;
+            variacao += a.Valor - (a.ValorAntesUltimo ?? a.Valor);
+            patrimonio += a.Valor - s.Valor;     // quanto o time valorizou desde que foi salvo
+        }
+        if (salva.CapitaoId is not null && m.EstaNoCampo(salva.CapitaoId)) m.AlternarCapitao(salva.CapitaoId);
+
+        pontos = somaPontos;
+        montada = m;
+    }
+
+    private string ClasseVariacao => variacao > 0 ? "sobe" : variacao < 0 ? "desce" : "igual";
+
+    private string TextoVariacao =>
+        variacao > 0 ? "▲ Valorizou " + Formato.Moeda(variacao) + " na rodada"
+        : variacao < 0 ? "▼ Desvalorizou " + Formato.Moeda(-variacao) + " na rodada"
+        : "Sem variação na rodada";
+}

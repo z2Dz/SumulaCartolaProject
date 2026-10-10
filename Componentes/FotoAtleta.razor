@@ -1,0 +1,32 @@
+@* Miniatura do atleta no formato do cartão do campo: foto recortada pela forma, ou a silhueta da posição. *@
+<svg class="foto-carta" viewBox="-2 -2 104 160.6" width="@Tamanho" height="@Altura" aria-hidden="true" focusable="false">
+    @if (!string.IsNullOrWhiteSpace(Atleta.FotoUrl))
+    {
+        <defs><clipPath id="@IdClip"><path d="@Forma" /></clipPath></defs>
+        <path class="fc-forma" d="@Forma" />
+        <image href="@Atleta.FotoUrl" x="0" y="0" width="100" height="156.6" preserveAspectRatio="xMidYMin slice" clip-path="url(#@IdClip)" />
+        <path class="fc-contorno" d="@Forma" />
+    }
+    else
+    {
+        <path class="fc-forma" d="@Forma" />
+        <path class="fc-linha" d="@Forma" transform="translate(3.5 5.5) scale(.93)" />
+        <svg x="8" y="22" width="84" height="84" viewBox="0 0 100 100">
+            <path class="fc-sil" fill-rule="evenodd" d="@SilhuetasAtleta.Caminho(Sigla, Atleta.Nome)" />
+        </svg>
+    }
+</svg>
+
+@code {
+    private const string Forma = "M50 0 L46.3 4 L43.2 5.7 L40.1 5.2 L37.7 2.4 L33.9 2.8 L29.8 4.3 L23.1 8.3 L8.3 19.1 L0.2 22.3 L0 86.9 L0.2 133.1 L1.4 136.1 L3.4 137.9 L6.6 139.4 L24.7 144.8 L35 148.5 L42.6 151.9 L50 156.5 L57.4 151.9 L65 148.5 L75.3 144.8 L93.4 139.4 L96.6 137.9 L98.6 136.1 L99.8 133.1 L100 86.9 L99.8 22.3 L91.7 19.1 L76.9 8.3 L70.2 4.3 L66.1 2.8 L62.3 2.4 L59.9 5.2 L56.8 5.7 L53.7 4 Z";
+
+    [Parameter, EditorRequired] public AtletaEscalavel Atleta { get; set; } = default!;
+    /// <summary>Largura em px; a altura segue a proporção do cartão (100 : 156,6).</summary>
+    [Parameter] public int Tamanho { get; set; } = 46;
+    /// <summary>Posição da vaga onde o atleta aparece. Sem ela, vale a primeira posição dele.</summary>
+    [Parameter] public PosicaoCampo? Posicao { get; set; }
+
+    private int Altura => (int)Math.Round(Tamanho * 1.566);
+    private string IdClip => "clip-" + Atleta.Id;
+    private string? Sigla => Posicao?.Sigla() ?? (Atleta.Posicoes.Count > 0 ? Atleta.Posicoes[0].Sigla() : null);
+}

@@ -1,0 +1,166 @@
+@page "/admin/historico"
+@attribute [Authorize(Roles = "admin")]
+@using System.Globalization
+@inject ServicoSumula Servico
+@inject IJSRuntime Js
+
+<PageTitle>Histórico · Cartola dos Amigos</PageTitle>
+
+<div class="pagina adm hist">
+    <a class="adm-voltar hist-nao-imprime" href="admin">‹ Admin</a>
+    <h1 class="hist-nao-imprime">Histórico de gols e cartões</h1>
+
+    @if (!string.IsNullOrEmpty(erro)) { <p class="erro">@erro</p> }
+
+    @if (carregando)
+    {
+        <p class="suave">Carregando…</p>
+    }
+    else if (temporadas.Count == 0)
+    {
+        <div class="cartao"><p class="suave">Ainda não há partidas finalizadas com súmula. O histórico aparece aqui depois da primeira.</p></div>
+    }
+    else
+    {
+        <div class="hist-barra hist-nao-imprime">
+            <div class="hist-temporadas" role="tablist">
+                @foreach (var t in temporadas)
+                {
+                    <button type="button" role="tab" class="hist-aba @(t == ano ? "ativa" : "")" @onclick="() => Escolher(t)">Temporada @t</button>
+                }
+            </div>
+            <button type="button" class="botao" @onclick="() => Imprimir(null)">Imprimir temporada</button>
+        </div>
+
+        <div class="hist-area">
+            <header class="hist-cab">
+                <h2>Temporada @ano@(mesImpressao is { } mi ? " · " + NomeMes(mi) : "")</h2>
+                <p class="suave">Gols e cartões das partidas finalizadas · Cartola dos Amigos</p>
+            </header>
+
+            @if (mesImpressao is null)
+            {
+                <section class="cartao hist-bloco">
+                    <h3>Total da temporada</h3>
+                    <div class="hist-totais">
+                        <span><b>@Partidas(linhasAno)</b> partidas</span>
+                        <span><b>@linhasAno.Sum(l => l.Gols)</b> gols</span>
+                        <span><b class="cor-am">@linhasAno.Sum(l => l.Amarelos)</b> AM</span>
+                        <span><b class="cor-az">@linhasAno.Sum(l => l.Azuis)</b> AZ</span>
+                        <span><b class="cor-ve">@linhasAno.Sum(l => l.Vermelhos)</b> VER</span>
+                    </div>
+                    <div class="rolagem-x">
+                        <table class="hist-tab">
+                            <thead><tr><th>Atleta</th><th>Jogos</th><th>Gols</th><th>AM</th><th>AZ</th><th>VER</th></tr></thead>
+                            <tbody>
+                                @foreach (var a in PorAtleta(linhasAno))
+                                {
+                                    <tr><td>@a.Nome</td><td>@a.Jogos</td><td>@a.Gols</td><td>@a.Amarelos</td><td>@a.Azuis</td><td>@a.Vermelhos</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            }
+
+            @foreach (var m in MesesVisiveis())
+            {
+                var doMes = linhasAno.Where(l => l.Mes == m).ToList();
+                var aberta = imprimindo || expandidos.Contains(m);
+                <section class="cartao hist-bloco hist-mes">
+                    <button type="button" class="hist-mes-topo" aria-expanded="@aberta" @onclick="() => Alternar(m)">
+                        <strong>@NomeMes(m)</strong>
+                        <span class="hist-mes-res">
+                            @Partidas(doMes) partidas · <b>@doMes.Sum(l => l.Gols)</b> gols ·
+                            <b class="cor-am">@doMes.Sum(l => l.Amarelos)</b> AM ·
+                            <b class="cor-az">@doMes.Sum(l => l.Azuis)</b> AZ ·
+                            <b class="cor-ve">@doMes.Sum(l => l.Vermelhos)</b> VER
+                        </span>
+                        <span class="hist-seta hist-nao-imprime">@(aberta ? "▴" : "▾")</span>
+                    </button>
+                    @if (aberta)
+                    {
+                        <div class="rolagem-x">
+                            <table class="hist-tab">
+                                <thead><tr><th>Atleta</th><th>Jogos</th><th>Gols</th><th>AM</th><th>AZ</th><th>VER</th></tr></thead>
+                                <tbody>
+                                    @foreach (var a in doMes.OrderByDescending(l => l.Gols).ThenBy(l => l.Nome))
+                                    {
+                                        <tr><td>@a.Nome</td><td>@a.Jogos</td><td>@a.Gols</td><td>@a.Amarelos</td><td>@a.Azuis</td><td>@a.Vermelhos</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="botao-sec hist-nao-imprime hist-imp-mes" @onclick="() => Imprimir(m)">Imprimir @NomeMes(m)</button>
+                    }
+                </section>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly CultureInfo Pt = new("pt-BR");
+
+    private List<HistoricoLinha> todas = new();
+    private List<int> temporadas = new();
+    private List<HistoricoLinha> linhasAno = new();
+    private readonly HashSet<int> expandidos = new();
+    private int ano;
+    private int? mesImpressao;
+    private bool carregando = true, imprimindo;
+    private string? erro;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            todas = await Servico.ObterHistoricoAsync();
+            temporadas = todas.Select(l => l.Ano).Distinct().OrderByDescending(a => a).ToList();
+            if (temporadas.Count > 0) Escolher(temporadas[0]);
+        }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+        carregando = false;
+    }
+
+    private void Escolher(int t)
+    {
+        ano = t;
+        linhasAno = todas.Where(l => l.Ano == t).ToList();
+        expandidos.Clear();
+        // o mês mais recente já vem aberto
+        if (linhasAno.Count > 0) expandidos.Add(linhasAno.Max(l => l.Mes));
+    }
+
+    private void Alternar(int mes) { if (!expandidos.Remove(mes)) expandidos.Add(mes); }
+
+    private IEnumerable<int> MesesVisiveis() =>
+        mesImpressao is { } m ? new[] { m } : linhasAno.Select(l => l.Mes).Distinct().OrderByDescending(x => x);
+
+    private static int Partidas(List<HistoricoLinha> ls) =>
+        ls.GroupBy(l => (l.Ano, l.Mes)).Sum(g => g.First().PartidasMes);
+
+    private static IEnumerable<HistoricoLinha> PorAtleta(List<HistoricoLinha> ls) =>
+        ls.GroupBy(l => l.AtletaId).Select(g => new HistoricoLinha
+        {
+            AtletaId = g.Key, Nome = g.First().Nome, Jogos = g.Sum(x => x.Jogos), Gols = g.Sum(x => x.Gols),
+            Amarelos = g.Sum(x => x.Amarelos), Azuis = g.Sum(x => x.Azuis), Vermelhos = g.Sum(x => x.Vermelhos)
+        }).OrderByDescending(a => a.Gols).ThenBy(a => a.Nome);
+
+    private static string NomeMes(int mes) => Pt.TextInfo.ToTitleCase(Pt.DateTimeFormat.GetMonthName(mes));
+
+    /// <summary>Imprime a temporada inteira (mes = null) ou só um mês, com tudo expandido.</summary>
+    private async Task Imprimir(int? mes)
+    {
+        mesImpressao = mes;
+        imprimindo = true;
+        StateHasChanged();
+        await Task.Delay(120);   // deixa o Blazor desenhar tudo antes de abrir a impressão
+        try { await Js.InvokeVoidAsync("print"); }
+        finally
+        {
+            imprimindo = false;
+            mesImpressao = null;
+        }
+    }
+}

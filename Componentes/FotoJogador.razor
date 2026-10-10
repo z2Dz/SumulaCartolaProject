@@ -1,0 +1,26 @@
+@if (!string.IsNullOrWhiteSpace(FotoUrl))
+{
+    <img class="foto" src="@FotoUrl" alt="@Nome" style="width:@(Tamanho)px;height:@(Tamanho)px" loading="lazy" />
+}
+else
+{
+    <span class="foto foto-sil" aria-hidden="true"
+          style="width:@(Tamanho)px;height:@(Tamanho)px;background:hsl(@Matiz 40% 30%)">
+        <SilhuetaAtleta Sigla="@SiglaEfetiva" Nome="@Nome" />
+    </span>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Nome { get; set; } = "";
+    [Parameter] public string? FotoUrl { get; set; }
+    [Parameter] public int Tamanho { get; set; } = 46;
+    /// <summary>Posições do atleta (GOL, LAT...). A primeira define a silhueta.</summary>
+    [Parameter] public IEnumerable<string>? Posicoes { get; set; }
+    /// <summary>Posição fixa, quando o contexto já sabe qual é. Tem prioridade sobre Posicoes.</summary>
+    [Parameter] public string? Posicao { get; set; }
+
+    private string? SiglaEfetiva => Posicao ?? Posicoes?.FirstOrDefault();
+
+    // Cor de fundo estável por nome, para os avatares não ficarem todos iguais
+    private int Matiz => Math.Abs(Nome.Aggregate(7, (h, c) => h * 31 + c)) % 360;
+}

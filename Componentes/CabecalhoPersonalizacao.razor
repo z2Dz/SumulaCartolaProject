@@ -1,0 +1,37 @@
+@* Cabeçalho de cada personalização do clube, no estilo de cartão de missão:
+   ícone à esquerda, etiqueta, título, descrição e barra de progresso até liberar.
+   Tocar nele abre ou fecha as opções logo abaixo. *@
+<div class="pers @(Liberada ? "liberada" : "") @(Aberto ? "aberto" : "")" role="button" tabindex="0"
+     aria-expanded="@(Aberto ? "true" : "false")" @onclick="OnAlternar" @onkeydown="AoTeclar">
+    <span class="pers-ico"><IconeUi Nome="@Icone" Tamanho="30" /></span>
+    <div class="pers-corpo">
+        <span class="pers-tag">@(Liberada ? "Liberada" : "Nível " + Torcida.Numero(Minimo))</span>
+        <h3>@Titulo</h3>
+        <p>@Descricao</p>
+        <div class="pers-prog">
+            <div class="pers-barra"><span style="width:@Percentual%"></span></div>
+            <small>@(Liberada ? "Liberada" : Torcida.Fmt(Torc) + "/" + Torcida.Fmt(Minimo))</small>
+        </div>
+    </div>
+    <span class="pers-chev" aria-hidden="true"><IconeUi Nome="@(Aberto ? "chevron_cima" : "chevron_baixo")" Tamanho="22" /></span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Icone { get; set; } = "";
+    [Parameter, EditorRequired] public string Titulo { get; set; } = "";
+    [Parameter] public string Descricao { get; set; } = "";
+    /// <summary>Torcedores que o time tem agora.</summary>
+    [Parameter] public int Torc { get; set; }
+    /// <summary>Torcedores necessários para liberar.</summary>
+    [Parameter] public int Minimo { get; set; }
+    [Parameter] public bool Aberto { get; set; }
+    [Parameter] public EventCallback OnAlternar { get; set; }
+
+    private bool Liberada => Torc >= Minimo;
+    private int Percentual => Minimo <= 0 ? 100 : (int)Math.Clamp(Torc * 100L / Minimo, 0, 100);
+
+    private async Task AoTeclar(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ") await OnAlternar.InvokeAsync();
+    }
+}

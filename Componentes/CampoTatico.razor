@@ -1,0 +1,175 @@
+<div class="campo-cena @(TemEstadio ? "com-estadio" : "") @(TemFaixas ? "com-faixas" : "")">
+    <div class="campo campo-@Estilo moldura-@BaseMoldura @(EhGala ? "gala" : "") @(GramaPropria ? "campo-custom" : "")" style="@EstiloCampo">
+        @if (TemEstadio)
+        {
+            <div class="estadio-fundo estadio-@Estadio" style="@EstiloEstadio" aria-hidden="true">
+                <i class="luz l1"></i><i class="luz l2"></i><i class="luz l3"></i><i class="luz l4"></i>
+            </div>
+        }
+        <svg class="campo-svg" viewBox="0 0 300 450" preserveAspectRatio="none" aria-hidden="true">
+            <g fill="none" style="stroke:var(--campo-linhas)" stroke-width="2">
+                <rect x="8" y="8" width="284" height="434" rx="6" />
+                <line x1="8" y1="225" x2="292" y2="225" />
+                <circle cx="150" cy="225" r="36" />
+                <rect x="85" y="8" width="130" height="76" />
+                <rect x="120" y="8" width="60" height="34" />
+                <rect x="85" y="366" width="130" height="76" />
+                <rect x="120" y="408" width="60" height="34" />
+            </g>
+        </svg>
+
+        <div class="campo-slots">
+            @foreach (var linha in Linhas())
+            {
+                <div class="linha">
+                    @for (var k = 0; k < linha.Vagas.Count; k++)
+                    {
+                        var (pos, i) = linha.Vagas[k];
+                        <SlotCampo EscudoTime="EscudoCard" UsaMolde="!EhGala" Arco="@Tatica.ArcoCss(linha.Tipo, linha.Vagas.Count, k)"
+                                   Ornado="@(Ef(pos, i) == "ornado")" Rubro="@(Ef(pos, i) == "rubro")" Tema="@TemaDe(pos, i)" Posicao="pos" Atleta="Escalacao.Obter(pos, i)" Ativo="@(Selecionado == new SlotRef(pos, i))"
+                                   EhCapitao="@EhCapitao(pos, i)"
+                                   OnClick="() => OnSlot.InvokeAsync(new SlotRef(pos, i))" />
+                    }
+                </div>
+            }
+
+            <div class="linha-base">
+                <div class="base-tec">
+                    <SlotCampo EscudoTime="EscudoCard" UsaMolde="!EhGala" Ornado="@(Ef(PosicaoCampo.Tecnico, 0) == "ornado")" Rubro="@(Ef(PosicaoCampo.Tecnico, 0) == "rubro")" Tema="@TemaDe(PosicaoCampo.Tecnico, 0)" Posicao="PosicaoCampo.Tecnico" Atleta="Escalacao.Obter(PosicaoCampo.Tecnico, 0)" Ativo="@(Selecionado == new SlotRef(PosicaoCampo.Tecnico, 0))"
+                               OnClick="() => OnSlot.InvokeAsync(new SlotRef(PosicaoCampo.Tecnico, 0))" />
+                </div>
+                <div class="base-gol">
+                    <SlotCampo EscudoTime="EscudoCard" UsaMolde="!EhGala" Ornado="@(Ef(PosicaoCampo.Goleiro, 0) == "ornado")" Rubro="@(Ef(PosicaoCampo.Goleiro, 0) == "rubro")" Tema="@TemaDe(PosicaoCampo.Goleiro, 0)" Posicao="PosicaoCampo.Goleiro" Atleta="Escalacao.Obter(PosicaoCampo.Goleiro, 0)" Ativo="@(Selecionado == new SlotRef(PosicaoCampo.Goleiro, 0))"
+                               EhCapitao="@EhCapitao(PosicaoCampo.Goleiro, 0)"
+                               OnClick="() => OnSlot.InvokeAsync(new SlotRef(PosicaoCampo.Goleiro, 0))" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (TemFaixas)
+    {
+        <div class="cena-faixas" aria-hidden="true">
+            <FaixaLateral Modelo="@FaixaEsq" Cor1="@FaixaCor1" Cor2="@FaixaCor2" Escudo="EscudoFaixa" />
+            <span class="cena-faixas-vao"></span>
+            <FaixaLateral Modelo="@FaixaDir" Cor1="@FaixaCor1" Cor2="@FaixaCor2" Escudo="EscudoFaixa" />
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public EscalacaoMontada Escalacao { get; set; } = default!;
+    [Parameter] public SlotRef? Selecionado { get; set; }
+    [Parameter] public EventCallback<SlotRef> OnSlot { get; set; }
+
+    /// <summary>Personalização da torcida: estilo do gramado, moldura dos cartões e cor das linhas.</summary>
+    [Parameter] public string Estilo { get; set; } = "classico";
+    [Parameter] public string Moldura { get; set; } = "nenhuma";
+    [Parameter] public string LinhasCor { get; set; } = "#ffffff";
+
+    /// <summary>Estádio construído pelo clube (chave de Estadios.Modelos). Vazio = sem estádio.</summary>
+    [Parameter] public string? Estadio { get; set; }
+
+    /// <summary>Cores personalizadas (#rrggbb). Vazio = padrão.</summary>
+    [Parameter] public string? CorGrama1 { get; set; }
+    [Parameter] public string? CorGrama2 { get; set; }
+    [Parameter] public string? CorMoldura { get; set; }
+    [Parameter] public string? CorEstadio1 { get; set; }
+    [Parameter] public string? CorEstadio2 { get; set; }
+
+    private static bool Hex(string? c) => !string.IsNullOrEmpty(c) && System.Text.RegularExpressions.Regex.IsMatch(c, "^#[0-9a-fA-F]{6}$");
+    private bool GramaPropria => Hex(CorGrama1) && Hex(CorGrama2);
+
+    private string EstiloCampo
+    {
+        get
+        {
+            // --linhas: quantas fileiras de cartões o campo tem (ataque + meio + defesa + goleiro/técnico).
+            // O CSS usa isso para calcular o tamanho do cartão e as fileiras nunca se sobreporem.
+            var css = $"--campo-linhas:{LinhasCor};--linhas:{Escalacao.Tatica.LinhasMeio.Length + 3};";
+            if (GramaPropria) css += $"--gc1:{CorGrama1};--gc2:{CorGrama2};";
+            if (Hex(CorMoldura)) css += $"--g-borda:{CorMoldura};--g-acento:{CorMoldura};--g-linha:{CorMoldura};--g-brilho:{CorMoldura}99;";
+            return css;
+        }
+    }
+
+    private string EstiloEstadio
+    {
+        get
+        {
+            var css = "";
+            if (Hex(CorEstadio1)) css += $"--e-a1:{CorEstadio1};--e-a2:color-mix(in srgb, {CorEstadio1} 45%, #000);";
+            if (Hex(CorEstadio2)) css += $"--e-anel:{CorEstadio2};--e-glow:{CorEstadio2}88;";
+            return css;
+        }
+    }
+
+    private bool TemEstadio => Estadios.Valido(Estadio) && !string.IsNullOrEmpty(Estadio);
+
+    /// <summary>Moldura de cada cartão (todos, por posição e individual). Sem isso, vale a moldura do clube.</summary>
+    [Parameter] public CardsConfig? Cards { get; set; }
+
+    /// <summary>Faixas laterais (chaves de FaixasLaterais.Modelos). Sem nenhuma, o campo ocupa a largura toda.</summary>
+    [Parameter] public string? FaixaEsq { get; set; }
+    [Parameter] public string? FaixaDir { get; set; }
+    [Parameter] public string? FaixaCor1 { get; set; }
+    [Parameter] public string? FaixaCor2 { get; set; }
+    /// <summary>Escudo do time que vai dentro das faixas.</summary>
+    [Parameter] public EscudoConfig? EscudoFaixa { get; set; }
+
+    /// <summary>Escudo do time que aparece como selo ao lado da foto de cada cartão (molde padrão). Vazio = sem selo.</summary>
+    [Parameter] public EscudoConfig? EscudoCard { get; set; }
+
+    private bool TemFaixas => FaixasLaterais.Achar(FaixaEsq) is not null || FaixasLaterais.Achar(FaixaDir) is not null;
+
+    // Molduras antigas já salvas (esmeralda_ouro, cristal) voltam ao cartão padrão
+    private string MolduraEf => CardsConfig.Valida(Moldura) ? Moldura : "nenhuma";
+
+    private bool TemCards => Cards?.TemAlgo == true;
+
+    // A Esmeralda muda o campo todo; com cartões personalizados ela deixa de valer
+    private bool EhGala => MolduraEf == "esmeralda" && !TemCards;
+
+    private string BaseMoldura => MolduraEf == "esmeralda" ? (EhGala ? "esmeralda" : "nenhuma") : MolduraEf;
+
+    // Moldura efetiva de um cartão: individual > posição > todos > moldura do clube
+    private string Ef(PosicaoCampo p, int i)
+    {
+        var a = Escalacao.Obter(p, i);
+        var padrao = MolduraEf == "esmeralda" ? "nenhuma" : MolduraEf;
+        var m = a is null || Cards is null ? padrao : Cards.Resolver(p.Sigla(), a.Id, padrao);
+        return CardsConfig.Valida(m) && m != "esmeralda" ? m : "nenhuma";
+    }
+
+    private string? TemaDe(PosicaoCampo p, int i) { var m = Ef(p, i); return CardsConfig.EhTema(m) ? m : null; }
+
+    private bool EhCapitao(PosicaoCampo p, int i)
+    {
+        var a = Escalacao.Obter(p, i);
+        return a is not null && a.Id == Escalacao.CapitaoId;
+    }
+
+    private record LinhaMontada(Tatica.LinhaCampo Tipo, List<(PosicaoCampo, int)> Vagas);
+
+    // Linhas de cima para baixo: ataque, meio-campo (1 ou 2 linhas) e defesa.
+    // A linha de goleiro e técnico é fixa e fica no markup.
+    private IEnumerable<LinhaMontada> Linhas()
+    {
+        var t = Escalacao.Tatica;
+
+        yield return new(Tatica.LinhaCampo.Ataque, Enumerable.Range(0, t.Atacantes).Select(i => (PosicaoCampo.Atacante, i)).ToList());
+
+        var m = 0;
+        foreach (var qtd in t.LinhasMeio)
+        {
+            yield return new(Tatica.LinhaCampo.Meio, Enumerable.Range(m, qtd).Select(i => (PosicaoCampo.Meia, i)).ToList());
+            m += qtd;
+        }
+
+        var defesa = new List<(PosicaoCampo, int)>();
+        if (t.Laterais == 2) defesa.Add((PosicaoCampo.Lateral, 0));
+        for (var z = 0; z < t.Zagueiros; z++) defesa.Add((PosicaoCampo.Zagueiro, z));
+        if (t.Laterais == 2) defesa.Add((PosicaoCampo.Lateral, 1));
+        yield return new(Tatica.LinhaCampo.Defesa, defesa);
+    }
+}

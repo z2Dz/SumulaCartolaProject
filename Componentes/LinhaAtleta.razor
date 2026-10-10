@@ -1,0 +1,23 @@
+<div class="adm-atleta">
+    <FotoJogador Nome="@Atleta.Nome" FotoUrl="@Atleta.FotoUrl" Posicoes="@Atleta.Posicoes" Tamanho="@Tamanho" />
+    <div class="adm-atleta-texto">
+        <strong>@Atleta.Nome</strong>
+        <span class="adm-tags">
+            @if (Atleta.Posicoes.Count == 0)
+            {
+                <span class="suave">sem posição</span>
+            }
+            @foreach (var p in Atleta.Posicoes)
+            {
+                <span class="adm-tag">@p</span>
+            }
+        </span>
+    </div>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired] public AtletaResumo Atleta { get; set; } = default!;
+    [Parameter] public int Tamanho { get; set; } = 44;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

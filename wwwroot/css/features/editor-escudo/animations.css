@@ -1,0 +1,380 @@
+/* Animações do escudo
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+/* ===== Animações dos elementos do escudo (liberadas com a torcida) ===== */
+.anim {
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    will-change: transform;
+}
+
+.anim-respirar {
+    animation: an-respirar 3.6s ease-in-out infinite;
+}
+
+.anim-rugir {
+    transform-origin: 50% 90%;
+    animation: an-rugir 3.2s ease-in-out infinite;
+}
+
+.anim-uivar {
+    transform-origin: 50% 85%;
+    animation: an-uivar 3.4s ease-in-out infinite;
+}
+
+.anim-balancar {
+    transform-origin: 50% 85%;
+    animation: an-balancar 2.4s ease-in-out infinite;
+}
+
+.anim-espreitar {
+    animation: an-espreitar 3.6s ease-in-out infinite;
+}
+
+.anim-investida {
+    animation: an-investida 2.8s ease-in-out infinite;
+}
+
+.anim-trotar {
+    animation: an-trotar 1.2s ease-in-out infinite;
+}
+
+.anim-empinar {
+    transform-origin: 50% 95%;
+    animation: an-empinar 3s ease-in-out infinite;
+}
+
+.anim-saltar {
+    animation: an-saltar 1.8s ease-in-out infinite;
+}
+
+.anim-asas {
+    animation: an-asas 1.4s ease-in-out infinite;
+}
+
+.anim-piscar {
+    animation: an-piscar 4s linear infinite;
+}
+
+.anim-nadar {
+    animation: an-nadar 3.4s ease-in-out infinite;
+}
+
+.anim-pisar {
+    animation: an-pisar 1.6s ease-out infinite;
+}
+
+.anim-brilho {
+    animation: an-brilho 3.2s ease-in-out infinite;
+}
+
+.anim-flutuar {
+    animation: an-flutuar 3.6s ease-in-out infinite;
+}
+
+.anim-flutuar-brilho {
+    animation: an-flutuar 3.6s ease-in-out infinite, an-brilho 3.6s ease-in-out infinite;
+}
+
+.anim-brilho-pulo {
+    animation: an-pulinho 2.6s ease-in-out infinite, an-brilho 2.6s ease-in-out infinite;
+}
+
+.anim-girar {
+    animation: an-girar 9s linear infinite;
+}
+
+.anim-embaralhar {
+    transform-origin: 50% 95%;
+    animation: an-embaralhar 3.4s ease-in-out infinite;
+}
+
+.anim-pulsar {
+    animation: an-pulsar 2.4s ease-in-out infinite;
+}
+
+@keyframes an-respirar {
+    0%,100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.07);
+    }
+}
+
+@keyframes an-rugir {
+    0%,60%,100% {
+        transform: rotate(0) scale(1);
+    }
+
+    20% {
+        transform: rotate(-9deg) scale(1.05);
+    }
+
+    30% {
+        transform: rotate(-9deg) translateY(-4%) scale(1.07);
+    }
+
+    40% {
+        transform: rotate(-7deg) scale(1.05);
+    }
+}
+
+@keyframes an-uivar {
+    0%,55%,100% {
+        transform: rotate(0) translateY(0);
+    }
+
+    25%,40% {
+        transform: rotate(-11deg) translateY(-4%);
+    }
+}
+
+@keyframes an-balancar {
+    0%,100% {
+        transform: rotate(-6deg);
+    }
+
+    50% {
+        transform: rotate(6deg);
+    }
+}
+
+@keyframes an-espreitar {
+    0%,100% {
+        transform: translateX(-5%);
+    }
+
+    50% {
+        transform: translateX(5%);
+    }
+}
+
+@keyframes an-investida {
+    0%,35% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(-6%);
+    }
+
+    62% {
+        transform: translateX(9%);
+    }
+
+    68% {
+        transform: translateX(7%) translateY(-1%);
+    }
+
+    74% {
+        transform: translateX(9%) translateY(1%);
+    }
+
+    80%,100% {
+        transform: translateX(0);
+    }
+}
+
+@keyframes an-trotar {
+    0%,100% {
+        transform: translateY(0) rotate(-1.5deg);
+    }
+
+    50% {
+        transform: translateY(-4%) rotate(1.5deg);
+    }
+}
+
+@keyframes an-empinar {
+    0%,50%,100% {
+        transform: rotate(0);
+    }
+
+    25% {
+        transform: rotate(-13deg);
+    }
+}
+
+@keyframes an-saltar {
+    0%,100% {
+        transform: translateY(0) scaleY(.96);
+    }
+
+    15% {
+        transform: translateY(0) scaleY(.94);
+    }
+
+    50% {
+        transform: translateY(-13%) scaleY(1.03);
+    }
+
+    85% {
+        transform: translateY(0) scaleY(.96);
+    }
+}
+
+@keyframes an-asas {
+    0%,100% {
+        transform: scale(1, 1);
+    }
+
+    50% {
+        transform: scale(.78, 1.06);
+    }
+}
+
+@keyframes an-piscar {
+    0%,90%,100% {
+        opacity: 1;
+    }
+
+    93%,95% {
+        opacity: .1;
+    }
+}
+
+@keyframes an-nadar {
+    0%,100% {
+        transform: translateX(-6%) rotate(-3deg);
+    }
+
+    50% {
+        transform: translateX(6%) rotate(3deg);
+    }
+}
+
+@keyframes an-pisar {
+    0%,60%,100% {
+        transform: translateY(0);
+    }
+
+    15% {
+        transform: translateY(-5%);
+    }
+
+    25% {
+        transform: translateY(0) translateX(1.5%);
+    }
+
+    31% {
+        transform: translateX(-1.5%);
+    }
+
+    37% {
+        transform: translateX(1%);
+    }
+
+    43% {
+        transform: translateX(0);
+    }
+}
+
+@keyframes an-brilho {
+    0%,55%,100% {
+        filter: brightness(1);
+    }
+
+    75% {
+        filter: brightness(1.8) saturate(1.2);
+    }
+}
+
+@keyframes an-flutuar {
+    0%,100% {
+        transform: translateY(3%);
+    }
+
+    50% {
+        transform: translateY(-4%);
+    }
+}
+
+@keyframes an-pulinho {
+    0%,60%,100% {
+        transform: translateY(0);
+    }
+
+    70% {
+        transform: translateY(-9%);
+    }
+
+    80% {
+        transform: translateY(0);
+    }
+
+    86% {
+        transform: translateY(-3%);
+    }
+
+    92% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes an-girar {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes an-embaralhar {
+    0%,100% {
+        transform: rotate(0);
+    }
+
+    30% {
+        transform: rotate(-9deg);
+    }
+
+    60% {
+        transform: rotate(9deg);
+    }
+
+    80% {
+        transform: rotate(0);
+    }
+}
+
+@keyframes an-pulsar {
+    0%,100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+        filter: brightness(1.35);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+.anim {
+        animation: none !important;
+    }
+}
+
+/* Prévias das animações (Meu clube e editor de escudo) */
+.prev-anim-grade {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: .6rem;
+    margin-top: .6rem;
+}
+
+.prev-anim {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .15rem;
+    padding: .6rem .3rem;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 10px;
+    text-align: center;
+    color: var(--amarelo);
+}
+
+.prev-anim svg {
+        overflow: visible;
+    }

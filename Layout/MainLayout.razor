@@ -1,0 +1,163 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject ServicoAutenticacao Auth
+@inject NavigationManager Nav
+@inject ProvedorEstadoAutenticacao Provedor
+@inject ServicoTorcida Torcidas
+
+<div class="shell">
+    @* ===== menu lateral (computador) ===== *@
+    <aside class="lateral">
+        <a href="escudo" class="lateral-time" title="Editar escudo">
+            <span class="escudo-lapis">
+                <Escudo Config="Provedor.Perfil?.Escudo" Tamanho="52" Coroa="@Coroa" Estrelas="@Estrelas" Dourado="@Dourado" />
+                <span class="lapis-mini"><IconeUi Nome="lapis" Tamanho="12" /></span>
+            </span>
+            <span class="lateral-nome">
+                <AuthorizeView>
+                    <Authorized>
+                        <strong>@context.User.FindFirst("nome_time")?.Value</strong>
+                        <small>@@@context.User.Identity?.Name</small>
+                    </Authorized>
+                </AuthorizeView>
+            </span>
+        </a>
+
+        <nav class="lateral-nav" aria-label="Principal">
+            <NavLink href="" Match="NavLinkMatch.All"><IconeUi Nome="casa" /><span>Início</span></NavLink>
+            <NavLink href="escalar"><IconeUi Nome="prancheta" /><span>Escalar</span></NavLink>
+            <NavLink href="ranking"><IconeUi Nome="trofeu" /><span>Ranking</span></NavLink>
+            <NavLink href="clube"><IconeUi Nome="estadio" /><span>Meu clube</span></NavLink>
+            <NavLink href="historico"><IconeUi Nome="tendencia" /><span>Artilheiros</span></NavLink>
+            <AuthorizeView Roles="admin">
+                <NavLink href="admin" Match="NavLinkMatch.All"><IconeUi Nome="ajustes" /><span>Admin</span></NavLink>
+                <div class="lateral-sub" role="group" aria-label="Admin">
+                    <NavLink href="admin/chegada"><IconeUi Nome="pessoas" Tamanho="18" /><span>Lista de chegada</span></NavLink>
+                    <NavLink href="admin/sumula"><IconeUi Nome="prancheta" Tamanho="18" /><span>Súmula</span></NavLink>
+                    <NavLink href="admin/historico"><IconeUi Nome="tendencia" Tamanho="18" /><span>Histórico de gols e cartões</span></NavLink>
+                    <NavLink href="admin/temporada"><IconeUi Nome="estadio" Tamanho="18" /><span>Temporada atual</span></NavLink>
+                    <NavLink href="admin/artilheiros"><IconeUi Nome="lapis" Tamanho="18" /><span>Editar artilheiros</span></NavLink>
+                </div>
+            </AuthorizeView>
+        </nav>
+
+        <div class="lateral-rodape">
+            <button type="button" class="lateral-sair" @onclick="Sair"><IconeUi Nome="sair" Tamanho="18" /> Sair</button>
+            <span class="lema">JUNTOS PELO TOPO</span>
+        </div>
+    </aside>
+
+    <div class="principal">
+        @* ===== cabeçalho ===== *@
+        <header class="topo-m">
+            <a href="escudo" class="topo-m-time" title="Editar escudo">
+                <Escudo Config="Provedor.Perfil?.Escudo" Tamanho="40" Coroa="@Coroa" Estrelas="@Estrelas" Dourado="@Dourado" />
+                <span>
+                    <AuthorizeView>
+                        <Authorized>
+                            <strong>@context.User.FindFirst("nome_time")?.Value</strong>
+                            <small>@@@context.User.Identity?.Name</small>
+                        </Authorized>
+                    </AuthorizeView>
+                </span>
+            </a>
+            <button type="button" class="perfil-btn" title="Sair" aria-label="Sair" @onclick="Sair"><span class="pb-desk"><IconeUi Nome="usuario" Tamanho="22" /></span><span class="pb-mob"><IconeUi Nome="sair" Tamanho="18" /> Sair</span></button>
+        </header>
+
+        @* ===== abas (celular) ===== *@
+        <nav class="abas-m" aria-label="Principal">
+            <NavLink href="" Match="NavLinkMatch.All"><IconeUi Nome="casa" Tamanho="20" /><span>Início</span></NavLink>
+            <NavLink href="escalar"><IconeUi Nome="prancheta" Tamanho="20" /><span>Escalar</span></NavLink>
+            <NavLink href="ranking"><IconeUi Nome="trofeu" Tamanho="20" /><span>Ranking</span></NavLink>
+            <NavLink href="clube"><IconeUi Nome="estadio" Tamanho="20" /><span>Clube</span></NavLink>
+            <NavLink href="historico"><IconeUi Nome="tendencia" Tamanho="20" /><span>Gols</span></NavLink>
+            <AuthorizeView Roles="admin">
+                <button type="button" class="aba-admin @(EmAdmin || menuAdmin ? "active" : "")" aria-haspopup="true" aria-expanded="@menuAdmin" @onclick="AlternarAdmin"><IconeUi Nome="ajustes" Tamanho="20" /><span>Admin</span></button>
+            </AuthorizeView>
+        </nav>
+
+        @* ===== submenu do Admin (celular) ===== *@
+        <AuthorizeView Roles="admin">
+            @if (menuAdmin)
+            {
+                <div class="admin-fundo" @onclick="FecharAdmin"></div>
+                <div class="admin-folha" role="menu" aria-label="Admin" @onclick="FecharAdmin">
+                    <NavLink href="admin" Match="NavLinkMatch.All"><IconeUi Nome="ajustes" Tamanho="20" /><span>Partidas</span></NavLink>
+                    <NavLink href="admin/chegada"><IconeUi Nome="pessoas" Tamanho="20" /><span>Lista de chegada</span></NavLink>
+                    <NavLink href="admin/sumula"><IconeUi Nome="prancheta" Tamanho="20" /><span>Súmula</span></NavLink>
+                    <NavLink href="admin/historico"><IconeUi Nome="tendencia" Tamanho="20" /><span>Histórico de gols e cartões</span></NavLink>
+                    <NavLink href="admin/temporada"><IconeUi Nome="estadio" Tamanho="20" /><span>Temporada atual</span></NavLink>
+                    <NavLink href="admin/artilheiros"><IconeUi Nome="lapis" Tamanho="20" /><span>Editar artilheiros</span></NavLink>
+                </div>
+            }
+        </AuthorizeView>
+
+        <main class="conteudo">
+            @Body
+        </main>
+    </div>
+</div>
+
+@code {
+    private int Torc => Torcidas.Cache?.Torcida ?? Torcida.Inicial;
+    private bool Coroa => Torcidas.Cache is { } c && c.Clube.Coroa && Torc >= Torcida.MinCoroa;
+    private int Estrelas => Torcidas.Cache is { } c && Torc >= Torcida.MinCoroa ? c.Clube.Estrelas : 0;
+    private bool Dourado => Torc >= Torcida.MinDourado;
+
+    private bool menuAdmin;
+    private bool EmAdmin => Nav.ToBaseRelativePath(Nav.Uri).StartsWith("admin", StringComparison.OrdinalIgnoreCase);
+
+    protected override void OnInitialized()
+    {
+        Torcidas.Mudou += AoMudar;
+        Nav.LocationChanged += AoNavegar;
+    }
+
+    private void AlternarAdmin() => menuAdmin = !menuAdmin;
+    private void FecharAdmin() => menuAdmin = false;
+
+    private void AoNavegar(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        menuAdmin = false;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void AoMudar() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Torcidas.Mudou -= AoMudar;
+        Nav.LocationChanged -= AoNavegar;
+    }
+
+    private async Task Sair()
+    {
+        await Auth.SairAsync();
+        Nav.NavigateTo("entrar", replace: true);
+    }
+}
+
+<style>
+    .admin-fundo, .admin-folha { display: none; }
+    @@media (max-width: 899px) {
+        .abas-m .aba-admin {
+            flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: .15rem;
+            padding: .45rem .2rem .35rem; border: 0; border-radius: 12px; background: transparent;
+            font: inherit; font-size: .68rem; font-weight: 600; line-height: 1.1; text-align: center;
+            color: var(--suave); cursor: pointer;
+        }
+        .abas-m .aba-admin.active { color: var(--acento); }
+        .abas-m .aba-admin.active svg { filter: drop-shadow(0 0 6px rgba(25,201,138,.7)); }
+
+        .admin-fundo { display: block; position: fixed; left: 0; right: 0; top: 0; bottom: calc(4.3rem + env(safe-area-inset-bottom, 0px)); z-index: 26; background: rgba(0,0,0,.45); }
+        .admin-folha {
+            display: flex; flex-direction: column; gap: .15rem; position: fixed; z-index: 27;
+            left: .6rem; right: .6rem; bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+            padding: .45rem; border-radius: 18px; background: rgba(8,20,15,.97);
+            border: 1px solid rgba(80,200,180,.35); box-shadow: 0 -8px 30px rgba(0,0,0,.5);
+        }
+        .admin-folha a { display: flex; align-items: center; gap: .75rem; padding: .8rem .9rem; border-radius: 12px; color: #fff; text-decoration: none; font-size: .92rem; font-weight: 600; }
+        .admin-folha a svg { flex: none; opacity: .85; }
+        .admin-folha a.active { background: rgba(25,201,138,.18); color: var(--acento); }
+    }
+</style>

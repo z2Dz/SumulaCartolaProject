@@ -1,0 +1,111 @@
+/* Estrutura do app (shell, conteúdo, .pagina)
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+/* Estrutura com menu inferior */
+.app {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+
+.conteudo {
+    flex: 1;
+}
+
+.pagina {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.carregando {
+    display: flex;
+    height: 100dvh;
+    align-items: center;
+    justify-content: center;
+    background: var(--verde);
+    color: var(--branco);
+}
+
+/* Login */
+.sem-menu {
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+}
+
+.dica {
+    font-size: .8rem;
+    color: var(--suave);
+    margin: .4rem 0 0;
+}
+
+.aviso {
+    margin: .8rem 0;
+    padding: .7rem .8rem;
+    border-radius: 12px;
+    font-size: .85rem;
+    background: rgba(245,197,24,.18);
+    color: var(--texto);
+}
+
+/* ===== Editor de escudo (layout em painéis) ===== */
+.pagina.larga {
+    max-width: 1120px;
+}
+
+.ordem {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin-bottom: .6rem;
+    font-size: .8rem;
+    color: var(--suave);
+}
+
+/* ===== Telas encaixadas: ocupam a altura da janela e só as listas rolam ===== */
+.app:has(.fixa) {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.conteudo:has(.fixa) {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px));
+}
+
+.fixa {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    padding-top: .6rem;
+    padding-bottom: .6rem;
+}
+
+.fixa > * {
+        flex: none;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+.shell {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+    min-height: 100dvh;
+}
+
+.principal {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.conteudo {
+    padding-bottom: 1.5rem;
+}

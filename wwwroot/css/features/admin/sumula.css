@@ -1,0 +1,917 @@
+/* Admin: súmula
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.adm-cartao.am.on {
+        background: var(--amarelo);
+        border-color: var(--amarelo);
+        color: var(--grafite);
+    }
+
+.adm-cartao.az.on {
+        background: #2a6fdb;
+        border-color: #2a6fdb;
+        color: var(--branco);
+    }
+
+.adm-cartao.ver.on {
+        background: var(--vermelho);
+        border-color: var(--vermelho);
+        color: var(--branco);
+    }
+
+/* Súmula: só a lista de jogadores rola */
+.fixa > .sum-rola {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+}
+
+.sum-rola > * {
+    flex: none;
+}
+
+@media (min-width: 720px) {
+.sum-filtros {
+        display: grid;
+        grid-template-columns: auto 1fr auto 1fr;
+        align-items: center;
+        gap: .4rem .6rem;
+    }
+
+.sum-filtros > .adm-dica {
+            grid-column: 1 / -1;
+        }
+}
+
+.sum-rola > .cartao {
+    margin-bottom: 0;
+}
+
+/* Súmula: número da camisa, nome e campos na mesma linha */
+.cartao.sj {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem .8rem;
+    padding: .6rem .8rem;
+}
+
+.sj .adm-nome {
+    flex: 1;
+    min-width: 6rem;
+}
+
+.sj .adm-jogador-corpo {
+    display: flex;
+    justify-content: space-between;
+    gap: .5rem .8rem;
+    margin: 0;
+    order: 3;
+    flex-basis: 100%;
+}
+
+.sj .adm-icone {
+    order: 2;
+}
+
+.sj .adm-passo {
+    gap: .3rem;
+}
+
+.sj .adm-passo span {
+        font-size: 1.05rem;
+    }
+
+.sj .adm-par {
+    gap: .3rem;
+}
+
+.sj .adm-cartao {
+    min-height: 2.1rem;
+    min-width: 2.4rem;
+    font-size: .8rem;
+}
+
+@media (min-width: 860px) {
+.adm:has(.sj) {
+        max-width: 1000px;
+    }
+
+.sj .adm-jogador-corpo {
+        order: 0;
+        flex: none;
+        flex-basis: auto;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+    }
+
+.sj .adm-icone {
+        order: 0;
+    }
+}
+
+/* Súmula: cartões como contadores (sem limite por tempo) */
+.sj .adm-cart {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    padding: .15rem .3rem;
+    border: 1px solid transparent;
+    border-radius: .5rem;
+}
+
+.sj .adm-cart small {
+        font-size: .7rem;
+        opacity: .7;
+    }
+
+.sj .adm-cart .adm-passo {
+        gap: .2rem;
+    }
+
+.sj .adm-cart.on.am {
+        border-color: #e6b800;
+        background: rgba(230, 184, 0, .15);
+    }
+
+.sj .adm-cart.on.az {
+        border-color: #2f7fe0;
+        background: rgba(47, 127, 224, .15);
+    }
+
+.sj .adm-cart.on.ver {
+        border-color: #d63a3a;
+        background: rgba(214, 58, 58, .15);
+    }
+
+.sj .adm-jogador-corpo {
+    flex-wrap: wrap;
+}
+
+/* Súmula: contador com + em cima e − embaixo, número ao lado */
+.sj .adm-passo {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: .35rem;
+    row-gap: .2rem;
+}
+
+.sj .adm-passo span {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        min-width: 1.4rem;
+    }
+
+.sj .adm-passo button:last-child {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+.sj .adm-passo button:first-child {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+/* ===== Ajustes: botões retangulares, sem rolagem lateral, camisa branca ===== */
+.sj .adm-passo button,
+.sj .adm-cart .adm-passo button {
+    width: 2.7rem;
+    height: 1.55rem;
+    border-radius: 5px;
+    font-size: 1.05rem;
+    line-height: 1;
+    padding: 0;
+}
+
+.sum-rola,
+.adm:has(.sj) {
+    overflow-x: hidden;
+}
+
+.cartao.sj {
+    overflow-x: clip;
+    max-width: 100%;
+}
+
+/* Súmula: barra de rolagem escondida (a lista continua rolando com o dedo ou a roda do mouse) */
+.fixa > .sum-rola,
+.fixa .previa,
+.fixa .chg-nomes,
+.fixa .chg-rola {
+    overflow-x: hidden;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Edge antigo */
+}
+
+.fixa > .sum-rola::-webkit-scrollbar,
+    .fixa .previa::-webkit-scrollbar,
+    .fixa .chg-nomes::-webkit-scrollbar,
+    .fixa .chg-rola::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Android, iOS */
+        width: 0;
+        height: 0;
+    }
+
+@media (min-width: 900px) {
+.esc-topo .esc-stat small {
+                font-size: .74rem;
+            }
+}
+
+.cor-am {
+    color: var(--amarelo);
+}
+
+.cor-az {
+    color: #4aa3ff;
+}
+
+.cor-ve {
+    color: #ff5a5a;
+}
+
+@media print {
+.hist-area .cor-am {
+                color: #8a6d00 !important;
+            }
+
+.hist-area .cor-az {
+                color: #0b5cad !important;
+            }
+
+.hist-area .cor-ve {
+                color: #b00020 !important;
+            }
+}
+
+.adm2-ico.am {
+    background: var(--amarelo);
+}
+
+.adm2-ico.az {
+    background: #2f7bf5;
+}
+
+.adm2-ico.ver {
+    background: #e5322d;
+}
+
+.chg2-card .adm-abas button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        padding: .75rem .6rem;
+        border-radius: 14px;
+        font-size: .95rem;
+        background: rgba(255,255,255,.04);
+        border: 1px solid rgba(255,255,255,.14);
+        color: var(--texto-claro);
+    }
+
+.chg2-card .chg-nome-txt small {
+    font-size: .8rem;
+    color: rgba(232,239,235,.65);
+    opacity: 1;
+}
+
+.chg2-item .adm-seg button {
+    padding: .35rem .6rem;
+    font-size: .75rem;
+}
+
+@media (min-width: 900px) {
+.chg2 .chg-nome-txt small {
+        font-size: .88rem;
+    }
+
+.chg2-item .adm-seg button {
+        padding: .45rem .8rem;
+        font-size: .82rem;
+    }
+}
+
+@media (min-width: 900px) and (min-height: 620px) {
+/* Prévia no campo (computador): o campo se ajusta à altura da janela, sem rolagem */
+.previa.previa-larga {
+        overflow-y: hidden;
+    }
+}
+
+@media (min-width: 900px) {
+.pagina.adm.fixa {
+        flex: 1;
+        min-height: 0;
+        padding: .8rem 1.2rem .9rem;
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 899px) {
+.chg2-item .adm-seg button {
+                flex: 1;
+                min-height: 2.3rem;
+                padding: .35rem .8rem;
+            }
+}
+
+/* =====================================================================
+   Súmula (visual novo): filtros, placar, abas e linhas dos atletas
+   ===================================================================== */
+.pagina.adm.fixa.sm2 {
+    max-width: 1280px;
+    width: 100%;
+}
+
+.sm2 .sm2-voltar {
+    gap: .3rem;
+    font-size: .9rem;
+    color: var(--menta);
+}
+
+/* filtros */
+.sm2-filtros {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .7rem;
+    padding: .55rem .9rem;
+    border-radius: 18px;
+    background: rgba(6,18,13,.62);
+    border: 1px solid rgba(31,227,160,.22);
+    backdrop-filter: blur(8px);
+}
+
+.sm2-cal {
+    display: grid;
+    place-items: center;
+    color: var(--menta);
+}
+
+.sm2-campo {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin: 0;
+    padding: .25rem .8rem .25rem .9rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(255,255,255,.04);
+    color: var(--texto-claro);
+}
+
+.sm2-campo select {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--branco);
+        font: inherit;
+        font-size: .95rem;
+        padding: .45rem 1.6rem .45rem .1rem;
+        min-width: 0;
+        max-width: 100%;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e8efeb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right .1rem center;
+        background-size: 1rem;
+    }
+
+.sm2-campo select option {
+            background: #0b1a14;
+            color: var(--texto-claro);
+        }
+
+.sm2-campo select:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+.sm2-rodada {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    flex: 1 1 18rem;
+    max-width: 30rem;
+}
+
+.sm2-rodada select {
+        width: 100%;
+    }
+
+.sm2-status select {
+    padding-right: 1.8rem;
+    min-width: 11rem;
+}
+
+.sm2-dot {
+    flex: none;
+    width: .7rem;
+    height: .7rem;
+    border-radius: 50%;
+    background: #8aa39a;
+}
+
+.sm2-dot.em_andamento {
+        background: var(--menta);
+        box-shadow: 0 0 8px var(--menta);
+    }
+
+.sm2-dot.finalizada {
+        background: #7aa7ff;
+    }
+
+.sm2-dot.cancelada {
+        background: #ff6b63;
+    }
+
+.sm2-aviso-sujo {
+    font-size: .8rem;
+    color: rgba(232,239,235,.65);
+}
+
+/* placar */
+.sm2-placar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+    padding: .7rem 1rem;
+    border-radius: 18px;
+    color: var(--branco);
+    background: linear-gradient(135deg, #12b57d, #0a6e4e 70%);
+    border: 1px solid rgba(31,227,160,.5);
+    box-shadow: 0 0 22px rgba(31,227,160,.18);
+}
+
+.sm2-nome {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.sm2-x {
+    font-size: 1.1rem;
+    opacity: .85;
+}
+
+/* abas dos times */
+.sm2-abas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+}
+
+.sm2-abas button img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+
+.sm2-abas button.ativa {
+            background: linear-gradient(135deg, #12b57d, #0a9467);
+            border-color: var(--menta);
+            color: var(--branco);
+            box-shadow: 0 0 16px rgba(31,227,160,.25);
+        }
+
+/* lista */
+.sm2-lista {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+}
+
+.sm2 > .sm2-lista {
+    flex: none;
+}
+
+.sm2-vazio {
+    padding: 1.2rem .4rem;
+    text-align: center;
+}
+
+.sm2-linha {
+    display: grid;
+    align-items: center;
+    gap: .6rem 1rem;
+    padding: .55rem .9rem;
+    border-radius: 14px;
+    background: rgba(6,18,13,.62);
+    border: 1px solid rgba(255,255,255,.1);
+    flex: none;
+}
+
+.sm2-atleta {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+}
+
+/* titulares e substituições do 2º tempo */
+.sm2-papel {
+    align-self: flex-start;
+    max-width: 100%;
+    padding: .1rem .55rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.sm2-papel.titular {
+        color: var(--menta);
+        background: rgba(31,227,160,.12);
+        border-color: rgba(31,227,160,.4);
+    }
+
+.sm2-papel.sai {
+        color: #ffb74d;
+        background: rgba(255,183,77,.12);
+        border-color: rgba(255,183,77,.45);
+    }
+
+.sm2-papel.entra {
+        color: #6db6ff;
+        background: rgba(109,182,255,.12);
+        border-color: rgba(109,182,255,.45);
+    }
+
+.sm2-papel.semvaga {
+        color: rgba(232,239,235,.7);
+        background: rgba(255,255,255,.06);
+        border-color: rgba(255,255,255,.2);
+    }
+
+.sm2-linha.sai {
+    border-left: 3px solid #ffb74d;
+}
+
+.sm2-linha.entra {
+    border-left: 3px solid #6db6ff;
+}
+
+.sm2-linha.titular {
+    border-left: 3px solid rgba(31,227,160,.6);
+}
+
+/* camisa com número */
+.sm2-camisa {
+    position: relative;
+    width: 54px;
+    height: 54px;
+    margin: 0;
+    display: block;
+    cursor: text;
+}
+
+.sm2-camisa svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        fill: #c62828;
+        stroke: rgba(0,0,0,.55);
+        stroke-width: 2;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,.45));
+    }
+
+.sm2-camisa.amarelo svg {
+        fill: var(--amarelo);
+    }
+
+.sm2-camisa input {
+        position: absolute;
+        left: 50%;
+        top: 58%;
+        transform: translate(-50%, -50%);
+        width: 70%;
+        padding: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--branco);
+        text-align: center;
+        font: inherit;
+        font-weight: 800;
+        font-size: 1.25rem;
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
+.sm2-camisa input::-webkit-outer-spin-button,
+        .sm2-camisa input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+.sm2-camisa.amarelo input {
+        color: var(--grafite);
+    }
+
+.sm2-camisa.vazio input::placeholder {
+        color: rgba(255,255,255,.75);
+        font-size: .8rem;
+        font-weight: 700;
+    }
+
+.sm2-camisa.amarelo.vazio input::placeholder {
+        color: rgba(0,0,0,.6);
+    }
+
+.sm2-camisa-dica {
+    position: absolute;
+    right: -4px;
+    top: -4px;
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #ffd24a;
+    color: var(--grafite);
+    font-size: .7rem;
+    font-weight: 800;
+    pointer-events: none;
+    animation: sm2-pulso-badge 1.4s ease-in-out infinite;
+}
+
+/* time vermelho: pulso vermelho */
+.sm2-camisa.vermelho.vazio svg {
+    stroke: #ff6b63;
+    animation: sm2-pulso-verm 1.4s ease-in-out infinite;
+}
+
+.sm2-camisa.vermelho .sm2-camisa-dica {
+    background: #ff4d4d;
+    color: var(--branco);
+}
+
+@keyframes sm2-pulso-verm {
+    0%, 100% {
+        filter: drop-shadow(0 0 0 rgba(255,60,60,0));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 8px rgba(255,60,60,1));
+    }
+}
+
+@keyframes sm2-pulso {
+    0%, 100% {
+        filter: drop-shadow(0 0 0 rgba(255,210,74,0));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 7px rgba(255,210,74,.95));
+    }
+}
+
+@keyframes sm2-pulso-badge {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.18);
+    }
+}
+
+/* contadores */
+.sm2-grupo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .2rem;
+}
+
+.sm2-grupo .adm-passo {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+    }
+
+.sm2-grupo .adm-passo span {
+            min-width: 1.6ch;
+            text-align: center;
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: var(--branco);
+        }
+
+.sm2-grupo .adm-passo button {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,.2);
+            background: rgba(255,255,255,.06);
+            color: var(--texto-claro);
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+.sm2-grupo .adm-passo button:disabled {
+                opacity: .35;
+            }
+
+.sm2-grupo.am.on .adm-passo span {
+        color: var(--amarelo);
+    }
+
+.sm2-grupo.az.on .adm-passo span {
+        color: #5ea0ff;
+    }
+
+.sm2-grupo.ver.on .adm-passo span {
+        color: #ff6b63;
+    }
+
+.sm2-remover {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    justify-self: end;
+    border-radius: 10px;
+    border: 1px solid rgba(255,107,99,.45);
+    background: rgba(255,107,99,.08);
+    color: #ff6b63;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+/* barra de ações */
+.sm2-barra {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .6rem;
+}
+
+.sm2-barra-gap {
+    flex: 1;
+}
+
+.sm2-add, .sm2-sec, .sm2-salvar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    min-height: 2.8rem;
+    padding: .5rem 1.2rem;
+    border-radius: 999px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.sm2-add, .sm2-sec {
+    border: 1px solid rgba(31,227,160,.45);
+    background: rgba(6,18,13,.62);
+    color: var(--menta);
+}
+
+.sm2-sec {
+    color: var(--texto-claro);
+    border-color: rgba(255,255,255,.2);
+}
+
+.sm2-salvar {
+    border: 1px solid var(--menta);
+    background: linear-gradient(135deg, #12b57d, #0a8a62);
+    color: var(--branco);
+}
+
+.sm2-salvar:disabled {
+        opacity: .45;
+        cursor: not-allowed;
+    }
+
+@media (min-width: 900px) {
+/* computador: só a lista rola */
+.pagina.adm.fixa.sm2 > .sm2-lista {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+.pagina.adm.fixa.sm2 > .sm2-lista::-webkit-scrollbar {
+            display: none;
+        }
+}
+
+@media (max-width: 899px) {
+/* celular: duas linhas por atleta */
+.sm2-filtros {
+        padding: .5rem .6rem;
+    }
+
+.sm2-rodada {
+        max-width: none;
+    }
+
+.sm2-status {
+        flex: 1 1 100%;
+    }
+
+.sm2-status select {
+            flex: 1;
+        }
+
+.sm2-placar {
+        gap: .6rem;
+        padding: .6rem;
+    }
+
+.sm2-nome {
+        font-size: .9rem;
+    }
+}
+
+@media (max-width: 719px) {
+.sm2-linha {
+        gap: .5rem .3rem;
+        padding: .6rem .6rem;
+    }
+
+.sm2-camisa {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+.sm2-atleta {
+        grid-row: 1;
+    }
+
+.sm2-remover {
+        grid-row: 1;
+    }
+
+.sm2-grupo {
+        grid-row: 2;
+    }
+
+.sm2-grupo .adm-passo {
+            gap: .25rem;
+        }
+
+.sm2-grupo .adm-passo button {
+                width: 28px;
+                height: 28px;
+            }
+
+.sm2-grupo .adm-passo span {
+                font-size: 1rem;
+            }
+
+.sm2-barra {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+.sm2-barra-gap {
+        display: none;
+    }
+}
+
+/* ===== Súmula: campo Gol contra (cole no FIM do wwwroot/css/app.css) ===== */
+.sm2-linha {
+    grid-template-columns: 64px minmax(7rem, 1.2fr) repeat(5, minmax(0, 1fr)) 46px;
+}
+
+.sm2-grupo.gc.on .adm-passo span {
+    color: #ff9f43;
+}
+
+@media (max-width: 719px) {
+.sm2-linha {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+.sm2-atleta {
+        grid-column: 2 / 5;
+    }
+
+.sm2-remover {
+        grid-column: 5;
+    }
+}

@@ -1,0 +1,765 @@
+/* Editor de escudo
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.menu-inferior a .mi-rot {
+            display: none;
+        }
+
+.menu-inferior a.active .mi-rot {
+                display: inline;
+            }
+
+.escudo-previa {
+    text-align: center;
+    padding: .5rem 0 1rem;
+}
+
+.escudo-previa .escudo {
+        margin: 0 auto;
+        filter: drop-shadow(0 4px 10px rgba(0,0,0,.28));
+    }
+
+.chip-simbolo {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .3rem .3rem .3rem .6rem;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background: rgba(128,128,128,.12);
+    color: var(--texto);
+    font-size: .8rem;
+    cursor: pointer;
+}
+
+.chip-simbolo.sel {
+        border-color: var(--verde-2);
+        background: rgba(20,96,74,.16);
+    }
+
+.chip-simbolo .remover {
+        border: 0;
+        background: rgba(128,128,128,.25);
+        color: inherit;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+.item-atleta.sel {
+        border-color: var(--verde-2);
+        background: rgba(20,96,74,.16);
+    }
+
+.ed {
+    --ed-painel: rgba(13,23,32,.94);
+    --ed-linha: rgba(255,255,255,.1);
+    --ed-tx: #e9eef2;
+    --ed-su: #8fa0ad;
+    --ed-dest: #eef0f2;
+    color: var(--ed-tx);
+    border-radius: 18px;
+    padding: .75rem;
+    background: radial-gradient(120% 90% at 50% 0%, #1a3a3a 0%, #0a1118 62%);
+}
+
+.ed-grade {
+    display: grid;
+    gap: .75rem;
+    align-items: start;
+    grid-template-columns: 250px minmax(0, 1fr) 270px;
+    grid-template-areas: "menu centro camadas" "paleta paleta paleta";
+}
+
+.ed-menu {
+    grid-area: menu;
+}
+
+.ed-centro {
+    grid-area: centro;
+}
+
+.ed-camadas {
+    grid-area: camadas;
+}
+
+.ed-paleta {
+    grid-area: paleta;
+}
+
+.ed-painel {
+    background: var(--ed-painel);
+    border: 1px solid var(--ed-linha);
+    border-radius: 12px;
+    padding: .6rem;
+}
+
+.ed h3 {
+    color: var(--ed-tx);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-size: .85rem;
+    margin: 0 0 .6rem;
+    padding-bottom: .5rem;
+    border-bottom: 1px solid var(--ed-linha);
+}
+
+/* menu */
+.ed-menu {
+    display: flex;
+    flex-direction: column;
+    padding: .4rem;
+}
+
+.ed-aba {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    width: 100%;
+    padding: .85rem .8rem;
+    background: transparent;
+    color: var(--ed-tx);
+    border: 0;
+    border-bottom: 1px solid var(--ed-linha);
+    font: inherit;
+    font-size: .92rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ed-aba span {
+        flex: 1;
+    }
+
+.ed-aba.ativa {
+        background: var(--ed-dest);
+        color: #12202a;
+        border-radius: 4px;
+    }
+
+.ed-opcoes {
+    padding: .6rem .2rem .9rem;
+}
+
+.ed-dica {
+    font-size: .78rem;
+    color: var(--ed-su);
+    margin: 0 0 .6rem;
+}
+
+.ed-grupo {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ed-su);
+    margin: .7rem 0 .4rem;
+}
+
+.ed-miniaturas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+    gap: .4rem;
+}
+
+.ed-mini {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+    background: rgba(255,255,255,.06);
+    color: var(--ed-tx);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.ed-mini.sel {
+        border-color: var(--branco);
+        background: rgba(255,255,255,.14);
+    }
+
+.ed .campo {
+    color: var(--ed-su);
+}
+
+.ed .campo input:not([type=range]) {
+        background: rgba(255,255,255,.08);
+        color: var(--ed-tx);
+        border-color: var(--ed-linha);
+    }
+
+.ed .cores label {
+    color: var(--ed-su);
+}
+
+.ed .botao-sec {
+    background: rgba(255,255,255,.08);
+    color: var(--ed-tx);
+    border: 1px solid var(--ed-linha);
+}
+
+/* quadro */
+.ed-canvas {
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+}
+
+.ed-quadro {
+    display: flex;
+    min-height: 400px;
+    max-height: 70vh;
+    overflow: auto;
+    padding: 1.2rem;
+    background-color: rgba(8,14,20,.55);
+    background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+.ed-zoom {
+    position: absolute;
+    right: .6rem;
+    bottom: .6rem;
+    display: flex;
+    align-items: center;
+    gap: .15rem;
+    padding: .25rem .4rem;
+    background: rgba(10,18,26,.88);
+    border: 1px solid var(--ed-linha);
+    border-radius: 8px;
+    color: var(--ed-su);
+}
+
+.ed-zoom small {
+        min-width: 2.6rem;
+        text-align: center;
+        color: var(--ed-tx);
+    }
+
+.ed-zoom button {
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        background: transparent;
+        color: var(--ed-tx);
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+.ed-zoom button:hover {
+            background: rgba(255,255,255,.1);
+        }
+
+.ed-ajustes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .8rem;
+    margin-top: .75rem;
+}
+
+.ed-ajustes label {
+        display: flex;
+        flex-direction: column;
+        gap: .3rem;
+        font-size: .78rem;
+        color: var(--ed-su);
+    }
+
+.ed-ajustes input[type=range] {
+        width: 100%;
+        accent-color: var(--branco);
+    }
+
+/* camadas */
+.ed-camada {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .35rem .4rem;
+    border-bottom: 1px solid var(--ed-linha);
+    cursor: pointer;
+    border-radius: 6px;
+    border: 2px solid transparent;
+}
+
+.ed-camada.sel {
+        background: rgba(255,255,255,.1);
+        border-color: rgba(255,255,255,.55);
+    }
+
+.ed-camada.oculta .ed-thumb, .ed-camada.oculta .ed-nome {
+        opacity: .4;
+    }
+
+.ed-thumb {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    background: rgba(0,0,0,.35);
+    border: 1px solid var(--ed-linha);
+    border-radius: 4px;
+    color: var(--ed-tx);
+}
+
+.ed-nome {
+    flex: 1;
+    font-size: .85rem;
+}
+
+.ed-icone {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    color: var(--ed-tx);
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.ed-icone:hover {
+        background: rgba(255,255,255,.1);
+    }
+
+/* paleta */
+.ed-titulo {
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ed-tx);
+    margin-bottom: .6rem;
+}
+
+.ed-titulo span {
+        color: var(--ed-su);
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+.ed-cores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+}
+
+.ed-cor {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 2px solid rgba(255,255,255,.18);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.ed-cor:nth-child(5) {
+        margin-right: .7rem;
+    }
+
+.ed-cor.sel {
+        outline: 3px solid var(--branco);
+        outline-offset: 2px;
+    }
+
+.ed-cor-livre {
+    position: relative;
+    display: grid;
+    place-items: center;
+    background: conic-gradient(#e33, #ec3, #3c3, #3cc, #33e, #c3c, #e33);
+    color: var(--branco);
+}
+
+.ed-cor-livre input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+.ed-cor-livre svg {
+        pointer-events: none;
+        filter: drop-shadow(0 0 2px rgba(0,0,0,.8));
+    }
+
+/* ações */
+.ed-acoes {
+    display: flex;
+    gap: .6rem;
+    margin-top: .8rem;
+    flex-wrap: wrap;
+}
+
+.ed-acoes .botao {
+        flex: 1;
+        min-width: 160px;
+        margin: 0;
+    }
+
+.ed-acoes .botao-sec {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+/* Todas as grades de miniaturas do editor: no máximo 3 colunas x 3 linhas, rolagem escondida.
+   A altura máxima é igual à largura da grade (3 linhas de células quadradas). */
+.ed-opcoes {
+    container-type: inline-size;
+}
+
+.ed-miniaturas.ed-rolagem {
+    grid-template-columns: repeat(3, 1fr);
+    max-height: 100cqw;
+    align-content: start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Edge antigo */
+}
+
+.ed-miniaturas.ed-rolagem::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Android, iOS */
+    }
+
+/* Campo de texto do editor (a classe .campo é do campo de futebol, por isso o nome próprio) */
+.ed-campo {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    margin: .4rem 0 .8rem;
+    font-size: .85rem;
+    color: var(--ed-su);
+}
+
+.ed-campo input {
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: .15em;
+        padding: .7rem;
+        border-radius: 10px;
+        border: 1px solid var(--ed-linha);
+        background: rgba(255,255,255,.08);
+        color: var(--ed-tx);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+.saldo small {
+        display: block;
+        color: var(--suave);
+        font-size: .7rem;
+    }
+
+.escalar-campo > .botao {
+    margin-top: .4rem;
+}
+
+.chip.sel {
+        background: var(--verde-2);
+        border-color: var(--verde-2);
+        color: var(--branco);
+    }
+
+.item-stats span {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+    }
+
+.item-stats small {
+        font-size: .66rem;
+        color: var(--suave);
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+
+.camisa svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+        stroke: rgba(255, 255, 255, .55);
+        stroke-width: 1.5;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .5));
+    }
+
+.camisa input {
+        position: absolute;
+        left: 50%;
+        top: 58%;
+        transform: translate(-50%, -50%);
+        width: 2rem;
+        height: 1.6rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        text-align: center;
+        font-size: 1.15rem;
+        font-weight: 800;
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
+.camisa input,
+.camisa.amarelo input {
+    color: #14213d;
+}
+
+.camisa.chama input::placeholder,
+.camisa.chama input {
+    color: #c62828;
+}
+
+.campo-txt input {
+        padding: .55rem .7rem;
+        border-radius: 10px;
+        border: 1px solid rgba(128,128,128,.45);
+        background: transparent;
+        color: var(--texto);
+        font-size: 1rem;
+    }
+
+.opcao.sel {
+        border-color: var(--amarelo);
+        background: rgba(245,197,24,.15);
+    }
+
+/* editor de escudo: itens que ainda não foram liberados pela torcida */
+.ed-mini.bloqueado {
+    opacity: .35;
+    filter: grayscale(1);
+    cursor: not-allowed;
+}
+
+.botao-sec.esc-fechar {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .55rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.15);
+    background: rgba(255,255,255,.04);
+    color: var(--texto);
+}
+
+.painel-atletas .chip {
+    padding: .3rem 1rem;
+    border-color: rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+}
+
+.painel-atletas .item-atleta {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1.4fr) minmax(0, .8fr) minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: .9rem;
+    padding: .55rem .9rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.07);
+    background: rgba(255,255,255,.035);
+}
+
+@media (max-width: 860px) {
+.esc-cab-icone svg {
+        width: 34px;
+        height: 34px;
+    }
+
+.painel-atletas .item-atleta {
+        grid-template-columns: auto minmax(0, 1fr) auto auto;
+        gap: .6rem;
+        padding: .5rem .6rem;
+    }
+}
+
+.esc-select svg {
+        position: absolute;
+        right: .5rem;
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: var(--acento);
+        stroke-width: 2.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        pointer-events: none;
+    }
+
+.esc-vista.ativa {
+        background: #f26a1b;
+        border-color: #f26a1b;
+        color: var(--branco);
+        box-shadow: 0 0 10px rgba(242,106,27,.45);
+    }
+
+/* =====================================================================
+   Editor de escudo: cabeçalho (voltar / título / Salvar) e layout de celular
+   ===================================================================== */
+.ed-topo {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin-bottom: .8rem;
+}
+
+.ed-voltar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: rgba(255,255,255,.06);
+    color: var(--branco);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.ed-salvar-topo {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    flex: none;
+    padding: .6rem 1.2rem;
+    background: #0c6b46;
+    color: var(--branco);
+    border: 2px solid var(--acento, var(--acento));
+    border-radius: 999px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ed-salvar-topo:disabled {
+        opacity: .6;
+    }
+
+/* Interruptor de animação no editor */
+.ed-anim {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    margin-top: .6rem;
+    padding: .6rem .7rem;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 10px;
+}
+
+.ed-anim label {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-weight: 600;
+    }
+
+.ed-anim.bloqueado {
+        opacity: .6;
+    }
+
+.ed-anim-previa {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+}
+
+.ed-anim-previa .escudo {
+        overflow: visible;
+    }
+
+/* Prévia das novas formas de escudo */
+.prev-formas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+    gap: .5rem;
+    margin-top: .4rem;
+}
+
+.prev-forma {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .2rem;
+    padding: .4rem .2rem;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 10px;
+}
+
+/* =====================================================================
+   Computador: o editor ocupa a altura da janela (o quadro cresce, os painéis laterais acompanham)
+   e o escudo ganha espaço. Celular e tablet em pé seguem o layout de mobile.css.
+   ===================================================================== */
+@media (min-width: 861px) {
+    .pagina.ed-pagina {
+        max-width: 1400px;
+    }
+
+    .ed {
+        display: flex;
+        min-height: calc(100dvh - 11.5rem);
+        padding: 1rem;
+    }
+
+    .ed-grade {
+        flex: 1;
+        grid-template-columns: 280px minmax(0, 1fr) 300px;
+        grid-template-rows: minmax(0, 1fr) auto;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .ed-menu,
+    .ed-camadas {
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    .ed-centro {
+        display: flex;
+        flex-direction: column;
+        gap: .75rem;
+        min-height: 0;
+    }
+
+    .ed-ajustes {
+        margin-top: 0;
+    }
+
+    .ed-canvas {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .ed-canvas .ed-quadro {
+        flex: 1;
+        min-height: 0;
+        max-height: none;
+        align-items: safe center;
+        justify-content: safe center;
+        padding: 1.5rem;
+        background-size: 28px 28px;
+    }
+
+    .ed-cor {
+        width: 44px;
+        height: 44px;
+    }
+
+    .ed-acoes {
+        margin-top: 1rem;
+    }
+}
+

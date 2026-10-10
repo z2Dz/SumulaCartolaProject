@@ -1,0 +1,96 @@
+/* Escalação: vistas (campo e lista)
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.folha-lista {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+}
+
+.painel-atletas.aberto > .folha-lista {
+        --linhas: 9;
+        flex: 0 1 auto;
+        min-height: 0;
+        max-height: calc(var(--linhas) * 4.3rem + (var(--linhas) - 1) * .4rem);
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        overscroll-behavior: contain;
+    }
+
+.painel-atletas.aberto > .folha-lista::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+
+.painel-atletas.aberto > .folha-lista > .item-atleta {
+            flex: none;
+            min-height: 4.3rem;
+        }
+
+.painel-atletas .folha-lista {
+    padding: .5rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.06);
+    background: rgba(0,0,0,.18);
+}
+
+.esc-vista {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.05);
+    color: var(--suave);
+    cursor: pointer;
+}
+
+/* vista em lista */
+.esc-lista {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.esc-lista-item {
+    display: grid;
+    grid-template-columns: 3rem 1fr auto;
+    align-items: center;
+    gap: .6rem;
+    padding: .7rem .8rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.1);
+    background: rgba(8,20,15,.7);
+    color: var(--texto);
+    text-align: left;
+    cursor: pointer;
+}
+
+.esc-lista-item.vazio {
+        border-style: dashed;
+        color: var(--suave);
+    }
+
+.esc-lista-pos {
+    font-weight: 800;
+    color: var(--amarelo);
+}
+
+.esc-lista-nome {
+    font-weight: 700;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.esc-lista-valor {
+    font-weight: 800;
+    color: var(--acento);
+}

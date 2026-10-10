@@ -1,0 +1,13 @@
+@* Mascote do clube: uma das silhuetas de atleta numa cor à escolha. *@
+@if (SilhuetasAtleta.Mapa.TryGetValue(Chave, out var caminho))
+{
+    <svg class="mascote" viewBox="0 0 100 100" width="@Tamanho" height="@Tamanho" style="color:@Cor" role="img" aria-label="Mascote do time">
+        <path fill="currentColor" fill-rule="evenodd" d="@caminho" />
+    </svg>
+}
+
+@code {
+    [Parameter] public string Chave { get; set; } = "";
+    [Parameter] public string Cor { get; set; } = "#f5c518";
+    [Parameter] public int Tamanho { get; set; } = 90;
+}

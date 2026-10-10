@@ -1,0 +1,189 @@
+/* Estádio
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+/* ===== Estádio: moldura em volta do campo (cole no FIM do app.css) =====
+   Fica dentro de .campo, atrás do gramado, e herda a inclinação 3D dele. */
+.estadio-fundo {
+    --e-a1: #1d2433;
+    --e-a2: #0d121c;
+    --e-anel: #c9a227;
+    --e-glow: rgba(255,230,140,.35);
+    position: absolute;
+    pointer-events: none;
+    transform: translateZ(-2px);
+    background: repeating-linear-gradient(90deg, rgba(0,0,0,.20) 0 2px, transparent 2px 7px), repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 9px), linear-gradient(160deg, var(--e-a1), var(--e-a2));
+}
+
+/* corredor entre as arquibancadas e o gramado */
+.estadio-fundo::before {
+        content: "";
+        position: absolute;
+        border: 2px solid rgba(255,255,255,.16);
+        box-shadow: inset 0 0 0 7px rgba(0,0,0,.18);
+    }
+
+.estadio-fundo::after {
+        content: "";
+        position: absolute;
+        background: #0c1412;
+    }
+
+.estadio-fundo .luz {
+        position: absolute;
+        border-radius: 50%;
+        background: radial-gradient(circle, var(--branco) 0 25%, var(--e-glow) 55%, transparent 72%);
+        filter: blur(.4px);
+    }
+
+.estadio-fundo .l1 {
+        left: 2%;
+        top: 2%;
+    }
+
+.estadio-fundo .l2 {
+        right: 2%;
+        top: 2%;
+    }
+
+.estadio-fundo .l3 {
+        left: 2%;
+        bottom: 2%;
+    }
+
+.estadio-fundo .l4 {
+        right: 2%;
+        bottom: 2%;
+    }
+
+.estadio-anel {
+    --e-a1: #3a1717;
+    --e-a2: #150909;
+    --e-anel: #ff2d3d;
+    --e-glow: rgba(255,45,61,.6);
+}
+
+.estadio-concreto {
+    --e-a1: #b4bcc3;
+    --e-a2: #6d767e;
+    --e-anel: #eef2f5;
+    --e-glow: rgba(255,255,255,.25);
+}
+
+.estadio-esmeralda {
+    --e-a1: #0f5a45;
+    --e-a2: #08281f;
+    --e-anel: var(--acento);
+    --e-glow: rgba(25,201,138,.5);
+}
+
+.estadio-colosso {
+    --e-anel: var(--branco);
+    --e-glow: rgba(255,60,60,.4);
+    background: repeating-linear-gradient(90deg, rgba(0,0,0,.25) 0 2px, transparent 2px 8px), repeating-linear-gradient(0deg, #c8202c 0 9px, #f2f2f2 9px 18px);
+}
+
+/* ===== Prévia do estádio (Meu clube › Lenda da pelada) ===== */
+.prev-est {
+    width: 100%;
+    max-width: 240px;
+    margin: 1.4rem auto 1.2rem;
+}
+
+.prev-est.peq {
+        max-width: 78px;
+        margin: .5rem auto .4rem;
+    }
+
+.campo-mini .estadio-fundo {
+        transform: none;
+        z-index: -1;
+    }
+
+.prev-est.peq .campo-mini {
+    border-width: 1px;
+}
+
+.prev-est.peq .campo-mini span {
+        border-width: 1px;
+    }
+
+.prev-est.peq .campo-mini .cm-meio {
+        height: 1px;
+    }
+
+.prev-est.peq .estadio-fundo {
+    box-shadow: 0 0 0 1px var(--e-anel), inset 0 0 14px rgba(0,0,0,.6);
+    border-radius: 14px;
+}
+
+.prev-est.peq .estadio-fundo .luz {
+        width: 7px;
+        height: 7px;
+    }
+
+.opcao-estadio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .1rem;
+    min-width: 110px;
+}
+
+.opcao-estadio .campo-mini {
+        min-width: 0;
+    }
+
+/* ===== Correção da prévia do estádio: a moldura fica ATRÁS do campo mini (antes ficava escondida) ===== */
+.prev-est {
+    position: relative;
+    padding: 7% 11%;
+}
+
+.prev-est.peq {
+        padding: 9% 12%;
+    }
+
+.prev-est > .estadio-fundo {
+        inset: 0;
+        border-radius: 26px;
+        transform: none;
+    }
+
+.prev-est > .estadio-fundo::before {
+            inset: 2% 4%;
+        }
+
+.prev-est > .estadio-fundo::after {
+            inset: 5.3% 10%;
+        }
+
+.prev-est.peq > .estadio-fundo {
+        border-radius: 12px;
+    }
+
+.prev-est .campo-mini {
+        position: relative;
+        z-index: 1;
+    }
+
+/* ===== Estádio menor (mais discreto em volta do campo) ===== */
+.estadio-fundo {
+    inset: calc(var(--estadio-sobra-y) * -100%) calc(var(--estadio-sobra-x) * -100%);
+    border-radius: 28px;
+    box-shadow: 0 0 0 2px var(--e-anel), 0 0 16px var(--e-glow), inset 0 0 0 4px rgba(0,0,0,.35), inset 0 0 26px rgba(0,0,0,.55);
+}
+
+.estadio-fundo::before {
+        inset: 1% 2%;
+        border-radius: 22px;
+    }
+
+.estadio-fundo::after {
+        inset: 2.4% 4%;
+        border-radius: 12px;
+    }
+
+.estadio-fundo .luz {
+        width: 12px;
+        height: 12px;
+    }

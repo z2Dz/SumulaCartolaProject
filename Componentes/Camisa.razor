@@ -1,0 +1,49 @@
+@* Camisa do time em SVG. Cor1 = base, Cor2 = detalhe do padrão, Cor3 = gola e punhos. *@
+<svg class="camisa" viewBox="0 0 100 100" width="@Tamanho" height="@Tamanho" role="img" aria-label="Camisa do time">
+    <defs>
+        <clipPath id="@_id"><path d="@Corpo" /></clipPath>
+    </defs>
+    <g clip-path="url(#@_id)">
+        <rect x="0" y="0" width="100" height="100" fill="@Cor1" />
+        @switch (Padrao)
+        {
+            case "listras_v":
+                foreach (var x in new[] { 26, 42, 58 })
+                {
+                    <rect x="@x" y="0" width="8" height="100" fill="@Cor2" />
+                }
+                break;
+            case "listras_h":
+                foreach (var y in new[] { 22, 40, 58, 76 })
+                {
+                    <rect x="0" y="@y" width="100" height="8" fill="@Cor2" />
+                }
+                break;
+            case "metade_v":
+                <rect x="50" y="0" width="50" height="100" fill="@Cor2" />
+                break;
+            case "faixa":
+                <polygon points="0,38 0,56 100,70 100,52" fill="@Cor2" />
+                break;
+            case "mangas":
+                <rect x="0" y="0" width="26" height="100" fill="@Cor2" />
+                <rect x="74" y="0" width="26" height="100" fill="@Cor2" />
+                break;
+        }
+        <path d="M35 8 Q50 24 65 8 L65 14 Q50 30 35 14Z" fill="@Cor3" />
+        <path d="M6 34 L19 42 L16 47 L3 39Z M94 34 L81 42 L84 47 L97 39Z" fill="@Cor3" />
+    </g>
+    <path d="@Corpo" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="2" stroke-linejoin="round" />
+</svg>
+
+@code {
+    private const string Corpo = "M35 8 L20 14 L5 36 L19 44 L26 36 L26 92 L74 92 L74 36 L81 44 L95 36 L80 14 L65 8 Q50 24 35 8Z";
+
+    [Parameter] public string Padrao { get; set; } = "listras_v";
+    [Parameter] public string Cor1 { get; set; } = "#0b7a3e";
+    [Parameter] public string Cor2 { get; set; } = "#f5c518";
+    [Parameter] public string Cor3 { get; set; } = "#ffffff";
+    [Parameter] public int Tamanho { get; set; } = 110;
+
+    private readonly string _id = "cm" + Guid.NewGuid().ToString("N")[..8];
+}

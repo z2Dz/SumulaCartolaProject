@@ -1,0 +1,358 @@
+@page "/clube"
+@attribute [Authorize]
+@inject ServicoTorcida Torcidas
+@inject ProvedorEstadoAutenticacao Provedor
+
+<PageTitle>Meu clube · Cartola dos Amigos</PageTitle>
+
+<div class="pagina clube">
+    <div class="clube-rolagem">
+    @if (carregando)
+    {
+        <h1 class="clube-titulo">Meu clube</h1>
+        <p class="suave centro">Carregando…</p>
+    }
+    else if (erro is not null && resumo is null)
+    {
+        <h1 class="clube-titulo">Meu clube</h1>
+        <div class="erro" role="alert">@erro <button type="button" class="botao-sec" @onclick="Carregar">Tentar de novo</button></div>
+    }
+    else if (resumo is not null)
+    {
+        <div class="clube-grade">
+        <div class="clube-col">
+        <h1 class="clube-titulo">Meu clube</h1>
+        <div class="clube-col-corpo">
+        @* ===== torcida ===== *@
+        <section class="cartao clube-topo">
+            <Escudo Config="Provedor.Perfil?.Escudo" Tamanho="84" Coroa="@(atual.Coroa && Torc >= Torcida.MinCoroa)"
+                    Estrelas="@(Torc >= Torcida.MinCoroa ? atual.Estrelas : 0)" Dourado="@(Torc >= Torcida.MinDourado)" />
+            <div class="clube-topo-info">
+                <small class="suave">Nível @Torcida.Numero(Torc) · @Torcida.Atual(Torc).Nome</small>
+                <strong class="clube-torcida">@Torcida.Fmt(Torc) torcedores</strong>
+                <div class="barra-nivel"><span style="width:@(Torcida.Progresso(Torc))%"></span></div>
+                @if (Torcida.Proximo(Torc) is { } prox)
+                {
+                    <small class="suave">Faltam @Torcida.Fmt(prox.Minimo - Torc) para o próximo nível</small>
+                }
+                else
+                {
+                    <small class="suave">Nível máximo alcançado.</small>
+                }
+            </div>
+        </section>
+
+        @* ===== resumo em números ===== *@
+        <section class="clube-resumo" aria-label="Resumo do clube">
+            <div class="clube-stat">
+                <strong>@Torcida.Fmt(Torc - Torcida.Inicial)</strong>
+                <small>torcedores conquistados</small>
+            </div>
+            <div class="clube-stat">
+                <strong>@resumo.Rodadas.Count</strong>
+                <small>@(resumo.Rodadas.Count == 1 ? "rodada contada" : "rodadas contadas")</small>
+            </div>
+            <div class="clube-stat">
+                <strong>@(resumo.Rodadas.Count > 0 ? Formato.Pontos(resumo.Rodadas.Max(r => r.Pontos)) : "—")</strong>
+                <small>melhor pontuação</small>
+            </div>
+            <div class="clube-stat">
+                <strong>@(resumo.Rodadas.Count > 0 ? "+" + Torcida.Fmt(resumo.Rodadas.Max(r => r.Ganho)) : "—")</strong>
+                <small>maior ganho numa rodada</small>
+            </div>
+            <div class="clube-stat clube-stat-larga">
+                <strong>@Torcida.Conquistas.Count(c => resumo.Conquistas.Contains(c.Chave)) de @Torcida.Conquistas.Count()</strong>
+                <small>conquistas desbloqueadas</small>
+            </div>
+        </section>
+
+        <details class="cartao regras-valor">
+            <summary>Como a torcida cresce?</summary>
+            <ul>
+                <li>Todo time começa com <strong>@Torcida.Fmt(Torcida.Inicial)</strong> torcedores. A torcida só cresce, nunca cai.</li>
+                <li><strong>Estreia:</strong> +@Torcida.Estreia na primeira rodada em que você estiver escalado.</li>
+                <li><strong>Acima da média:</strong> se o time fizer mais pontos que a média das suas rodadas anteriores, ganha (diferença × @Torcida.PorPonto) torcedores, no máximo +@Torcida.TetoRodada por rodada.</li>
+                <li><strong>Sequência:</strong> a cada @Torcida.SequenciaTam rodadas seguidas acima da média, +@Torcida.BonusSequencia.</li>
+                <li><strong>Conquistas</strong> dão torcedores extras uma única vez.</li>
+                <li>A rodada só conta se a escalação foi salva antes do horário da partida. Rodadas em que você não estava escalado são ignoradas.</li>
+                <li>As recompensas são só visuais e não dão vantagem no jogo.</li>
+            </ul>
+        </details>
+
+        @* ===== histórico e conquistas ===== *@
+        <section class="cartao">
+            <h3>Conquistas</h3>
+            <div class="conquistas">
+                @foreach (var c in Torcida.Conquistas)
+                {
+                    var ganha = resumo.Conquistas.Contains(c.Chave);
+                    <div class="conquista @(ganha ? "ganha" : "")" aria-label="@(ganha ? c.Nome + ", conquistada" : c.Nome)">
+                        @if (ganha) { <span class="conquista-ok" aria-hidden="true">✓</span> }
+                        <strong>@c.Nome</strong>
+                        <small>@c.Descricao</small>
+                        <span>@(ganha ? "✓ Conquistada · +" + c.Bonus + " torcedores" : "+" + c.Bonus + " torcedores")</span>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <section class="cartao">
+            <h3>Últimas rodadas</h3>
+            @if (resumo.Rodadas.Count == 0)
+            {
+                <p class="suave">Nenhuma rodada contada ainda. Salve uma escalação antes da próxima partida.</p>
+            }
+            else
+            {
+                <div class="rolagem-x">
+                    <table class="tabela-torcida">
+                        <thead><tr><th>Rodada</th><th>Pontos</th><th>Média ant.</th><th>Ganho</th><th>Torcida</th></tr></thead>
+                        <tbody>
+                            @foreach (var r in resumo.Rodadas.AsEnumerable().Reverse().Take(10))
+                            {
+                                <tr>
+                                    <td>@(r.NumeroRodada?.ToString() ?? r.Ordem.ToString())</td>
+                                    <td>@Formato.Pontos(r.Pontos)</td>
+                                    <td>@(r.MediaAnterior is { } m ? Formato.Media(m) : "—")</td>
+                                    <td class="@(r.Ganho > 0 ? "ganho" : "")">
+                                        @(r.Ganho > 0 ? "+" + Torcida.Fmt(r.Ganho) : "0")
+                                        @if (r.BonusSequencia > 0) { <small> (seq. +@r.BonusSequencia)</small> }
+                                        @if (r.Conquistas.Count > 0) { <small> (@string.Join(", ", r.Conquistas.Select(k => Torcida.Conquista(k)?.Nome ?? k)))</small> }
+                                    </td>
+                                    <td>@Torcida.Fmt(r.TorcidaTotal)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        </div>
+        </div>
+
+        <div class="clube-col">
+        <h2 class="clube-titulo">Recompensas</h2>
+        <div class="clube-col-corpo">
+        @* Só prévia: aqui se vê o que cada nível libera. A aplicação fica no campo (Escalar) e no editor de escudo. *@
+
+        <section class="cartao grupo @(Torc < Torcida.MinTextos ? "trancado" : "")">
+            <CabecalhoPersonalizacao Icone="pessoas" Titulo="Torcida organizada" Descricao="Dê um apelido à torcida e pendure até duas faixas nas laterais do campo, com o escudo do time dentro." Torc="Torc" Minimo="Torcida.MinTextos" Aberto='@(aberto == "pessoas")' OnAlternar='() => Alternar("pessoas")' />
+            @if (aberto == "pessoas")
+            {
+                <div class="grupo-corpo">
+                    <ul class="lista-previa">
+                        <li><strong>Apelido da torcida</strong> (ex.: Fiel, Legião), mostrado na Home.</li>
+                        <li><strong>Faixas laterais</strong>: até duas, uma para cada lado do campo, entre 8 modelos, com o escudo do seu time dentro e as cores à sua escolha. Aparecem na Home e no ranking.</li>
+                    </ul>
+                    <div class="prev-faixas">
+                        @foreach (var f in FaixasLaterais.Modelos)
+                        {
+                            <div class="prev-faixa" title="@f.Nome">
+                                <FaixaLateral Modelo="@f.Chave" Cor1="@resumo.Clube.FaixaCor1" Cor2="@resumo.Clube.FaixaCor2" Escudo="Provedor.Perfil?.Escudo" />
+                                <small>@f.Nome</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+
+        <section class="cartao grupo @(Torc < Torcida.MinCampo ? "trancado" : "")">
+            <CabecalhoPersonalizacao Icone="campo" Titulo="Campo" Descricao="Escolha o estilo do gramado e a cor das linhas." Torc="Torc" Minimo="Torcida.MinCampo" Aberto='@(aberto == "campo")' OnAlternar='() => Alternar("campo")' />
+            @if (aberto == "campo")
+            {
+                <div class="grupo-corpo">
+                    <div class="opcoes-linha">
+                        @foreach (var o in ClubeConfig.Campos)
+                        {
+                            <div class="opcao fixa @(atual.Campo == o.Chave ? "sel" : "")">
+                                <span class="amostra-campo campo-@o.Chave"></span>@o.Nome
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+
+        <section class="cartao grupo @(Torc < Torcida.MinEscudo ? "trancado" : "")">
+            <CabecalhoPersonalizacao Icone="escudo" Titulo="Novas formas de escudo" Descricao="Modelos 26 a 38, com coroas e faixas, para o seu escudo." Torc="Torc" Minimo="Torcida.MinEscudo" Aberto='@(aberto == "escudo")' OnAlternar='() => Alternar("escudo")' />
+            @if (aberto == "escudo")
+            {
+                <div class="grupo-corpo">
+                    <p class="suave">Prévia com as cores do seu escudo. Os modelos aparecem no <a href="escudo">editor de escudo</a>.</p>
+                    <div class="prev-formas">
+                        @foreach (var f in EscudoConfig.Formas.Where(f => Torcida.FormaNova(f.Chave)))
+                        {
+                            <div class="prev-forma" title="@f.Nome"><Escudo Config="@ComForma(f.Chave)" Tamanho="46" /><small>@f.Nome.Replace("Modelo ", "")</small></div>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+
+        <section class="cartao grupo @(Torc < Torcida.MinAnimacao ? "trancado" : "")">
+            <CabecalhoPersonalizacao Icone="escudo" Titulo="Escudo animado" Descricao="Os elementos do escudo ganham movimento: leão respira, lobo uiva, águia bate asas e mais." Torc="Torc" Minimo="Torcida.MinAnimacao" Aberto='@(aberto == "animacao")' OnAlternar='() => Alternar("animacao")' />
+            @if (aberto == "animacao")
+            {
+                <div class="grupo-corpo">
+                    <p class="suave">Veja como cada elemento se mexe. O movimento é ativado no <a href="escudo">editor de escudo</a>, na aba Detalhes.</p>
+                    <div class="prev-anim-grade">
+                        @foreach (var k in AnimacoesEscudo.Mapa.Keys)
+                        {
+                            <PreviaAnimacao Chave="@k" />
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+
+        <section class="cartao grupo @(Torc < Torcida.MinMoldura ? "trancado" : "")">
+            <CabecalhoPersonalizacao Icone="detalhes" Titulo="Moldura dos cards" Descricao="Molduras especiais para os cards dos jogadores no campo." Torc="Torc" Minimo="Torcida.MinMoldura" Aberto='@(aberto == "detalhes")' OnAlternar='() => Alternar("detalhes")' />
+            @if (aberto == "detalhes")
+            {
+                <div class="grupo-corpo">
+                    <div class="opcoes-linha">
+                        @foreach (var o in ClubeConfig.Molduras)
+                        {
+                            var liberada = Torc >= Torcida.MinDaMoldura(o.Chave) && (Torc >= Torcida.MinMoldura || o.Chave == "nenhuma");
+                            <div class="opcao fixa @(atual.Moldura == o.Chave ? "sel" : "") @(liberada ? "" : "bloq")">
+                                <PreviaMoldura Chave="@o.Chave" />@o.Nome
+                                @if (o.Chave != "nenhuma")
+                                {
+                                    <small class="opcao-min">@(liberada ? "liberada" : $"libera com {Torcida.Fmt(Torcida.MinDaMoldura(o.Chave))}")</small>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+
+        <section class="cartao grupo @(Torc < Torcida.MinCoroa ? "trancado" : "")">
+            <CabecalhoPersonalizacao Icone="coroa" Titulo="Escudo e fundo da Home" Descricao="Coroa, estrelas e fundo personalizado na tela inicial." Torc="Torc" Minimo="Torcida.MinCoroa" Aberto='@(aberto == "coroa")' OnAlternar='() => Alternar("coroa")' />
+            @if (aberto == "coroa")
+            {
+                <div class="grupo-corpo">
+                    <Escudo Config="Provedor.Perfil?.Escudo" Tamanho="72" Coroa="true" Estrelas="3" />
+                    <div class="opcoes-linha">
+                        @foreach (var o in ClubeConfig.Fundos)
+                        {
+                            <div class="opcao fixa @(atual.FundoHome == o.Chave ? "sel" : "")">
+                                <span class="amostra-fundo home-fundo-@o.Chave"></span>@o.Nome
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+
+        <section class="cartao grupo @(Torc < Torcida.MinCamisa ? "trancado" : "")">
+            <CabecalhoPersonalizacao Icone="faixas" Titulo="Camisa do time" Descricao="Mostre a camisa do seu clube na Home." Torc="Torc" Minimo="Torcida.MinCamisa" Aberto='@(aberto == "faixas")' OnAlternar='() => Alternar("faixas")' />
+            @if (aberto == "faixas")
+            {
+                <div class="grupo-corpo">
+                    @{ var cam = atual.Camisa; }
+                    <div class="opcoes-linha">
+                        @foreach (var o in CamisaConfig.Padroes)
+                        {
+                            <div class="opcao fixa @(cam?.Padrao == o.Chave ? "sel" : "")">
+                                <Camisa Padrao="@o.Chave" Cor1="@(cam?.Cor1 ?? "#0b7a3e")" Cor2="@(cam?.Cor2 ?? "#f5c518")" Cor3="@(cam?.Cor3 ?? "#ffffff")" Tamanho="64" />@o.Nome
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+
+        <section class="cartao grupo @(Torc < Torcida.MinMascote ? "trancado" : "")">
+            <CabecalhoPersonalizacao Icone="estrela" Titulo="Mascote" Descricao="Escolha um mascote para representar o clube." Torc="Torc" Minimo="Torcida.MinMascote" Aberto='@(aberto == "estrela")' OnAlternar='() => Alternar("estrela")' />
+            @if (aberto == "estrela")
+            {
+                <div class="grupo-corpo">
+                    <div class="opcoes-linha">
+                        @foreach (var o in ClubeConfig.Mascotes)
+                        {
+                            <div class="opcao fixa opcao-mascote @(atual.Mascote == o.Chave ? "sel" : "")" title="@o.Nome" aria-label="@o.Nome">
+                                <Mascote Chave="@o.Chave" Cor="@atual.MascoteCor" Tamanho="44" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+
+        <section class="cartao grupo @(Torc < Torcida.MinDourado ? "trancado" : "")">
+            <CabecalhoPersonalizacao Icone="trofeu" Titulo="Lenda da pelada" Descricao="Brilho dourado no escudo, destaque no ranking, um estádio para o seu clube e o nome dele." Torc="Torc" Minimo="Torcida.MinDourado" Aberto='@(aberto == "trofeu")' OnAlternar='() => Alternar("trofeu")' />
+            @if (aberto == "trofeu")
+            {
+                <div class="grupo-corpo">
+                    <p class="suave">Com @Torcida.Fmt(Torcida.MinDourado) torcedores o escudo ganha brilho dourado e o time recebe destaque no ranking. O brilho é automático.</p>
+                    <p class="suave">Seu clube também cresceu tanto que construiu um estádio. Ele vira a moldura do campo na hora de escalar e aparece para os amigos quando olharem a sua escalação no ranking. Toque num modelo para ver como fica:</p>
+
+                    <PreviaEstadio Chave="@prevEstadio" />
+
+                    <div class="opcoes-linha">
+                        <button type="button" class="opcao @(prevEstadio == "" ? "sel" : "")" @onclick='() => prevEstadio = ""'>Sem estádio</button>
+                        @foreach (var o in Estadios.Modelos)
+                        {
+                            <button type="button" class="opcao opcao-estadio @(prevEstadio == o.Chave ? "sel" : "")" @onclick="() => prevEstadio = o.Chave">
+                                <PreviaEstadio Chave="@o.Chave" Classe="peq" />@o.Nome
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+
+        </div>
+        </div>
+        </div>
+    }
+    </div>
+</div>
+
+@code {
+    private EscudoConfig ComForma(string chave)
+    {
+        var b = Provedor.Perfil?.Escudo;
+        return new EscudoConfig
+        {
+            Forma = chave, Padrao = "metade_v", Simbolo = "nenhum",
+            Cor1 = b?.Cor1 ?? "#0b7a3e", Cor2 = b?.Cor2 ?? "#f5c518",
+            CorBorda = b?.CorBorda ?? "#0b3d2e", CorSimbolo = b?.CorSimbolo ?? "#ffffff",
+            Simbolos = new()
+        };
+    }
+
+    private ResumoTorcida? resumo;
+    private bool carregando = true;
+    private string? erro;
+    private string? aberto;   // personalização aberta (uma por vez)
+    private string prevEstadio = "arena";   // estádio mostrado na prévia
+
+    private void Alternar(string chave) => aberto = aberto == chave ? null : chave;
+
+    // Escolhas atuais do clube, só para marcar na prévia
+    private ClubeConfig atual => resumo?.Clube ?? new ClubeConfig();
+
+    private int Torc => resumo?.Torcida ?? Torcida.Inicial;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Provedor.GetAuthenticationStateAsync();
+        await Carregar();
+    }
+
+    private async Task Carregar()
+    {
+        carregando = true;
+        erro = null;
+        try
+        {
+            resumo = await Torcidas.CarregarAsync();
+        }
+        catch (ErroTorcidaException ex) { erro = ex.Message; }
+        finally { carregando = false; }
+    }
+}

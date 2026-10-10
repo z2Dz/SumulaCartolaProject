@@ -1,0 +1,49 @@
+/* Variáveis (:root)
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+:root {
+    --amarelo: #f5c518;
+    --erro: #b3261e;
+}
+
+@media (prefers-color-scheme: dark) {
+:root {
+        --fundo: #0e1512;
+        --cartao: #17211c;
+        --texto: #e8efeb;
+        --suave: #93a39a;
+    }
+}
+
+/* =====================================================================
+   Novo visual: tema escuro, menu lateral (computador) e abas (celular)
+   ===================================================================== */
+:root {
+    --fundo: #07110d;
+    --cartao: #0e1a15;
+    --texto: #e8efeb;
+    --suave: #8fa39a;
+    --verde: #0f5a42;
+    --verde-2: #16a374;
+    --acento: #19c98a;
+    --raio: 18px;
+}
+
+/* =====================================================================
+   Cores de uso repetido (substituem os hex soltos nos demais arquivos)
+   ===================================================================== */
+:root {
+    --branco: #ffffff;
+    --menta: #1fe3a0;
+    --texto-claro: #e8efeb;
+    --preto-suave: #111111;
+    --grafite: #1a1a1a;
+    --vermelho: #d32f2f;
+}
+
+/* Estádio: quanto a moldura passa do gramado (fração da largura / da altura do campo).
+   Usado por .estadio-fundo e pelo cálculo do tamanho do campo na tela Escalar. */
+:root {
+    --estadio-sobra-x: .055;
+    --estadio-sobra-y: .035;
+}

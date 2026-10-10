@@ -1,0 +1,1327 @@
+/* Admin: ordem de chegada e prévia dos times
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.area-arrasto {
+    position: relative;
+    margin: 0 auto;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+}
+
+.area-arrasto:active {
+        cursor: grabbing;
+    }
+
+.area-arrasto .escudo {
+        pointer-events: none;
+    }
+
+.ed-quadro .area-arrasto {
+        margin: auto !important;
+        flex: none;
+    }
+
+/* ===== Ordem de chegada: nomes de um lado, chegada do outro ===== */
+.chg-grid {
+    display: grid;
+    gap: .8rem;
+    align-items: start;
+}
+
+.chg-col {
+    min-width: 0;
+}
+
+.chg-nomes {
+    list-style: none;
+    margin: .6rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    max-height: 26rem;
+    overflow-y: auto;
+}
+
+.chg-nome {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .4rem .5rem;
+    border: 1px solid rgba(128,128,128,.25);
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.chg-nome:active {
+        background: rgba(128,128,128,.15);
+    }
+
+.chg-nome-txt {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.chg-nome-txt strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+.chg-nome-txt small {
+        opacity: .65;
+    }
+
+.chg-mais {
+    flex: none;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--verde);
+    color: var(--branco);
+    font-weight: 700;
+}
+
+@media (min-width: 720px) {
+.adm:has(.chg-grid) {
+        max-width: 1040px;
+    }
+
+.chg-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+.chg-nomes {
+        max-height: 34rem;
+    }
+}
+
+/* Chegada: duas colunas, cada uma rola por dentro */
+.fixa > .chg-grid {
+        flex: 1;
+        min-height: 0;
+        grid-auto-rows: minmax(0, 1fr);
+    }
+
+.chg-col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.chg-col > * {
+        flex: none;
+    }
+
+.chg-col > .chg-nomes,
+    .chg-col > .chg-rola {
+        flex: 1;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+    }
+
+/* Lista de nomes da chegada: 9 linhas visíveis, o resto rola */
+.chg-nome {
+    height: 2.9rem;
+    flex: none;
+}
+
+.chg-col > .chg-nomes {
+    flex: 0 1 auto;
+    max-height: calc(var(--linhas) * 2.9rem + (var(--linhas) - 1) * .3rem);
+}
+
+/* Lista de nomes da chegada: 8 linhas e barra de rolagem oculta (a rolagem continua funcionando) */
+.chg-nomes {
+    --linhas: 8;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.chg-nomes::-webkit-scrollbar {
+        display: none;
+    }
+
+/* Lista da ordem de chegada: 8 linhas visíveis, barra de rolagem oculta */
+.chg-rola:has(> .adm-lista) {
+    --linhas: 8;
+    --alt-item: 3.6rem;
+    flex: 0 1 auto;
+    max-height: calc(var(--linhas) * var(--alt-item) + (var(--linhas) - 1) * .4rem);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.chg-rola:has(> .adm-lista)::-webkit-scrollbar {
+        display: none;
+    }
+
+.chg-rola > .adm-lista .adm-item {
+    height: var(--alt-item, 3.6rem);
+}
+
+@media (max-width: 480px) {
+/* Telas estreitas: o item tem duas linhas */
+.chg-rola:has(> .adm-lista) {
+        --alt-item: 6.3rem;
+    }
+}
+
+/* Chegada: as duas colunas com a mesma altura */
+.fixa > .chg-grid {
+    align-items: stretch;
+}
+
+/* Prévia dos times (chegada) */
+.previa-fundo {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(0,0,0,.6);
+}
+
+.previa {
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    background: var(--cartao);
+    box-shadow: 0 12px 32px rgba(0,0,0,.4);
+}
+
+.previa-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.previa-topo h3 {
+        margin: 0;
+    }
+
+.previa-times {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow-y: auto;
+}
+
+.previa-time {
+    min-width: 0;
+    border-radius: 12px;
+    border-top: 4px solid transparent;
+    background: rgba(128,128,128,.08);
+}
+
+.previa-time.vermelho {
+        border-top-color: var(--vermelho);
+    }
+
+.previa-time.amarelo {
+        border-top-color: var(--amarelo);
+    }
+
+.previa-time h4 {
+        margin: 0 0 .5rem;
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+.previa-time ol {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: n;
+        display: flex;
+        flex-direction: column;
+    }
+
+.previa-time li {
+        counter-increment: n;
+        display: flex;
+        align-items: center;
+        min-width: 0;
+    }
+
+.previa-time li::before {
+            content: counter(n);
+            flex: none;
+            opacity: .6;
+            text-align: right;
+        }
+
+.previa-time li small {
+            margin-left: auto;
+            opacity: .6;
+            white-space: nowrap;
+        }
+
+.previa-nome {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+/* Botão de editar atleta nas listas */
+.chg-nomes > li {
+    display: flex;
+    align-items: stretch;
+    gap: .3rem;
+}
+
+.chg-nomes > li > .chg-nome {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+    }
+
+.chg-editar {
+    flex: none;
+    width: 2.9rem;
+    height: 2.9rem;
+    border: 1px solid rgba(128, 128, 128, .25);
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.chg-editar:active {
+        background: rgba(128, 128, 128, .15);
+    }
+
+.regras-valor h4 {
+    margin: .8rem 0 .3rem;
+    font-size: .9rem;
+}
+
+.rk-info strong {
+        overflow-wrap: anywhere;
+    }
+
+.lateral-nome strong {
+        font-size: 1.1rem;
+        overflow-wrap: anywhere;
+    }
+
+.topo-m-time strong {
+        display: block;
+        font-size: 1.15rem;
+    }
+
+.esc-num strong {
+        display: block;
+        font-size: 1.35rem;
+        color: var(--texto);
+        white-space: nowrap;
+    }
+
+.esc-stat strong {
+        display: block;
+        font-size: 1.1rem;
+        font-weight: 800;
+        white-space: nowrap;
+        color: var(--texto);
+    }
+
+.regras-modal-corpo h4 {
+        margin: 1rem 0 .3rem;
+        color: var(--acento);
+    }
+
+.ed-anim small {
+        opacity: .8;
+    }
+
+/* ===== Ordem de chegada: visual em vidro escuro ===== */
+.chg2 .chg-grid {
+    gap: 1rem;
+}
+
+.chg2 .cartao.chg2-card {
+    background: rgba(6,18,13,.62);
+    border: 1px solid rgba(31,227,160,.28);
+    border-radius: 20px;
+    padding: 1rem;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.35) inset, 0 10px 30px rgba(0,0,0,.35);
+}
+
+/* abas */
+.chg2-card .adm-abas {
+    gap: .5rem;
+    margin-bottom: .8rem;
+}
+
+.chg2-card .adm-abas button.ativa {
+            background: linear-gradient(135deg, #12a574, #0b6e50);
+            border-color: var(--menta);
+            color: var(--branco);
+            box-shadow: 0 0 14px rgba(31,227,160,.25);
+        }
+
+/* busca */
+.chg2-busca {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .55rem .9rem;
+    margin-bottom: .6rem;
+    border-radius: 14px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.16);
+    color: var(--texto-claro);
+}
+
+.chg2-busca input {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-size: .95rem;
+    }
+
+.chg2-busca input::placeholder {
+            color: rgba(232,239,235,.55);
+        }
+
+.chg2-dica {
+    margin: 0 0 .6rem;
+    font-size: .78rem;
+    color: rgba(232,239,235,.6);
+}
+
+/* lista da esquerda */
+.chg2-card .chg-nomes {
+    gap: .5rem;
+    margin-top: 0;
+}
+
+.chg2-card .chg-nomes > li {
+        align-items: center;
+        gap: .5rem;
+    }
+
+.chg2-card .chg-nome {
+    height: 3.6rem;
+    padding: .4rem .6rem;
+    border-radius: 14px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.12);
+    color: var(--texto-claro);
+}
+
+.chg2-card .chg-nome:hover {
+        background: rgba(31,227,160,.08);
+        border-color: rgba(31,227,160,.4);
+    }
+
+.chg2-card .chg-nome-txt strong {
+    font-size: 1rem;
+}
+
+.chg2-card .chg-mais {
+    width: 2.2rem;
+    height: 2.2rem;
+    background: #0e5a45;
+    color: var(--menta);
+    border: 1px solid rgba(31,227,160,.45);
+}
+
+.chg2-card .chg-editar {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    color: rgba(232,239,235,.7);
+    border-color: rgba(255,255,255,.12);
+}
+
+/* pontinhos de arrastar */
+.chg2-grip {
+    flex: none;
+    width: 14px;
+    height: 22px;
+    opacity: .6;
+    background-image: radial-gradient(circle, var(--texto-claro) 1.6px, transparent 2px);
+    background-size: 7px 7px;
+    background-position: center;
+}
+
+/* cabeçalho da ordem */
+.chg2-cab {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin-bottom: .8rem;
+    flex-wrap: wrap;
+}
+
+.chg2-cab-ico {
+    color: var(--menta);
+    display: grid;
+    place-items: center;
+}
+
+.chg2-cab-txt {
+    flex: 1;
+    min-width: 10rem;
+}
+
+.chg2-times {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-weight: 700;
+    font-size: .9rem;
+    color: var(--texto-claro);
+}
+
+.chg2-times .adm-bolinha {
+        margin-left: .4rem;
+    }
+
+.chg2-dica-arrastar {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem 1rem;
+    border-radius: 12px;
+    font-size: .85rem;
+    color: var(--texto-claro);
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.18);
+}
+
+/* linhas da ordem */
+.chg2-ordem {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.chg2-item {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .45rem .7rem;
+    border-radius: 14px;
+    cursor: grab;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.14);
+    color: var(--texto-claro);
+}
+
+.chg2-item.vermelho {
+        border-left: 3px solid var(--vermelho);
+    }
+
+.chg2-item.amarelo {
+        border-left: 3px solid var(--amarelo);
+    }
+
+.chg2-item.arrastando {
+        opacity: .45;
+        border-style: dashed;
+    }
+
+.chg2-item:hover {
+        background: rgba(31,227,160,.07);
+    }
+
+.chg2-num {
+    flex: none;
+    width: 2.1rem;
+    height: 2.1rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    font-weight: 800;
+    color: var(--branco);
+    background: linear-gradient(135deg, #17b583, #0b7a58);
+}
+
+.chg2-nome {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.chg2-mover {
+    display: flex;
+    gap: .3rem;
+}
+
+.chg2-mover .adm-icone {
+        min-width: 2.1rem;
+        min-height: 2.1rem;
+        padding: 0;
+        border-radius: 10px;
+        background: rgba(255,255,255,.04);
+        border-color: rgba(255,255,255,.2);
+        color: var(--texto-claro);
+    }
+
+.chg2-mover .adm-perigo {
+        color: #ff6b63;
+        border-color: rgba(255,107,99,.45);
+    }
+
+/* rodapé tracejado */
+.chg2-rodape {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .8rem;
+    margin-top: .8rem;
+    padding: .9rem 1rem;
+    border-radius: 14px;
+    text-align: left;
+    border: 1.5px dashed rgba(31,227,160,.45);
+    color: var(--texto-claro);
+}
+
+@media (max-width: 719px) {
+.chg2-dica-arrastar, .chg2-rodape, .chg2-grip {
+        display: none;
+    }
+
+.chg2-item {
+        flex-wrap: wrap;
+        row-gap: .4rem;
+        cursor: default;
+    }
+
+.chg2-nome {
+        flex-basis: calc(100% - 6rem);
+    }
+
+.chg2-item .adm-seg {
+        order: 5;
+    }
+
+.chg2-item .chg2-mover {
+        order: 6;
+        margin-left: auto;
+    }
+}
+
+.chg2 > .cartao .adm-rotulo {
+        margin: 0 0 .3rem;
+        color: var(--menta);
+    }
+
+.chg2 > .cartao .adm-campo {
+        background: rgba(255,255,255,.04);
+        border: 1px solid rgba(255,255,255,.18);
+        border-radius: 14px;
+        color: var(--texto-claro);
+    }
+
+.chg2 > .cartao .adm-campo option {
+            background: #0b1a14;
+            color: var(--texto-claro);
+        }
+
+/* a lista ocupa todo o espaço do cartão e rola por dentro (antes parava em 8 linhas) */
+.chg2 .chg-col > .chg-nomes {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    padding-bottom: .2rem;
+}
+
+.chg2 .chg-col > .chg-rola {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.chg2 .chg-nomes > li,
+.chg2 .chg2-item,
+.chg2 .chg2-rodape {
+    flex-shrink: 0;
+}
+
+.chg2 .chg-col > .chg2-rodape {
+    flex: none;
+}
+
+/* ===== Chegada: barra de ações maior ===== */
+.chg2-barra {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    flex-wrap: wrap;
+    padding: .8rem 1rem;
+    border-radius: 20px;
+    background: rgba(6,18,13,.62);
+    border: 1px solid rgba(31,227,160,.28);
+    backdrop-filter: blur(8px);
+}
+
+.chg2-barra-gap {
+    flex: 1;
+}
+
+.chg2-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .6rem;
+    min-height: 3.4rem;
+    padding: .8rem 1.5rem;
+    border-radius: 16px;
+    font: inherit;
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    color: var(--texto-claro);
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.2);
+}
+
+.chg2-btn:hover:not(:disabled) {
+        background: rgba(255,255,255,.1);
+    }
+
+.chg2-btn:disabled {
+        opacity: .45;
+        cursor: default;
+    }
+
+.chg2-btn.destaque {
+        color: var(--menta);
+        border-color: var(--menta);
+        background: rgba(31,227,160,.08);
+    }
+
+.chg2-btn.primario {
+        min-width: 15rem;
+        color: var(--branco);
+        font-weight: 700;
+        border-color: var(--menta);
+        background: linear-gradient(135deg, #17b583, #0b7a58);
+        box-shadow: 0 0 16px rgba(31,227,160,.25);
+    }
+
+@media (max-width: 899px) {
+.chg2-barra {
+        gap: .5rem;
+        padding: .6rem;
+    }
+
+.chg2-barra-gap {
+        display: none;
+    }
+
+.chg2-btn {
+        flex: 1 1 45%;
+        min-height: 3rem;
+        padding: .6rem .8rem;
+        font-size: .95rem;
+    }
+
+.chg2-btn.primario {
+            min-width: 0;
+            flex-basis: 100%;
+        }
+}
+
+@media (min-width: 900px) {
+/* ===== Chegada: ocupa melhor a tela e barra de ações em uma linha ===== */
+.pagina.adm.fixa.chg2 {
+        max-width: 1600px;
+        width: 100%;
+        margin-inline: auto;
+        padding-inline: 1.2rem;
+    }
+
+.chg2 .chg-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.2rem;
+    }
+
+.chg2 .cartao.chg2-card {
+        padding: 1.2rem 1.4rem;
+    }
+
+.chg2 .chg-nome {
+        height: 4.1rem;
+        padding: .5rem .8rem;
+    }
+
+.chg2 .chg-nome-txt strong {
+        font-size: 1.1rem;
+    }
+
+.chg2 .chg-mais {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+.chg2 .chg-editar {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+.chg2-item {
+        padding: .6rem .9rem;
+        gap: .9rem;
+    }
+
+.chg2-num {
+        width: 2.4rem;
+        height: 2.4rem;
+        font-size: 1.05rem;
+    }
+
+.chg2-mover .adm-icone {
+        min-width: 2.4rem;
+        min-height: 2.4rem;
+    }
+
+.chg2-rodape {
+        padding: 1.1rem 1.2rem;
+    }
+
+.chg2-barra {
+        flex-wrap: nowrap;
+        gap: .8rem;
+    }
+
+.chg2-btn {
+        white-space: nowrap;
+        flex: none;
+        padding: .8rem 1.3rem;
+    }
+
+.chg2-btn.primario {
+            min-width: 13rem;
+        }
+}
+
+/* Prévia dos times (chegada): versão ampliada */
+.previa {
+    width: min(1100px, 96vw);
+    max-height: 92dvh;
+    padding: 1.4rem 1.6rem;
+    gap: .9rem;
+}
+
+.previa-times {
+    gap: 1rem;
+}
+
+.previa-time {
+    padding: .9rem 1.1rem;
+}
+
+.previa-time h4 {
+        font-size: 1.25rem;
+        margin-bottom: .8rem;
+    }
+
+.previa-time ol {
+        gap: .55rem;
+    }
+
+.previa-time li {
+        gap: .8rem;
+        font-size: 1.1rem;
+    }
+
+.previa-time li::before {
+            width: 1.8rem;
+            font-size: 1rem;
+        }
+
+.previa-time li small {
+            font-size: .95rem;
+        }
+
+.previa-nome {
+    font-size: 1.1rem;
+}
+
+@media (max-width: 640px) {
+.previa {
+        padding: 1rem;
+    }
+
+.previa-times {
+        grid-template-columns: 1fr;
+    }
+
+.previa-time li {
+        font-size: 1rem;
+    }
+}
+
+/* Prévia dos times: contagem por posição e visão no campo */
+.previa-acoes {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.previa-modo {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 10px;
+    background: rgba(128,128,128,.14);
+}
+
+.previa-modo button.ativa {
+            background: #1f9d6b;
+            color: var(--branco);
+            font-weight: 600;
+        }
+
+.previa-time h4 {
+    flex-wrap: wrap;
+}
+
+.previa-pos {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+    margin-left: auto;
+}
+
+.previa-chip {
+    padding: .1rem .55rem;
+    border-radius: 999px;
+    background: rgba(128,128,128,.18);
+    font-size: .85rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.previa-tatica {
+    margin: 0 0 .4rem;
+    font-size: .95rem;
+    opacity: .85;
+}
+
+.previa-campo .campo-cena {
+        --tilt: 10deg;
+        padding: .4rem 0;
+    }
+
+.previa-campo .slot-btn {
+        pointer-events: none;
+    }
+
+.previa-reservas {
+    margin: .6rem 0 0;
+    font-size: .9rem;
+    opacity: .85;
+}
+
+/* Prévia no campo: mais larga para os lados */
+.previa.previa-larga {
+    width: min(1400px, 98vw);
+}
+
+.previa-campo {
+    --slot: clamp(46px, 5.6vw, 84px);
+}
+
+/* Prévia dos times: barras de rolagem escondidas (a rolagem continua funcionando) */
+.previa,
+.previa-times,
+.previa-time,
+.previa-campo {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.previa::-webkit-scrollbar,
+    .previa-times::-webkit-scrollbar,
+    .previa-time::-webkit-scrollbar,
+    .previa-campo::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+
+.previa,
+.previa-times {
+    overflow-x: hidden;
+}
+
+/* Prévia dos times: goleiro fixo, troca de goleiros e reservas */
+.previa-troca {
+    padding: .4rem .9rem;
+    border: 1px solid rgba(128,128,128,.35);
+    border-radius: 10px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: .95rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.previa-troca:hover:not(:disabled) {
+        border-color: #1f9d6b;
+        color: #1f9d6b;
+    }
+
+.previa-troca:disabled {
+        opacity: .45;
+        cursor: default;
+    }
+
+.previa-goleiro {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin: .2rem 0 .6rem;
+    font-size: 1rem;
+}
+
+.previa-goleiro.sem {
+        font-size: .9rem;
+        opacity: .75;
+    }
+
+.previa-reserv {
+    margin-top: .8rem;
+    padding-top: .6rem;
+    border-top: 1px dashed rgba(128,128,128,.35);
+}
+
+.previa-reserv h5 {
+        margin: 0 0 .5rem;
+        font-size: .95rem;
+        opacity: .85;
+    }
+
+.previa-reserv ul {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: .5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+.previa-reserv li {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        padding: .35rem .5rem;
+        border-radius: 10px;
+        background: rgba(128,128,128,.12);
+    }
+
+.previa-reserv li::before {
+            content: none;
+        }
+
+.previa-reserv-txt {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+@media (max-width: 640px) {
+.previa-acoes {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+}
+
+@media (min-width: 900px) and (min-height: 620px) {
+.previa-campo {
+        --h: max(260px, calc(100vh - 390px));
+    }
+
+.previa-larga .previa-goleiro {
+        margin: 0 0 .3rem;
+    }
+
+.previa-larga .previa-tatica {
+        margin: 0;
+    }
+
+.previa-larga .previa-reserv {
+        margin-top: .4rem;
+        padding-top: .4rem;
+    }
+
+.previa-larga .previa-reserv ul {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        }
+}
+
+/* Prévia no campo: sem holofote atrás do campo e com sombra nos cartões (vazios e cheios) */
+.previa-campo .campo-cena::before {
+    display: none;
+}
+
+.previa-campo .slot-btn,
+.previa-campo .slot-btn.vazia {
+    filter: drop-shadow(0 7px 5px rgba(0,0,0,.6)) drop-shadow(0 1px 1px rgba(0,0,0,.5));
+}
+
+.previa-campo .campo-cena .slot::before {
+    background: radial-gradient(ellipse, rgba(0,0,0,.75), transparent 72%);
+    height: 12px;
+    bottom: -6px;
+}
+
+/* Substituições do 2º tempo (chegada e prévia) */
+.chg2-tempo {
+    display: block;
+    margin-top: 1px;
+    font-size: .76rem;
+    line-height: 1.25;
+    color: #9fb3ad;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chg2-tempo.sai {
+        color: #ff9b8f;
+    }
+
+.chg2-tempo.entra {
+        color: #5fe0a8;
+    }
+
+.previa-subs {
+    margin-top: .8rem;
+    padding-top: .6rem;
+    border-top: 1px dashed rgba(128,128,128,.35);
+}
+
+.previa-subs h5 {
+        margin: 0 0 .5rem;
+        font-size: .95rem;
+        opacity: .85;
+    }
+
+.previa-subs ul {
+        display: grid;
+        gap: .35rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+.previa-subs li {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        padding: .35rem .6rem;
+        border-radius: 10px;
+        background: rgba(128,128,128,.12);
+        font-size: .95rem;
+    }
+
+.previa-subs li::before {
+            content: none;
+        }
+
+.previa-subs .sub-sai b {
+        color: #ff6b5e;
+    }
+
+.previa-subs .sub-entra b {
+        color: #2fd18b;
+    }
+
+.previa-subs .sub-seta {
+        opacity: .6;
+    }
+
+.previa-subs-sobra {
+    margin: .5rem 0 0;
+    font-size: .85rem;
+    opacity: .75;
+}
+
+@media (max-width: 640px) {
+.previa-acoes {
+        row-gap: .4rem;
+    }
+}
+
+/* =====================================================================
+   Celular: chegada com popup para adicionar atleta e ordem sem corte
+   ===================================================================== */
+.chg2-pop-cab, .chg2-pop-ok, .chg2-pop-fundo, .chg2-abrir-add, .chg2 .so-mob {
+    display: none;
+}
+
+@media (max-width: 899px) {
+.chg2 .so-desk {
+        display: none;
+    }
+
+.chg2 .so-mob {
+        display: inline;
+    }
+
+.fixa > .chg-grid {
+        flex: none;
+        grid-template-columns: 1fr;
+        grid-auto-rows: auto;
+    }
+
+/* a ordem cresce com o conteúdo; a página é que rola */
+.chg2 .chg-col:not(.chg-add) {
+        overflow: visible;
+    }
+
+.chg2 .chg-col:not(.chg-add) > .chg-rola {
+            flex: none;
+            overflow: visible;
+        }
+
+.chg2-vazio {
+        padding: 1rem .2rem;
+        text-align: center;
+    }
+
+.chg2-abrir-add {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        width: 100%;
+        min-height: 3rem;
+        margin: 0 0 .7rem;
+        border-radius: 14px;
+        border: 1px solid var(--menta);
+        background: linear-gradient(135deg, #12a574, #0b6e50);
+        color: var(--branco);
+        font: inherit;
+        font-weight: 700;
+        box-shadow: 0 0 14px rgba(31,227,160,.25);
+    }
+
+.chg2-cab {
+        margin-bottom: .6rem;
+    }
+
+.chg2-cab-txt {
+        min-width: 0;
+    }
+
+/* linhas da ordem: 1ª linha identifica, 2ª linha mexe */
+.chg2-item {
+        display: grid;
+        grid-template-columns: auto auto minmax(0, 1fr);
+        align-items: center;
+        gap: .4rem .6rem;
+        padding: .6rem .7rem;
+    }
+
+.chg2-item .chg2-nome {
+            flex-basis: auto;
+        }
+
+.chg2-item .adm-seg {
+            grid-column: 1 / 3;
+            grid-row: 2;
+            order: 0;
+        }
+
+.chg2-item .chg2-mover {
+            grid-column: 3;
+            grid-row: 2;
+            margin-left: 0;
+            justify-content: flex-end;
+            order: 0;
+        }
+
+.chg2-mover .adm-icone {
+        min-width: 2.4rem;
+        min-height: 2.3rem;
+    }
+
+/* popup: o card de atletas vira uma folha que sobe de baixo */
+.chg-add {
+        display: none;
+    }
+
+.chg2 .cartao.chg-add.pop-aberto {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: 7dvh;
+        z-index: 28;
+        margin: 0;
+        border-radius: 22px 22px 0 0;
+        background: #08150f;
+        padding: .9rem .9rem calc(.9rem + env(safe-area-inset-bottom, 0px));
+        overflow: hidden;
+    }
+
+.chg2-pop-fundo {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 27;
+        background: rgba(0,0,0,.6);
+    }
+
+.chg2-pop-cab {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .6rem;
+        margin-bottom: .7rem;
+    }
+
+.chg2-pop-ok {
+        display: block;
+        flex: none;
+        width: 100%;
+        margin-top: .7rem;
+        border-radius: 14px;
+    }
+
+.chg2 .chg-add .chg-nomes {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow-y: auto;
+    }
+}

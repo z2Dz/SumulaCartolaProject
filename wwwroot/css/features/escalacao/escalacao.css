@@ -1,0 +1,49 @@
+/* Escalação: estrutura geral
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+/* Tela de escalação */
+.escalar-topo {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .8rem;
+}
+
+.tatica {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    font-size: .8rem;
+    color: var(--suave);
+}
+
+.tatica select {
+        font-size: 1.1rem;
+        font-weight: 700;
+        padding: .65rem .8rem;
+        border-radius: 12px;
+        border: 1px solid rgba(128,128,128,.4);
+        background: var(--cartao);
+        color: var(--texto);
+    }
+
+.contador {
+    text-align: center;
+    line-height: 1.1;
+}
+
+.contador strong {
+        font-size: 1.4rem;
+    }
+
+.contador small {
+        display: block;
+        color: var(--suave);
+        font-size: .7rem;
+    }
+
+/* ===== Escalação: orçamento e painel de atletas ===== */
+.escalar-topo {
+    align-items: flex-end;
+}

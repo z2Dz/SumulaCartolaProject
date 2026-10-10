@@ -1,0 +1,74 @@
+@* Prévia do escudo onde os símbolos podem ser arrastados com o dedo ou o mouse.
+   O arraste só re-renderiza este componente (a página inteira só é avisada ao soltar). *@
+<div class="area-arrasto" style="position:relative;margin:0 auto;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;width:@(Largura)px;height:@(Altura)px"
+     @onpointerdown="AoPressionar" @onpointermove="AoMover"
+     @onpointerup="AoSoltar" @onpointercancel="AoSoltar" @onpointerleave="AoSoltar">
+    <div style="pointer-events:none"><Escudo Config="Config" Tamanho="Largura" /></div>
+    @if (Config.Simbolos is not null && Ativo is int i && i >= 0 && i < Config.Simbolos.Count)
+    {
+        var s = Config.Simbolos[i];
+        var t = Math.Clamp(s.Tamanho, EscudoConfig.TamanhoMin, EscudoConfig.TamanhoMax);
+        <svg class="anel-selecao" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 100 120" aria-hidden="true">
+            <rect x="@F(s.X - t / 2.0)" y="@F(s.Y - t / 2.0)" width="@t" height="@t" rx="3" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 2" />
+        </svg>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public EscudoConfig Config { get; set; } = default!;
+    [Parameter] public int Largura { get; set; } = 150;
+    [Parameter] public int? Ativo { get; set; }
+    [Parameter] public EventCallback<int?> AtivoChanged { get; set; }
+    /// <summary>Disparado ao soltar o símbolo (posição já atualizada em Config).</summary>
+    [Parameter] public EventCallback Alterado { get; set; }
+
+    private bool _arrastando;
+    private double _dx, _dy;
+    private int Altura => (int)Math.Round(Largura * 1.2);
+
+    private static string F(double v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    // OffsetX/OffsetY são relativos à área de arraste (os filhos têm pointer-events:none)
+    private (double x, double y) Ponto(PointerEventArgs e) =>
+        (e.OffsetX / Largura * 100, e.OffsetY / Altura * 120);
+
+    private async Task AoPressionar(PointerEventArgs e)
+    {
+        var lista = Config.Simbolos;
+        if (lista is null || lista.Count == 0) return;
+
+        var (x, y) = Ponto(e);
+
+        // Escolhe o símbolo tocado (o de cima primeiro); se tocou fora de todos, pega o mais próximo
+        int escolhido = -1;
+        for (var i = lista.Count - 1; i >= 0; i--)
+        {
+            var s = lista[i];
+            if (Math.Max(Math.Abs(x - s.X), Math.Abs(y - s.Y)) <= s.Tamanho / 2.0) { escolhido = i; break; }
+        }
+        if (escolhido < 0)
+            escolhido = Enumerable.Range(0, lista.Count)
+                .OrderBy(i => Math.Pow(x - lista[i].X, 2) + Math.Pow(y - lista[i].Y, 2)).First();
+
+        _dx = x - lista[escolhido].X;
+        _dy = y - lista[escolhido].Y;
+        _arrastando = true;
+        Ativo = escolhido;
+        await AtivoChanged.InvokeAsync(escolhido);
+    }
+
+    private void AoMover(PointerEventArgs e)
+    {
+        if (!_arrastando || Ativo is not int i || Config.Simbolos is null || i >= Config.Simbolos.Count) return;
+        var (x, y) = Ponto(e);
+        Config.Simbolos[i].X = EscudoConfig.LimitarX(x - _dx);
+        Config.Simbolos[i].Y = EscudoConfig.LimitarY(y - _dy);
+    }
+
+    private async Task AoSoltar(PointerEventArgs e)
+    {
+        if (!_arrastando) return;
+        _arrastando = false;
+        await Alterado.InvokeAsync();
+    }
+}

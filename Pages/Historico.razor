@@ -1,0 +1,511 @@
+@page "/historico"
+@using SumulaCartolaProject.Models
+@using SumulaCartolaProject.Servicos
+@inject ServicoHistorico Servico
+@inject ServicoTemporada ServicoTemp
+@using System.Globalization
+
+<PageTitle>Histórico de gols</PageTitle>
+
+<div class="hist">
+    <h1 class="hist-d">Histórico de gols</h1>
+    <p class="hist-sub hist-d">Artilheiros da pelada desde 2008</p>
+
+    @if (carregando)
+    {
+        <p class="hist-msg">Carregando histórico…</p>
+    }
+    else if (erro is not null)
+    {
+        <p class="hist-msg hist-erro">@erro</p>
+        <button class="hist-btn" @onclick="Carregar">Tentar de novo</button>
+    }
+    else
+    {
+        var porAtleta = ResumoPorAtleta;
+        <div class="hist-m">
+            <a class="m-voltar" href="/">‹ Início</a>
+            <h1 class="m-h1">Histórico de gols</h1>
+            <p class="m-sub">Artilheiros da pelada desde 2008</p>
+
+            <div class="m-pills">
+                <button class="@(Aba == 0 ? "on" : "")" @onclick="() => Aba = 0">Geral</button>
+                @foreach (var a in anos)
+                {
+                    var ano = a;
+                    <button class="@(Aba == ano ? "on" : "")" @onclick="() => Aba = ano">@ano</button>
+                }
+            </div>
+
+            <div class="m-cards">
+                <div>
+                    <i class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path fill="currentColor" d="M12 7.5l3.2 2.3-1.2 3.8h-4l-1.2-3.8z"/></svg></i>
+                    <span><b>@totalGols.ToString("N0")</b><small>gols @(Aba == 0 ? "no histórico" : "em " + Aba)</small></span>
+                </div>
+                <div>
+                    <i class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="currentColor"/><circle cx="17" cy="9" r="2.5" fill="currentColor" opacity=".7"/><path fill="currentColor" d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.200 6 5.500zM15.500 14c2.600 0 5.500 1.600 5.500 5h-4.200c0-1.900-.6-3.600-1.300-5z"/></svg></i>
+                    <span><b>@Linhas.Count</b><small>jogadores</small></span>
+                </div>
+                <div class="gold">
+                    <i class="ic"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.500l2.900 6 6.600.9-4.800 4.600 1.200 6.500L12 17.300 6.100 20.500l1.200-6.500L2.500 9.400l6.600-.9z"/></svg></i>
+                    <span><b>@(Linhas.Count > 0 ? Linhas[0].Nome : "—")</b><small>artilheiro@(Linhas.Count > 0 ? " (" + Linhas[0].Gols + ")" : "")</small></span>
+                </div>
+            </div>
+
+            <div class="m-filtro">
+                <input type="search" placeholder="Buscar jogador" @bind="busca" @bind:event="oninput" />
+                <select @bind="filtro">
+                    <option value="todos">Todos</option>
+                    <option value="ativos">Só ativos</option>
+                    <option value="inativos">Só inativos</option>
+                </select>
+            </div>
+
+            <div class="m-tabela @(EhTemporadaAtual ? "" : "so-gols")">
+                <div class="m-row m-head">
+                    <span class="c-pos">#</span>
+                    <span class="c-nome">JOGADOR</span>
+                    <span class="c-n t-v" title="Jogos no Vermelho">V</span>
+                    <span class="c-n t-a" title="Jogos no Amarelo">A</span>
+                    <span class="c-n"><u class="cart am"></u></span>
+                    <span class="c-n"><u class="cart az"></u></span>
+                    <span class="c-n"><u class="cart vm"></u></span>
+                    <span class="c-m" title="Gols por jogo">MÉD</span>
+                    <span class="c-g">GOLS</span>
+                </div>
+                <div class="m-corpo">
+                    @if (Linhas.Count == 0)
+                    {
+                        <p class="hist-msg">Nenhum jogador encontrado.</p>
+                    }
+                    @foreach (var l in Linhas)
+                    {
+                        var r = ResumoDe(l, porAtleta);
+                        <div class="m-row @(l.Posicao == 1 ? "p1" : "")">
+                            <span class="c-pos">@l.Posicao</span>
+                            <span class="c-nome @(l.Ativo ? "" : "off")">@l.Nome</span>
+                            <span class="c-n t-v">@(r is null ? "–" : r.JogosVermelho.ToString())</span>
+                            <span class="c-n t-a">@(r is null ? "–" : r.JogosAmarelo.ToString())</span>
+                            <span class="c-n">@(r is null ? "–" : r.Amarelos.ToString())</span>
+                            <span class="c-n">@(r is null ? "–" : r.Azuis.ToString())</span>
+                            <span class="c-n">@(r is null ? "–" : r.Vermelhos.ToString())</span>
+                            <span class="c-m">@MediaTexto(l, r)</span>
+                            <span class="c-g"><b>@l.Gols</b></span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <a class="m-cta" href="/escalar">
+                <i class="ic"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10v2h3v3c0 2.200-1.600 4-3.700 4.300A5 5 0 0 1 13 15.900V18h3v2H8v-2h3v-2.100A5 5 0 0 1 7.700 12.300C5.600 12 4 10.200 4 8V5h3V3zm-1 4v1c0 1 .6 1.800 1.400 2.100A9 9 0 0 1 7 7H6zm12 0h-1c0 1.200-.1 2.300-.4 3.100C17.400 9.800 18 9 18 8V7z"/></svg></i>
+                <span><b>O topo te espera!</b><small>Quem será o artilheiro da próxima rodada?</small></span>
+                <em>›</em>
+            </a>
+        </div>
+
+        <div class="hist-corpo @(EhTemporadaAtual ? "" : "sem-lado")">
+            @if (EhTemporadaAtual)
+            {
+                <aside class="hist-lado">
+                    <section class="hist-card">
+                        <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 11H5L3 7zm2.6 13h12.8v2H5.6v-2z"/></svg>Top 3 da temporada</h2>
+                        @if (Top3.Count == 0)
+                        {
+                            <p class="hist-msg">Sem gols nesta temporada.</p>
+                        }
+                        @foreach (var l in Top3)
+                        {
+                            <div class="top3 @(l.Posicao == 1 ? "p1" : "")">
+                                <span class="pos">@l.Posicao</span>
+                                <span class="av"><SilhuetaAtleta Nome="@l.Nome" /></span>
+                                <span class="tx"><b>@l.Nome</b><small>@(l.Ativo ? "Ativo" : "Inativo")</small></span>
+                                <span class="gl">@l.Gols</span>
+                            </div>
+                        }
+                    </section>
+
+                    <section class="hist-card">
+                        <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 20V10h3v10H4zm6 0V4h3v16h-3zm6 0v-7h3v7h-3z"/></svg>Estatísticas</h2>
+                        <div class="stats">
+                            <div class="stat"><small>Mais gols</small><b>@EstMaisGols.Nome</b><strong>@EstMaisGols.Valor</strong></div>
+                            <div class="stat"><small>Melhor média</small><b>@EstMedia.Nome</b><strong>@EstMedia.Valor</strong></div>
+                            <div class="stat"><small>Mais jogos</small><b>@EstJogos.Nome</b><strong>@EstJogos.Valor</strong></div>
+                            <div class="stat"><small>Mais cartões</small><b>@EstCartoes.Nome</b><strong>@EstCartoes.Valor</strong></div>
+                        </div>
+                        <p class="hist-nota">Média = gols por jogo (mínimo de @MinJogosMedia jogos). Jogos, média e cartões vêm da temporada lançada no app.</p>
+                    </section>
+                </aside>
+            }
+
+            <div class="hist-principal">
+                <div class="hist-filtros">
+                    <input type="search" placeholder="Buscar jogador" @bind="busca" @bind:event="oninput" />
+                    <select @bind="filtro">
+                        <option value="todos">Todos</option>
+                        <option value="ativos">Só ativos</option>
+                        <option value="inativos">Só inativos</option>
+                    </select>
+                    <select class="hist-ano" @bind="Aba" aria-label="Temporada">
+                        <option value="0">Geral</option>
+                        @foreach (var a in anos)
+                        {
+                            <option value="@a">@a</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="hist-resumo">
+                    <div><b>@totalGols.ToString("N0")</b><span>gols @(Aba == 0 ? "no histórico" : "em " + Aba)</span></div>
+                    <div><b>@Linhas.Count</b><span>jogadores</span></div>
+                    @if (Linhas.Count > 0)
+                    {
+                        <div><b>@Linhas[0].Nome</b><span>artilheiro (@Linhas[0].Gols)</span></div>
+                    }
+                </div>
+
+                @if (Linhas.Count == 0)
+                {
+                    <p class="hist-msg">Nenhum jogador encontrado.</p>
+                }
+                else
+                {
+                    @if (EhTemporadaAtual)
+                    {
+                        <div class="hist-cab hist-cab-g" aria-hidden="true">
+                            <span class="g1">JOGOS NO TIME</span>
+                            <span class="g2">CARTÕES</span>
+                            <span class="g3">GOLS/JOGO</span>
+                        </div>
+                        <div class="hist-cab">
+                            <span class="pos">#</span>
+                            <span class="nome">JOGADOR</span>
+                            <span class="n t-v" title="Jogos no time Vermelho">VERM.</span>
+                            <span class="n t-a" title="Jogos no time Amarelo">AMAR.</span>
+                            <span class="n" title="Cartões amarelos"><u class="cart am"></u> AM</span>
+                            <span class="n" title="Cartões azuis"><u class="cart az"></u> AZ</span>
+                            <span class="n" title="Cartões vermelhos"><u class="cart vm"></u> VM</span>
+                            <span class="n" title="Média de gols por jogo">MÉD.</span>
+                            <span class="gols">GOLS</span>
+                        </div>
+                    }
+                    <ol class="hist-lista @(EhTemporadaAtual ? "com-stats" : "")">
+                        @foreach (var l in Linhas)
+                        {
+                            var r = ResumoDe(l, porAtleta);
+                            <li class="@(l.Posicao <= 3 ? "top" + l.Posicao : "")">
+                                <span class="pos">@l.Posicao</span>
+                                <span class="nome">@l.Nome @if (!l.Ativo){<em>inativo</em>}</span>
+                                @if (EhTemporadaAtual)
+                                {
+                                    <span class="n">@(r is null ? "–" : r.JogosVermelho.ToString())</span>
+                                    <span class="n">@(r is null ? "–" : r.JogosAmarelo.ToString())</span>
+                                    <span class="n">@(r is null ? "–" : r.Amarelos.ToString())</span>
+                                    <span class="n">@(r is null ? "–" : r.Azuis.ToString())</span>
+                                    <span class="n">@(r is null ? "–" : r.Vermelhos.ToString())</span>
+                                    <span class="n med">@MediaTexto(l, r)</span>
+                                }
+                                <span class="gols">@l.Gols</span>
+                            </li>
+                        }
+                    </ol>
+                    @if (Aba == 0 && outrosGeral > 0)
+                    {
+                        <p class="hist-nota">O total geral inclui @outrosGeral gols sem ano definido (coluna "Gols Outros" da planilha).</p>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    List<HistoricoArtilheiro> jogadores = new();
+    List<HistoricoGol> gols = new();
+    List<int> anos = new();
+    bool carregando = true;
+    string? erro;
+    string busca = "";
+    string filtro = "todos";
+    int aba = DateTime.Now.Year;   // sempre abre na temporada atual
+    bool primeiraCarga = true;
+    const int MinJogosMedia = 5;
+    static readonly CultureInfo PtBr = new("pt-BR");
+    Dictionary<int, List<ResumoTemporada>> resumos = new();
+    int Aba
+    {
+        get => aba;
+        set { if (aba == value) return; aba = value; _ = CarregarResumoAsync(value); }
+    }
+    int totalGols => Linhas.Sum(l => l.Gols);
+    int outrosGeral => jogadores.Sum(j => j.GolsOutros ?? 0);
+
+    protected override async Task OnInitializedAsync() => await Carregar();
+
+    async Task Carregar()
+    {
+        carregando = true; erro = null;
+        try
+        {
+            (jogadores, gols) = await Servico.CarregarAsync();
+            anos = gols.Where(g => g.Ano.HasValue).Select(g => g.Ano!.Value).Distinct().OrderByDescending(a => a).ToList();
+            if (primeiraCarga)
+            {
+                primeiraCarga = false;
+                if (!anos.Contains(aba)) aba = anos.FirstOrDefault();
+            }
+        }
+        catch (Exception ex) { erro = "Não foi possível carregar o histórico: " + ex.Message; }
+        carregando = false;
+        await CarregarResumoAsync(aba);
+    }
+
+    // Jogos, média e cartões vêm do resumo da temporada. Se a leitura falhar, os cartões mostram "—".
+    async Task CarregarResumoAsync(int ano)
+    {
+        if (ano != DateTime.Now.Year || resumos.ContainsKey(ano)) { StateHasChanged(); return; }
+        try { resumos[ano] = await ServicoTemp.ResumoAsync(ano); }
+        catch { resumos[ano] = new(); }
+        StateHasChanged();
+    }
+
+    // Estatísticas (jogos por time, cartões, média) existem só para a temporada atual.
+    bool EhTemporadaAtual => Aba == DateTime.Now.Year;
+
+    List<ResumoTemporada> ResumoAtual => resumos.TryGetValue(Aba, out var r) ? r : new();
+    record Destaque(string Nome, string Valor);
+    static readonly Destaque SemDado = new("—", "—");
+
+    List<LinhaRanking> Top3 => Ranking(false).Where(l => l.Posicao <= 3).Take(3).ToList();
+
+    Destaque EstMaisGols
+    {
+        get
+        {
+            var r = Ranking(false);
+            if (r.Count == 0) return SemDado;
+            var topo = r.Where(l => l.Gols == r[0].Gols).ToList();
+            return new Destaque(Nomes(topo.Select(t => t.Nome)), r[0].Gols.ToString());
+        }
+    }
+
+    Destaque EstMedia => Melhor(ResumoAtual.Where(x => x.Jogos >= MinJogosMedia),
+        x => (double)x.Gols / x.Jogos, v => v.ToString("0.0", PtBr));
+    Destaque EstJogos => Melhor(ResumoAtual, x => x.Jogos, v => ((int)v).ToString());
+    Destaque EstCartoes => Melhor(ResumoAtual, x => x.Amarelos + x.Azuis + x.Vermelhos, v => ((int)v).ToString());
+
+    static Destaque Melhor(IEnumerable<ResumoTemporada> fonte, Func<ResumoTemporada, double> valor, Func<double, string> fmt)
+    {
+        var l = fonte.Select(x => (x.Nome, V: valor(x))).Where(x => x.V > 0).OrderByDescending(x => x.V).ToList();
+        if (l.Count == 0) return SemDado;
+        var topo = l.Where(x => Math.Abs(x.V - l[0].V) < 1e-9).Select(x => x.Nome);
+        return new Destaque(Nomes(topo), fmt(l[0].V));
+    }
+
+    static string Nomes(IEnumerable<string> nomes)
+    {
+        var l = nomes.OrderBy(n => n).ToList();
+        return l.Count <= 2 ? string.Join(", ", l) : l[0] + " +" + (l.Count - 1);
+    }
+
+
+    Dictionary<Guid, ResumoTemporada> ResumoPorAtleta =>
+        ResumoAtual.GroupBy(x => x.AtletaId).ToDictionary(g => g.Key, g => g.First());
+
+    ResumoTemporada? ResumoDe(LinhaRanking l, Dictionary<Guid, ResumoTemporada> porAtleta)
+    {
+        if (!EhTemporadaAtual) return null;
+        var atletaId = jogadores.FirstOrDefault(j => j.JogadorId == l.JogadorId)?.AtletaId;
+        return atletaId.HasValue && porAtleta.TryGetValue(atletaId.Value, out var r) ? r : null;
+    }
+
+    static string MediaTexto(LinhaRanking l, ResumoTemporada? r) =>
+        r is null || r.Jogos <= 0 ? "–" : ((double)l.Gols / r.Jogos).ToString("0.0", PtBr);
+
+    List<LinhaRanking> Linhas => Ranking(true);
+
+    List<LinhaRanking> Ranking(bool aplicarFiltros)
+    {
+        {
+            IEnumerable<(HistoricoArtilheiro J, int G)> basico = Aba == 0
+                ? jogadores.Select(j => (j, j.Total ?? 0))
+                : jogadores.Join(gols.Where(g => g.Ano == Aba).GroupBy(g => g.JogadorId),
+                    j => j.JogadorId, g => g.Key, (j, g) => (j, g.Sum(x => x.Gols)));
+
+            var q = basico.Where(x => x.G > 0);
+            if (aplicarFiltros && filtro == "ativos") q = q.Where(x => x.J.Ativo);
+            if (aplicarFiltros && filtro == "inativos") q = q.Where(x => !x.J.Ativo);
+            if (aplicarFiltros && !string.IsNullOrWhiteSpace(busca))
+                q = q.Where(x => x.J.Nome.Contains(busca.Trim(), StringComparison.OrdinalIgnoreCase));
+
+            var lista = q.OrderByDescending(x => x.G).ThenBy(x => x.J.Nome).ToList();
+            var res = new List<LinhaRanking>();
+            for (int i = 0; i < lista.Count; i++)
+            {
+                int pos = i > 0 && lista[i].G == lista[i - 1].G ? res[i - 1].Posicao : i + 1;
+                res.Add(new LinhaRanking(pos, lista[i].J.JogadorId, lista[i].J.Nome, lista[i].J.Ativo, lista[i].G, null));
+            }
+            return res;
+        }
+    }
+}
+
+<style>
+    .hist { --hist-h: calc(100dvh - 8.5rem); max-width: 1700px; margin: 0 auto; padding: 1rem; box-sizing: border-box; height: var(--hist-h); display: flex; flex-direction: column; overflow: hidden; }
+    .hist > * { flex: none; }
+    .hist > .hist-corpo { flex: 1 1 auto; min-height: 0; }
+    .hist-corpo { display: grid; grid-template-columns: 340px 1fr; gap: 1rem; }
+    .hist-lado { display: flex; flex-direction: column; gap: .8rem; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+    .hist-lado::-webkit-scrollbar { display: none; }
+    .hist-principal { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .hist-principal > * { flex: none; }
+    .hist-card { background: rgba(10,25,25,.6); border: 1px solid rgba(80,200,180,.3); border-radius: 16px; padding: .8rem; }
+    .hist-card h2 { display: flex; align-items: center; gap: .5rem; margin: 0 0 .6rem; font-size: 1rem; }
+    .hist-card h2 svg { width: 1.2rem; height: 1.2rem; color: #ffd24a; flex: none; }
+    .top3 { display: flex; align-items: center; gap: .6rem; padding: .45rem .55rem; margin-bottom: .4rem; border: 1px solid rgba(80,200,180,.2); border-radius: 12px; background: rgba(255,255,255,.03); }
+    .top3.p1 { border-color: #1fa37a; background: rgba(31,163,122,.18); }
+    .top3 .pos { width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: .85rem; background: rgba(255,255,255,.08); flex: none; }
+    .top3.p1 .pos { background: rgba(255,210,74,.25); color: #ffd24a; }
+    .top3 .av { width: 2.3rem; height: 2.3rem; border-radius: 50%; background: rgba(80,200,180,.25); color: rgba(255,255,255,.9); overflow: hidden; flex: none; }
+    .top3 .av .silhueta { width: 100%; height: 100%; }
+    .top3 .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .top3 .tx b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .top3 .tx small { opacity: .65; font-size: .72rem; }
+    .top3 .gl { min-width: 2.2rem; text-align: center; padding: .25rem .5rem; border-radius: 999px; border: 1px solid rgba(80,200,180,.5); font-weight: 700; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .stat { display: flex; flex-direction: column; gap: .15rem; padding: .7rem; border: 1px solid rgba(80,200,180,.2); border-radius: 12px; background: rgba(255,255,255,.03); min-width: 0; }
+    .stat small { opacity: .7; font-size: .72rem; }
+    .stat b { font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .stat strong { font-size: 1.6rem; margin-top: .3rem; }
+    .hist-lista { flex: 1 1 auto !important; min-height: 0; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+    .hist-lista li { flex: none; }
+    .hist-lista::-webkit-scrollbar { display: none; }
+    @@media (min-width: 900px) { .hist { --hist-h: 100dvh; } }
+    .hist h1 { margin: 0; font-size: 1.6rem; }
+    .hist-sub { opacity: .7; margin: .2rem 0 1rem; }
+    .hist-abas { display: flex; gap: .4rem; overflow-x: auto; padding-bottom: .5rem; scrollbar-width: none; }
+    .hist-abas::-webkit-scrollbar { display: none; }
+    .hist-abas button, .hist-btn { flex: none; padding: .45rem .9rem; border-radius: 999px; border: 1px solid rgba(80,200,180,.35); background: rgba(10,25,25,.6); color: inherit; cursor: pointer; }
+    .hist-abas button.on { background: #1fa37a; border-color: #1fa37a; color: #fff; font-weight: 600; }
+    .hist-filtros { display: flex; gap: .5rem; margin: .5rem 0 1rem; }
+    .hist-filtros input, .hist-filtros select { padding: .5rem .7rem; border-radius: 10px; border: 1px solid rgba(80,200,180,.35); background: rgba(10,25,25,.6); color: inherit; }
+    .hist-filtros input { flex: 1; min-width: 0; }
+    .hist-filtros select { flex: none; }
+    .hist-resumo { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-bottom: 1rem; }
+    .hist-resumo div { background: rgba(10,25,25,.6); border: 1px solid rgba(80,200,180,.3); border-radius: 12px; padding: .6rem .7rem; display: flex; flex-direction: column; min-width: 0; }
+    .hist-resumo b { font-size: 1.15rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hist-resumo span { font-size: .75rem; opacity: .7; }
+    .hist-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35rem; }
+    .hist-lista li { display: flex; align-items: center; gap: .7rem; padding: .55rem .8rem; background: rgba(10,25,25,.55); border: 1px solid rgba(80,200,180,.2); border-radius: 12px; }
+    .hist-lista .pos { width: 2rem; text-align: center; font-weight: 700; opacity: .8; }
+    .hist-lista .nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hist-lista .nome em { font-style: normal; font-size: .7rem; margin-left: .4rem; padding: .1rem .45rem; border-radius: 999px; background: rgba(255,255,255,.12); opacity: .8; }
+    .hist-lista .gols { font-weight: 700; font-size: 1.1rem; color: #ffd24a; }
+    .hist-lista li.top1 { border-color: #ffd24a; } .hist-lista li.top2 { border-color: #c9d1d9; } .hist-lista li.top3 { border-color: #c98a4b; }
+    .hist-msg, .hist-nota { opacity: .75; } .hist-nota { font-size: .8rem; margin-top: .8rem; } .hist-erro { color: #ff7b7b; opacity: 1; }
+    @@media (min-width: 900px) {
+        .hist { padding: 1.2rem 1.6rem 1.4rem; }
+        .hist h1 { font-size: 2rem; }
+        .hist-sub { font-size: 1rem; margin-bottom: .9rem; }
+        .hist-corpo { grid-template-columns: minmax(0, 1fr) minmax(300px, 28%); gap: 1.4rem; }
+        .hist-lado { order: 2; overflow: hidden; }
+        .hist-corpo.sem-lado { grid-template-columns: 1fr; }
+        .hist-card { padding: 1.1rem; border-radius: 18px; }
+        .hist-card h2 { font-size: 1.15rem; margin-bottom: .9rem; }
+        .top3 { padding: .7rem .8rem; margin-bottom: .6rem; gap: .8rem; }
+        .top3 .av { width: 3rem; height: 3rem; }
+        .top3 .tx b { font-size: 1.05rem; }
+        .top3 .gl { font-size: 1.1rem; min-width: 2.8rem; }
+        .hist-card:last-child { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        .stats { flex: 1 1 auto; grid-auto-rows: 1fr; gap: .7rem; }
+        .stat { padding: .9rem; justify-content: center; }
+        .stat small { font-size: .82rem; }
+        .stat b { font-size: 1.05rem; }
+        .stat strong { font-size: 2.3rem; }
+        .hist-filtros { gap: .7rem; margin: 0 0 .9rem; }
+        .hist-filtros input, .hist-filtros select { padding: .75rem 1rem; font-size: 1rem; }
+        .hist-resumo { gap: .8rem; margin-bottom: .9rem; }
+        .hist-resumo div { padding: 1rem 1.1rem; border-radius: 14px; }
+        .hist-resumo b { font-size: 1.6rem; }
+        .hist-resumo span { font-size: .9rem; }
+        .hist-lista { gap: .5rem; }
+        .hist-lista li { padding: .85rem 1.1rem; font-size: 1.08rem; border-radius: 14px; }
+        .hist-lista .gols { font-size: 1.3rem; }
+        .hist-lista .pos { font-size: 1.05rem; }
+        .hist-corpo .hist-cab { display: grid; flex: none; }
+        .hist-cab, .hist-lista.com-stats li { grid-template-columns: 2.5rem 1fr repeat(5, 3.7rem) 3.8rem 3.4rem; gap: .5rem; align-items: center; }
+        .hist-cab { padding: 0 1.2rem .45rem; font-size: .78rem; font-weight: 700; letter-spacing: .04em; opacity: .85; }
+        .hist-cab .pos { width: auto; text-align: center; }
+        .hist-cab .n, .hist-lista.com-stats li .n { text-align: center; }
+        .hist-cab .gols { text-align: right; color: inherit; font-size: inherit; }
+        .hist-cab .t-v { color: #ff6b6b; } .hist-cab .t-a { color: #ffd24a; }
+        .hist-cab-g { padding-bottom: .15rem; font-size: .62rem; opacity: .7; }
+        .hist-cab-g span { text-align: center; border-bottom: 1px solid rgba(80,200,180,.3); padding-bottom: .15rem; }
+        .hist-cab-g .g1 { grid-column: 3 / span 2; }
+        .hist-cab-g .g2 { grid-column: 5 / span 3; }
+        .hist-cab-g .g3 { grid-column: 8; }
+        .hist-cab .cart { margin-right: .1rem; }
+        .hist-lista.com-stats li { display: grid; }
+        .hist-lista.com-stats li .pos { width: auto; }
+        .hist-lista.com-stats li .gols { text-align: right; }
+        .hist-lista li .n.med { color: #9ff0d3; font-weight: 600; }
+    }
+    .cart { display: inline-block; width: .6rem; height: .85rem; border-radius: 2px; vertical-align: middle; }
+    .cart.am { background: #ffd24a; } .cart.az { background: #3b82f6; } .cart.vm { background: #ef4444; }
+    .hist-cab { display: none; }
+    .hist-m { display: none; }
+    @@media (max-width: 899px) {
+        .hist { height: var(--hist-h); display: flex; flex-direction: column; overflow: hidden; padding: .6rem .8rem; max-width: 100%; }
+        .hist-d, .hist-corpo { display: none !important; }
+        .hist > .hist-m { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; gap: .6rem; }
+        .hist-m > * { flex: none; }
+        .m-voltar { color: #3ee0a8; text-decoration: none; font-size: .85rem; font-weight: 600; }
+        .m-h1 { margin: 0; font-size: 1.5rem; }
+        .m-sub { margin: -.35rem 0 0; opacity: .7; font-size: .85rem; }
+        .m-pills { display: flex; gap: .4rem; overflow-x: auto; scrollbar-width: none; }
+        .m-pills::-webkit-scrollbar { display: none; }
+        .m-pills button { flex: none; padding: .4rem .85rem; border-radius: 999px; border: 1px solid rgba(80,200,180,.35); background: rgba(10,25,25,.6); color: inherit; font-weight: 600; font-size: .85rem; }
+        .m-pills button.on { background: #1fa37a; border-color: #1fa37a; color: #fff; }
+        .m-cards { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: .45rem; }
+        .m-cards > div { display: flex; align-items: center; gap: .45rem; padding: .55rem; border-radius: 14px; border: 1px solid rgba(80,200,180,.3); background: rgba(10,25,25,.6); min-width: 0; }
+        .m-cards .ic { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; background: rgba(31,163,122,.3); color: #3ee0a8; }
+        .m-cards .ic svg { width: 1.15rem; height: 1.15rem; }
+        .m-cards .gold .ic { background: rgba(255,210,74,.2); color: #ffd24a; }
+        .m-cards span { display: flex; flex-direction: column; min-width: 0; }
+        .m-cards b { font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .m-cards small { font-size: .62rem; opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .m-filtro { display: flex; gap: .4rem; }
+        .m-filtro input, .m-filtro select { padding: .45rem .65rem; border-radius: 10px; border: 1px solid rgba(80,200,180,.35); background: rgba(10,25,25,.6); color: inherit; font-size: .85rem; }
+        .m-filtro input { flex: 1; min-width: 0; }
+        .hist-m > .m-tabela { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; border: 1px solid rgba(80,200,180,.3); border-radius: 14px; background: rgba(10,25,25,.55); overflow: hidden; }
+        .m-tabela > * { flex: none; }
+        .m-corpo { flex: 1 1 auto !important; min-height: 0; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; padding: 0 .35rem .35rem; }
+        .m-corpo::-webkit-scrollbar { display: none; }
+        .m-row { display: grid; grid-template-columns: 1.3rem 1fr 1.5rem 1.5rem 1.4rem 1.4rem 1.4rem 1.9rem 2.3rem; gap: .25rem; align-items: center; padding: .5rem .5rem; font-size: .8rem; }
+        .m-corpo .m-row { border-radius: 10px; margin-top: .25rem; border: 1px solid rgba(80,200,180,.15); }
+        .m-corpo .m-row.p1 { background: rgba(31,163,122,.25); border-color: #1fa37a; }
+        .m-head { font-size: .62rem; letter-spacing: .04em; opacity: .85; font-weight: 700; padding-top: .6rem; padding-bottom: .4rem; border-bottom: 1px solid rgba(80,200,180,.2); }
+        .m-row .c-pos { text-align: center; font-weight: 700; opacity: .85; }
+        .m-row .c-nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+        .m-row .c-nome.off { opacity: .6; font-weight: 500; }
+        .m-row .c-n, .m-row .c-m { text-align: center; font-size: .75rem; }
+        .m-row .c-m { color: #9ff0d3; }
+        .m-row .c-g { text-align: right; }
+        .m-row .c-g b { display: inline-block; min-width: 1.9rem; text-align: center; padding: .15rem .3rem; border-radius: 8px; background: rgba(255,255,255,.08); color: #ffd24a; font-size: .95rem; }
+        .m-row.p1 .c-g b { background: #1fa37a; color: #fff; }
+        .m-head .t-v, .m-corpo .t-v { color: #ff6b6b; }
+        .m-head .t-a, .m-corpo .t-a { color: #ffd24a; }
+        .cart { display: inline-block; width: .55rem; height: .8rem; border-radius: 2px; }
+        .cart.am { background: #ffd24a; } .cart.az { background: #3b82f6; } .cart.vm { background: #ef4444; }
+        .so-gols .m-row { grid-template-columns: 1.3rem 1fr 2.3rem; }
+        .so-gols .c-n, .so-gols .c-m { display: none; }
+        .m-nota { margin: 0; padding: .35rem .6rem; font-size: .68rem; opacity: .6; }
+        .m-cta { display: flex; align-items: center; gap: .6rem; padding: .65rem .8rem; border-radius: 14px; border: 1px solid rgba(80,200,180,.4); background: linear-gradient(90deg, rgba(31,163,122,.45), rgba(10,25,25,.6)); color: inherit; text-decoration: none; }
+        .m-cta .ic { flex: none; width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center; background: rgba(31,163,122,.4); color: #3ee0a8; }
+        .m-cta .ic svg { width: 1.2rem; height: 1.2rem; }
+        .m-cta span { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .m-cta b { font-size: .9rem; }
+        .m-cta small { font-size: .72rem; opacity: .75; }
+        .m-cta em { font-style: normal; font-size: 1.4rem; opacity: .8; }
+    }
+    @@media (max-width: 520px) { .hist-resumo { grid-template-columns: 1fr 1fr; } .hist-resumo div:nth-child(3) { grid-column: 1 / -1; } }
+</style>

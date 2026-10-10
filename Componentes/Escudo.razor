@@ -1,0 +1,53 @@
+@if (!Decorado)
+{
+    <svg class="escudo" viewBox="0 0 100 120" width="@Tamanho" height="@Altura" role="img" aria-label="Escudo do time">
+        @((MarkupString)_svg)
+    </svg>
+}
+else
+{
+    <span class="escudo-deco @(Dourado ? "dourado" : "")">
+        @if (Coroa)
+        {
+            <svg class="escudo-coroa" viewBox="0 0 40 24" width="@(Tamanho * 45 / 100)" height="@(Tamanho * 27 / 100)" aria-hidden="true">
+                <path d="M3 21L1 6L11 13L20 2L29 13L39 6L37 21Z" fill="#f5c518" stroke="#8a6a00" stroke-width="1.4" stroke-linejoin="round" />
+                <circle cx="1" cy="6" r="1.8" fill="#fff3b0" /><circle cx="20" cy="2.4" r="1.8" fill="#fff3b0" /><circle cx="39" cy="6" r="1.8" fill="#fff3b0" />
+            </svg>
+        }
+        @if (Estrelas > 0)
+        {
+            <span class="escudo-estrelas" aria-hidden="true">
+                @for (var i = 0; i < Math.Min(Estrelas, 5); i++)
+                {
+                    <svg viewBox="0 0 24 24" width="@(Math.Max(10, Tamanho / 6))" height="@(Math.Max(10, Tamanho / 6))"><path d="M12 2L14.9 8.6L22 9.3L16.6 14L18.2 21L12 17.3L5.8 21L7.4 14L2 9.3L9.1 8.6Z" fill="#f5c518" stroke="#8a6a00" stroke-width="1.2" stroke-linejoin="round" /></svg>
+                }
+            </span>
+        }
+        <svg class="escudo" viewBox="0 0 100 120" width="@Tamanho" height="@Altura" role="img" aria-label="Escudo do time">
+            @((MarkupString)_svg)
+        </svg>
+    </span>
+}
+
+@code {
+    /// <summary>Configuração do escudo. Null mostra um escudo cinza.</summary>
+    [Parameter] public EscudoConfig? Config { get; set; }
+
+    /// <summary>Largura em pixels (a altura é 1,2x).</summary>
+    [Parameter] public int Tamanho { get; set; } = 64;
+
+    /// <summary>Recompensas da torcida: coroa e estrelas em cima do escudo (4.000) e brilho dourado (10.000).</summary>
+    [Parameter] public bool Coroa { get; set; }
+    [Parameter] public int Estrelas { get; set; }
+    [Parameter] public bool Dourado { get; set; }
+
+    private bool Decorado => Coroa || Estrelas > 0 || Dourado;
+
+    // Id único por instância: vários escudos na mesma tela não podem repetir o clipPath
+    private readonly string _id = Guid.NewGuid().ToString("N")[..8];
+    private string _svg = "";
+    private int Altura => (int)Math.Round(Tamanho * 1.2);
+
+    protected override void OnParametersSet() =>
+        _svg = GeradorEscudoSvg.Gerar(Config ?? EscudoConfig.Vazio(), _id);
+}

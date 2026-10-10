@@ -1,0 +1,89 @@
+/* Escudo e camisa do time
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+.topo-time {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.topo-time small {
+        display: block;
+        opacity: .7;
+        font-size: .75rem;
+    }
+
+/* Escudo */
+.escudo {
+    display: block;
+}
+
+/* Número da camisa em formato de camisa */
+.camisa {
+    position: relative;
+    display: inline-block;
+    width: 3.4rem;
+    height: 3.4rem;
+    flex: none;
+    margin: 0;
+}
+
+.camisa input::-webkit-outer-spin-button,
+    .camisa input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+.camisa input::placeholder {
+        color: inherit;
+        opacity: .5;
+    }
+
+/* Camisa sempre branca; só o contorno indica o time */
+.camisa.vermelho svg path,
+.camisa.amarelo svg path {
+    fill: var(--branco);
+}
+
+.camisa.vermelho svg path {
+    stroke: #c62828;
+    stroke-width: 2.5;
+}
+
+.camisa.amarelo svg path {
+    stroke: #e0b000;
+    stroke-width: 2.5;
+}
+
+/* Atleta recém-adicionado: o número é o automático, pede conferência */
+.camisa.chama svg {
+    animation: camisa-pulso 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+.camisa.chama svg {
+        filter: drop-shadow(0 0 6px rgba(255, 213, 74, .95));
+    }
+}
+
+.escudo-estrelas {
+    display: inline-flex;
+    gap: 2px;
+}
+
+.escudo-lapis {
+    position: relative;
+    display: inline-flex;
+}
+
+.camisa-barra {
+    position: absolute;
+    left: 20%;
+    right: 20%;
+    bottom: -3%;
+    height: 7%;
+    border-radius: 0 0 999px 999px;
+    background: linear-gradient(180deg, #2de3a0, #11a56f);
+    box-shadow: 0 0 10px rgba(45,227,160,.75);
+    pointer-events: none;
+}

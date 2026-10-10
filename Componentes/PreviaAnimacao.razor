@@ -1,0 +1,26 @@
+@* Mostra um elemento do escudo se mexendo, com o nome do elemento e o da animação. *@
+@if (_anim is not null)
+{
+    <div class="prev-anim" title="@Nome: @_anim.Nome">
+        <svg viewBox="-24 -24 48 48" width="@Tamanho" height="@Tamanho" aria-hidden="true" class="icone-simbolo">
+            <g class="anim anim-@_anim.Classe">@((MarkupString)_svg)</g>
+        </svg>
+        <strong>@Nome</strong>
+        <small>@_anim.Nome</small>
+    </div>
+}
+
+@code {
+    [Parameter] public string Chave { get; set; } = "";
+    [Parameter] public int Tamanho { get; set; } = 56;
+
+    private AnimacaoEscudo? _anim;
+    private string _svg = "";
+    private string Nome => EscudoConfig.NomeSimbolo(Chave);
+
+    protected override void OnParametersSet()
+    {
+        _anim = AnimacoesEscudo.De(Chave);
+        _svg = GeradorEscudoSvg.SimboloIsolado(Chave);
+    }
+}

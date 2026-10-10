@@ -1,0 +1,24 @@
+@if (Plano.Trocas.Count > 0 || Plano.SemVaga.Count > 0)
+{
+    <div class="previa-subs">
+        <h5>Substituições do 2º tempo (@Plano.Trocas.Count)</h5>
+        <ul>
+            @foreach (var t in Plano.Trocas)
+            {
+                <li>
+                    <span class="sub-sai"><b>▼</b> @t.Sai.Nome</span>
+                    <span class="sub-seta">→</span>
+                    <span class="sub-entra"><b>▲</b> @t.Entra.Nome</span>
+                </li>
+            }
+        </ul>
+        @if (Plano.SemVaga.Count > 0)
+        {
+            <p class="previa-subs-sobra">Sem vaga: @string.Join(", ", Plano.SemVaga.Select(a => a.Nome))</p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public PlanoTempos Plano { get; set; } = new();
+}

@@ -1,0 +1,55 @@
+name: Publicar no GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x          # o projeto usa net10.0
+
+      # O site fica em https://USUARIO.github.io/REPOSITORIO/, então o <base href> precisa do nome do repositório.
+      # Isso é feito ANTES do publish, para o service worker calcular os hashes já com o arquivo final.
+      # Se usar domínio próprio, apague este passo.
+      - name: Ajustar caminho base
+        run: |
+          REPO="${GITHUB_REPOSITORY#*/}"
+          sed -i "s|<base href=\"/\" />|<base href=\"/${REPO}/\" />|" wwwroot/index.html
+          sed -i "s|const base = \"/\";|const base = \"/${REPO}/\";|" wwwroot/service-worker.published.js
+          grep -n "base href" wwwroot/index.html
+
+      - name: Publicar o Blazor
+        run: dotnet publish -c Release -o release
+
+      - name: Preparar páginas estáticas
+        run: |
+          touch release/wwwroot/.nojekyll                          # sem isso a pasta _framework é ignorada
+          cp release/wwwroot/index.html release/wwwroot/404.html   # recarregar em /escalar ou /admin não dá 404
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: release/wwwroot
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

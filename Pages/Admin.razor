@@ -1,0 +1,179 @@
+@page "/admin/cartola"
+@attribute [Authorize(Roles = "admin")]
+@inject ServicoSumula Servico
+@inject IJSRuntime Js
+
+<PageTitle>Admin Cartola · Cartola dos Amigos</PageTitle>
+
+<div class="pagina adm adm2">
+    <header class="adm2-topo">
+        <span class="adm2-hex"><IconeUi Nome="engrenagem" Tamanho="30" /></span>
+        <div>
+            <h1>Admin · Cartola</h1>
+            <a class="adm2-sub" href="admin">‹ Painel do admin</a>
+            <span class="adm2-traco"></span>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(erro)) { <p class="erro">@erro</p> }
+    @if (!string.IsNullOrEmpty(aviso)) { <p class="adm-ok">@aviso</p> }
+
+    @if (!criando)
+    {
+        <button type="button" class="adm2-nova" @onclick="() => criando = true">
+            <span class="adm2-nova-meio"><IconeUi Nome="mais" Tamanho="22" /> Nova partida</span>
+            <IconeUi Nome="seta" Tamanho="22" />
+        </button>
+    }
+    else
+    {
+        <div class="adm2-vidro">
+            <h3>Nova partida</h3>
+            <p class="adm-dica">Vermelho x Amarelo. A ordem de chegada define quem joga em cada time.</p>
+            <label class="adm-rotulo" for="data">Data e hora</label>
+            <input id="data" class="adm-campo" type="datetime-local" @bind="novaData" @bind:format="yyyy-MM-ddTHH:mm" />
+            <label class="adm-rotulo" for="rodada">Rodada (opcional)</label>
+            <input id="rodada" class="adm-campo" type="number" min="1" inputmode="numeric" placeholder="automática" @bind="novaRodada" />
+            <div class="adm-linha-form adm-topo-gap">
+                <button type="button" class="adm2-btn destaque" disabled="@ocupado" @onclick="Criar">@(ocupado ? "Criando…" : "Criar partida")</button>
+                <button type="button" class="adm2-btn" @onclick="() => criando = false">Cancelar</button>
+            </div>
+        </div>
+    }
+
+    @if (carregando)
+    {
+        <p class="adm-dica">Carregando…</p>
+    }
+    else if (partidas.Count == 0)
+    {
+        <div class="adm2-vidro"><p class="adm-dica">Nenhuma partida ainda. Crie a primeira acima.</p></div>
+    }
+    else
+    {
+        @foreach (var p in partidas)
+        {
+            <article class="adm2-vidro adm2-partida" @key="p.Id">
+                <div class="adm2-cab">
+                    <span class="adm2-cal"><IconeUi Nome="calendario" Tamanho="20" /></span>
+                    <strong class="adm2-titulo">@p.Titulo</strong>
+                    <span class="adm2-badge @p.Status"><IconeUi Nome="calendario" Tamanho="13" /> @p.StatusRotulo</span>
+                </div>
+
+                <div class="adm2-meio">
+                    <div class="adm2-times">
+                        <div class="adm2-time">
+                            <img class="adm2-logo" src="img/time-vermelho.png" alt="Escudo do Vermelho" />
+                            <span>Vermelho</span>
+                        </div>
+                        <span class="adm2-x">
+                            @if (p.MostraPlacar) { @($"{p.PlacarVermelho ?? 0} x {p.PlacarAmarelo ?? 0}") } else { @("X") }
+                        </span>
+                        <div class="adm2-time">
+                            <img class="adm2-logo" src="img/time-amarelo.png" alt="Escudo do Amarelo" />
+                            <span>Amarelo</span>
+                        </div>
+                    </div>
+
+                    <div class="adm2-stats">
+                        <div class="adm2-stat">
+                            <span class="adm2-ico bola"><IconeUi Nome="bola" Tamanho="30" /></span>
+                            <div><b>@p.Gols</b><small>Gols</small></div>
+                        </div>
+                        <div class="adm2-stat">
+                            <span class="adm2-ico cartao am"></span>
+                            <div><b>@p.Amarelos</b><small>Cartões<br />amarelos</small></div>
+                        </div>
+                        <div class="adm2-stat">
+                            <span class="adm2-ico cartao az"></span>
+                            <div><b>@p.Azuis</b><small>Cartões<br />azuis</small></div>
+                        </div>
+                        <div class="adm2-stat">
+                            <span class="adm2-ico cartao ver"></span>
+                            <div><b>@p.Vermelhos</b><small>Cartões<br />vermelhos</small></div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="adm2-info"><IconeUi Nome="relogio" Tamanho="16" /> @p.NaChegada na chegada · @p.NaSumula na súmula</p>
+
+                <div class="adm2-acoes">
+                    <a class="adm2-btn" href="admin/chegada?partida=@p.Id"><IconeUi Nome="entrada" Tamanho="18" /> Chegada</a>
+                    <a class="adm2-btn" href="admin/sumula?partida=@p.Id"><IconeUi Nome="documento" Tamanho="18" /> Súmula</a>
+                    @if (p.Finalizada)
+                    {
+                        <button type="button" class="adm2-btn" disabled="@ocupado" @onclick="() => Reabrir(p)"><IconeUi Nome="desfazer" Tamanho="18" /> Reabrir</button>
+                    }
+                    else if (p.Status != "cancelada")
+                    {
+                        <button type="button" class="adm2-btn destaque" disabled="@ocupado" @onclick="() => Finalizar(p)"><IconeUi Nome="check" Tamanho="18" /> Finalizar</button>
+                    }
+                </div>
+            </article>
+        }
+    }
+</div>
+
+@code {
+    private List<PartidaResumo> partidas = new();
+    private DateTime novaData = DateTime.Now.Date.AddHours(19);
+    private int? novaRodada;
+    private string? erro, aviso;
+    private bool carregando = true, criando, ocupado;
+
+    protected override async Task OnInitializedAsync() => await Recarregar();
+
+    private async Task Recarregar()
+    {
+        try { partidas = await Servico.ListarPartidasAsync(); }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+        carregando = false;
+    }
+
+    private async Task Criar()
+    {
+        erro = aviso = null; ocupado = true;
+        try
+        {
+            await Servico.CriarPartidaAsync(novaData, novaRodada);
+            criando = false; novaRodada = null;
+            aviso = "Partida criada.";
+            await Recarregar();
+        }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+        ocupado = false;
+    }
+
+    private async Task Finalizar(PartidaResumo p)
+    {
+        if (!await Js.InvokeAsync<bool>("confirm",
+                $"Finalizar a partida? O placar será calculado pelos gols da súmula e os pontos passam a valer."))
+            return;
+
+        erro = aviso = null; ocupado = true;
+        try
+        {
+            await Servico.FinalizarPartidaAsync(p.Id);
+            aviso = "Partida finalizada.";
+            await Recarregar();
+        }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+        ocupado = false;
+    }
+
+    private async Task Reabrir(PartidaResumo p)
+    {
+        if (!await Js.InvokeAsync<bool>("confirm", "Reabrir a partida? Os pontos dela deixam de valer até finalizar de novo."))
+            return;
+
+        erro = aviso = null; ocupado = true;
+        try
+        {
+            await Servico.ReabrirPartidaAsync(p.Id);
+            aviso = "Partida reaberta.";
+            await Recarregar();
+        }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+        ocupado = false;
+    }
+}

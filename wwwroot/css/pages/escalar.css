@@ -1,0 +1,77 @@
+/* Página Escalar
+   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+
+/* Escalar: fundo desfocado só na área de conteúdo (fora do menu lateral), com as manchas mais ao centro */
+.pagina.escalar::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    filter: blur(70px);
+    clip-path: inset(0);
+    background: radial-gradient(circle 22vmax at 32% 30%, rgba(25,201,138,.40), transparent 70%), radial-gradient(circle 20vmax at 68% 28%, rgba(20,150,170,.32), transparent 70%), radial-gradient(circle 24vmax at 50% 78%, rgba(15,110,80,.45), transparent 70%), radial-gradient(circle 14vmax at 50% 50%, rgba(25,201,138,.18), transparent 70%);
+}
+
+@media (min-width: 900px) {
+.pagina.escalar::before {
+        left: 250px; /* largura do menu lateral */
+    }
+}
+
+/* =====================================================================
+   Escalar: posição do campo na página
+   A geometria do campo (tamanho, inclinação, cartões) está em
+   features/escalacao/campo-3d.css; aqui só o que é desta tela.
+   ===================================================================== */
+.pagina.escalar {
+    --vao-campo: 1rem;      /* espaço entre o estádio e o botão Salvar */
+}
+
+/* ----- celular e tablet em pé ----- */
+@media (max-width: 899px) {
+    .pagina.escalar .campo-cena {
+        pointer-events: none;            /* a área vazia do campo não rouba toques... */
+    }
+
+    .pagina.escalar .campo-cena .slot-btn {
+        pointer-events: auto;            /* ...só os cartões respondem */
+    }
+
+    .pagina.escalar .escalar-campo.com-lista > .campo-cena {
+        display: none;                   /* vista em lista: a lista substitui o campo */
+    }
+}
+
+/* ----- computador: a página tem a altura da janela e o campo ocupa o espaço que sobra ----- */
+@media (min-width: 900px) {
+    .pagina.escalar .escalar-campo {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 0;
+        min-width: 0;
+    }
+
+    .pagina.escalar .escalar-campo > * {
+        flex: none;
+    }
+
+    .pagina.escalar .escalar-campo > .campo-cena {
+        flex: 1 1 0;
+        height: 0;
+        min-height: 0;
+    }
+
+    .pagina.escalar .escalar-campo > .esc-dica,
+    .pagina.escalar .escalar-campo > .regras-valor,
+    .pagina.escalar .escalar-campo > .esc-salvar,
+    .pagina.escalar .escalar-campo > .esc-ajuda {
+        flex-shrink: 0;
+    }
+
+    .pagina.escalar .escalar-campo > .botao.esc-salvar {
+        margin-top: 0;
+    }
+}

@@ -1,0 +1,35 @@
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(Program).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <Authorizing>
+                    <div class="carregando">Carregando…</div>
+                </Authorizing>
+                <NotAuthorized>
+                    @if (context.User.Identity?.IsAuthenticated != true)
+                    {
+                        <RedirecionarParaLogin />
+                    }
+                    else
+                    {
+                        <div class="pagina">
+                            <h2>Sem permissão</h2>
+                            <p>Esta área é exclusiva para administradores.</p>
+                            <a class="botao" href="">Voltar ao início</a>
+                        </div>
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Não encontrado</PageTitle>
+            <LayoutView Layout="@typeof(LayoutSemMenu)">
+                <div class="pagina">
+                    <h2>Página não encontrada</h2>
+                    <a class="botao" href="">Ir para o início</a>
+                </div>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
