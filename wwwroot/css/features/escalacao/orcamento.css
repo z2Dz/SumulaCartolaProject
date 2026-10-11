@@ -6,13 +6,13 @@
     line-height: 1.1;
 }
 
-.saldo strong {
+    .saldo strong {
         font-size: 1.15rem;
         color: #2fbf71;
         white-space: nowrap;
     }
 
-.saldo.estourou strong {
+    .saldo.estourou strong {
         color: var(--erro);
     }
 
@@ -24,7 +24,7 @@
     overflow: hidden;
 }
 
-.barra-orc span {
+    .barra-orc span {
         display: block;
         height: 100%;
         border-radius: 999px;
@@ -32,7 +32,7 @@
         transition: width .2s;
     }
 
-.barra-orc span.estourou {
+        .barra-orc span.estourou {
             background: var(--erro);
         }
 
@@ -42,11 +42,11 @@
     color: var(--suave);
 }
 
-.painel-saldo strong {
+    .painel-saldo strong {
         color: #2fbf71;
     }
 
-.painel-saldo.estourou strong {
+    .painel-saldo.estourou strong {
         color: var(--erro);
     }
 
@@ -82,8 +82,9 @@
 
 .esc-stats {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    border-radius: 14px 14px 0 0;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr; /* uma coluna por número: 2 na Escalar, 3 no resumo da Início */
+    border-radius: 14px;
     border: 1px solid rgba(255,255,255,.1);
     background: rgba(8,20,15,.78);
 }
@@ -95,7 +96,7 @@
     min-width: 0;
 }
 
-.esc-stat + .esc-stat {
+    .esc-stat + .esc-stat {
         border-left: 1px solid rgba(255,255,255,.1);
     }
 

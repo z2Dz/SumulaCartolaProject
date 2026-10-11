@@ -98,7 +98,12 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
                 Azul1T = Inteiro(t["azul_1t"]) ?? 0,
                 Azul2T = Inteiro(t["azul_2t"]) ?? 0,
                 Vermelho1T = Inteiro(t["vermelho_1t"]) ?? 0,
-                Vermelho2T = Inteiro(t["vermelho_2t"]) ?? 0
+                Vermelho2T = Inteiro(t["vermelho_2t"]) ?? 0,
+                Assistencias = Inteiro(t["assistencias"]) ?? 0,
+                ChutesGol = Inteiro(t["chutes_gol"]) ?? 0,
+                Defesas = Inteiro(t["defesas"]) ?? 0,
+                PenaltisCometidos = Inteiro(t["penaltis_cometidos"]) ?? 0,
+                PenaltisPerdidos = Inteiro(t["penaltis_perdidos"]) ?? 0
             }).ToList();
 
     // ----- Partidas -----
@@ -204,7 +209,12 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
                 ["azul_1t"] = l.Azul1T,
                 ["azul_2t"] = l.Azul2T,
                 ["vermelho_1t"] = l.Vermelho1T,
-                ["vermelho_2t"] = l.Vermelho2T
+                ["vermelho_2t"] = l.Vermelho2T,
+                ["assistencias"] = l.Assistencias,
+                ["chutes_gol"] = l.ChutesGol,
+                ["defesas"] = l.Defesas,
+                ["penaltis_cometidos"] = l.PenaltisCometidos,
+                ["penaltis_perdidos"] = l.PenaltisPerdidos
             }).ToList()
         };
         if (status is not null) p["p_status"] = status;

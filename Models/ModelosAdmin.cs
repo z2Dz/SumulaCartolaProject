@@ -17,15 +17,27 @@ public static class TimePelada
 
     public static readonly EscudoConfig EscudoVermelho = new()
     {
-        Forma = "e16", Padrao = "metade_v", Simbolo = "nenhum", Sigla = "",
-        Cor1 = "#ffffff", Cor2 = "#d71920", CorBorda = "#7a0d12", CorSimbolo = "#f5c518",
+        Forma = "e16",
+        Padrao = "metade_v",
+        Simbolo = "nenhum",
+        Sigla = "",
+        Cor1 = "#ffffff",
+        Cor2 = "#d71920",
+        CorBorda = "#7a0d12",
+        CorSimbolo = "#f5c518",
         Simbolos = new() { new SimboloPosicionado { Chave = "coroa", X = 50, Y = 44, Tamanho = 30 } }
     };
 
     public static readonly EscudoConfig EscudoAmarelo = new()
     {
-        Forma = "e16", Padrao = "metade_v", Simbolo = "nenhum", Sigla = "",
-        Cor1 = "#f5c518", Cor2 = "#111111", CorBorda = "#111111", CorSimbolo = "#ffffff",
+        Forma = "e16",
+        Padrao = "metade_v",
+        Simbolo = "nenhum",
+        Sigla = "",
+        Cor1 = "#f5c518",
+        Cor2 = "#111111",
+        CorBorda = "#111111",
+        CorSimbolo = "#ffffff",
         Simbolos = new() { new SimboloPosicionado { Chave = "coroa", X = 50, Y = 44, Tamanho = 30 } }
     };
 }
@@ -123,6 +135,13 @@ public class LinhaSumula
     public int Azul2T { get; set; }
     public int Vermelho1T { get; set; }
     public int Vermelho2T { get; set; }
+
+    /// <summary>Eventos do jogo inteiro (a tela não separa por tempo).</summary>
+    public int Assistencias { get; set; }
+    public int ChutesGol { get; set; }
+    public int Defesas { get; set; }
+    public int PenaltisCometidos { get; set; }
+    public int PenaltisPerdidos { get; set; }
 
     /// <summary>Total de gols. Ao editar, grava tudo em gols_1t e zera gols_2t (a tela não separa por tempo).</summary>
     public int Gols

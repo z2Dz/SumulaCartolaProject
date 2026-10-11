@@ -11,6 +11,22 @@
 <div class="pagina home home-fundo-@Clube.FundoHome">
     <div class="dash">
 
+        @* ===== resumo no alto (celular): patrimônio, pontuação e torcida ===== *@
+        <div class="esc-stats dash-resumo" aria-label="Resumo do clube">
+            <div class="esc-stat">
+                <small>Patrimônio</small>
+                <strong>@Formato.Moeda(patrimonio)</strong>
+            </div>
+            <div class="esc-stat">
+                <small>Pontuação</small>
+                <strong>@Formato.Pontos(pontos)</strong>
+            </div>
+            <div class="esc-stat">
+                <small>Torcida</small>
+                <strong>@Torcida.Fmt(Torc)</strong>
+            </div>
+        </div>
+
         @* ===== Meu elenco ===== *@
         <section class="cartao dash-elenco" aria-label="Meu elenco">
             <div class="dash-elenco-topo">
@@ -49,13 +65,19 @@
                         <p class="home-estadio">Estádio <strong>@Clube.Estadio</strong></p>
                     }
                     <div class="home-campo-faixas">
-                        @if (TemFaixa) { <FaixaLateral Modelo="@Clube.Esquerda()" Cor1="@Clube.FaixaCor1" Cor2="@Clube.FaixaCor2" Escudo="Provedor.Perfil?.Escudo" /> }
+                        @if (TemFaixa)
+                        {
+                            <FaixaLateral Modelo="@Clube.Esquerda()" Cor1="@Clube.FaixaCor1" Cor2="@Clube.FaixaCor2" Escudo="Provedor.Perfil?.Escudo" />
+                        }
                         <div class="home-campo">
                             <CampoTatico Escalacao="montada" Cards="cards" Estilo="@Clube.Campo" Moldura="@Clube.Moldura" LinhasCor="@Clube.CampoLinhas" Estadio="@Clube.EstadioModelo"
                                          CorGrama1="@Clube.CampoCor1" CorGrama2="@Clube.CampoCor2" CorMoldura="@Clube.MolduraCor"
                                          CorEstadio1="@Clube.EstadioCor1" CorEstadio2="@Clube.EstadioCor2" EscudoCard="Provedor.Perfil?.Escudo" />
                         </div>
-                        @if (TemFaixa) { <FaixaLateral Modelo="@Clube.Direita()" Cor1="@Clube.FaixaCor1" Cor2="@Clube.FaixaCor2" Escudo="Provedor.Perfil?.Escudo" /> }
+                        @if (TemFaixa)
+                        {
+                            <FaixaLateral Modelo="@Clube.Direita()" Cor1="@Clube.FaixaCor1" Cor2="@Clube.FaixaCor2" Escudo="Provedor.Perfil?.Escudo" />
+                        }
                     </div>
                     <a href="escalar" class="gerenciar"><IconeUi Nome="troca" Tamanho="22" /><span>Gerenciar escalação</span><IconeUi Nome="seta" Tamanho="18" /></a>
                 </div>
@@ -134,6 +156,7 @@
     private EscalacaoMontada? montada;
     private CardsConfig cards = new();
     private decimal? pontos;
+    private const decimal MultCapitao = 1.5m;   // o capitão vale ×1,5
     private decimal patrimonio = Valorizacao.Orcamento;
     private decimal variacao;
     private ResumoTorcida resumo = new();
@@ -211,13 +234,13 @@
             if (!porId.TryGetValue(s.AtletaId, out var a) || s.Indice is < 0 or > 5) continue;
             m.Definir(s.Pos, s.Indice, a);
 
-            if (a.UltimaPontuacao is { } p) somaPontos = (somaPontos ?? 0) + p;
+            if (a.UltimaPontuacao is { } p) somaPontos = (somaPontos ?? 0) + p * (a.Id == salva.CapitaoId ? MultCapitao : 1m);
             variacao += a.Valor - (a.ValorAntesUltimo ?? a.Valor);
             patrimonio += a.Valor - s.Valor;     // quanto o time valorizou desde que foi salvo
         }
         if (salva.CapitaoId is not null && m.EstaNoCampo(salva.CapitaoId)) m.AlternarCapitao(salva.CapitaoId);
 
-        pontos = somaPontos;
+        pontos = somaPontos is null ? null : somaPontos + (PontosDoTecnico.Valor(m) ?? 0m);   // técnico = média do time
         montada = m;
     }
 

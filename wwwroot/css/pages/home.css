@@ -16,7 +16,7 @@
     min-height: calc(100dvh - 11rem);
 }
 
-.home-grade > .cartao {
+    .home-grade > .cartao {
         margin-bottom: 0;
     }
 
@@ -55,7 +55,7 @@
     text-decoration: none;
 }
 
-.home-lapis:focus-visible {
+    .home-lapis:focus-visible {
         outline: 2px solid var(--amarelo);
         outline-offset: 2px;
     }
@@ -79,7 +79,7 @@
     gap: .6rem;
 }
 
-.home-meio-topo h3 {
+    .home-meio-topo h3 {
         margin: 0;
     }
 
@@ -113,12 +113,12 @@
     padding: 1rem 0;
 }
 
-.home-vazio h3 {
+    .home-vazio h3 {
         margin: .6rem 0 0;
         font-size: 1.4rem;
     }
 
-.home-vazio .botao {
+    .home-vazio .botao {
         text-decoration: none;
         margin-top: .4rem;
     }
@@ -128,7 +128,7 @@
     width: min(300px, 70%);
 }
 
-.home-juiz img {
+    .home-juiz img {
         display: block;
         width: 100%;
         height: auto;
@@ -152,7 +152,7 @@
     gap: .2rem;
 }
 
-.home-bloco + .home-bloco {
+    .home-bloco + .home-bloco {
         padding-top: 1.8rem;
         border-top: 1px solid rgba(128,128,128,.25);
     }
@@ -167,21 +167,21 @@
     font-weight: 600;
 }
 
-.home-var.sobe {
+    .home-var.sobe {
         color: #1f9d5b;
     }
 
-.home-var.desce {
+    .home-var.desce {
         color: #d64545;
     }
 
-.home-var.igual {
+    .home-var.igual {
         color: var(--suave);
     }
 
 @media (max-width: 899px) {
-/* celular e tablet: escudo e pontuação lado a lado; a escalação ocupa a largura toda embaixo */
-.home-grade {
+    /* celular e tablet: escudo e pontuação lado a lado; a escalação ocupa a largura toda embaixo */
+    .home-grade {
         min-height: 0;
         gap: .8rem;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -192,15 +192,15 @@
 }
 
 @media (max-width: 420px) {
-.home-grande {
+    .home-grande {
         font-size: 1.6rem;
     }
 
-.home-time {
+    .home-time {
         padding: 1rem .6rem;
     }
 
-.home-var {
+    .home-var {
         font-size: .78rem;
     }
 }
@@ -214,14 +214,14 @@
     gap: 2px;
 }
 
-.escudo-deco.dourado .escudo,
-.escudo-deco.dourado .escudo-coroa {
-    filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 12px rgba(245,197,24,.75));
-    animation: brilho-ouro 2.8s ease-in-out infinite;
-}
+    .escudo-deco.dourado .escudo,
+    .escudo-deco.dourado .escudo-coroa {
+        filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 12px rgba(245,197,24,.75));
+        animation: brilho-ouro 2.8s ease-in-out infinite;
+    }
 
 @media (prefers-reduced-motion: reduce) {
-.escudo-deco.dourado .escudo,
+    .escudo-deco.dourado .escudo,
     .escudo-deco.dourado .escudo-coroa {
         animation: none;
     }
@@ -285,7 +285,7 @@
     align-items: stretch;
 }
 
-.home-campo-faixas .home-campo {
+    .home-campo-faixas .home-campo {
         flex: 1;
         min-width: 0;
         width: auto;
@@ -307,7 +307,7 @@
     text-align: center;
 }
 
-.home-faixa.oculta {
+    .home-faixa.oculta {
         display: none;
     }
 
@@ -320,7 +320,7 @@
 }
 
 @media (max-width: 560px) {
-.home-faixa {
+    .home-faixa {
         font-size: .7rem;
         padding: .6rem .25rem 1.1rem;
     }
@@ -349,7 +349,7 @@
     border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
-.dash-elenco-topo h2 {
+    .dash-elenco-topo h2 {
         display: flex;
         align-items: center;
         gap: .7rem;
@@ -385,7 +385,7 @@
     gap: .7rem;
 }
 
-.dash-campo .home-campo {
+    .dash-campo .home-campo {
         pointer-events: none;
     }
 
@@ -393,6 +393,20 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+}
+
+/* Os mesmos três números em dois formatos: cartões na lateral (computador) ou
+   o resumo compacto no alto, no mesmo visual do cabeçalho da Escalar (celular). */
+@media (min-width: 900px) {
+    .dash-resumo {
+        display: none;
+    }
+}
+
+@media (max-width: 899px) {
+    .dash-lado {
+        display: none;
+    }
 }
 
 .dash-card {
@@ -413,7 +427,7 @@
     align-self: start;
 }
 
-.dash-ico.moeda, .dash-ico.estrela, .dash-ico.torcida {
+    .dash-ico.moeda, .dash-ico.estrela, .dash-ico.torcida {
         background: rgba(245,197,24,.14);
         color: var(--amarelo);
     }
@@ -425,7 +439,7 @@
     min-width: 0;
 }
 
-.dash-corpo h3 {
+    .dash-corpo h3 {
         margin: 0;
         font-size: 1.1rem;
     }
@@ -439,19 +453,19 @@
     opacity: .85;
 }
 
-.dash-deco.sobe {
+    .dash-deco.sobe {
         color: var(--acento);
     }
 
-.dash-deco.desce {
+    .dash-deco.desce {
         color: #e05555;
     }
 
-.dash-deco.igual {
+    .dash-deco.igual {
         color: rgba(255,255,255,.2);
     }
 
-.dash-deco.estadio {
+    .dash-deco.estadio {
         color: rgba(255,255,255,.28);
     }
 
@@ -481,10 +495,9 @@
 }
 
 @media (max-width: 1099px) {
-.dash {
+    .dash {
         grid-template-columns: minmax(0, 1fr);
     }
-
 }
 
 /* ===== Home: campo maior e painel do elenco mais transparente ===== */
@@ -494,12 +507,12 @@
     box-shadow: none;
 }
 
-.cartao.dash-elenco .dash-elenco-topo {
+    .cartao.dash-elenco .dash-elenco-topo {
         border-bottom-color: rgba(255,255,255,.05);
     }
 
-/* o brilho cinza dos refletores atrás do campo fica quase invisível */
-.cartao.dash-elenco .campo-cena::before {
+    /* o brilho cinza dos refletores atrás do campo fica quase invisível */
+    .cartao.dash-elenco .campo-cena::before {
         opacity: .18;
     }
 
@@ -511,29 +524,29 @@
    A geometria (cartões, inclinação, perspectiva) vem de features/escalacao/campo-3d.css.
    Aqui só o espaço que a Home reserva para o campo. */
 @media (min-width: 900px) {
-/* computador: a cena ocupa a altura que a janela deixa; o campo cabe nela */
-.dash-campo .campo-cena {
-        --altura: max(340px, calc(100dvh - 17rem));   /* o que sobra depois do título, do botão e das margens */
+    /* computador: a cena ocupa a altura que a janela deixa; o campo cabe nela */
+    .dash-campo .campo-cena {
+        --altura: max(340px, calc(100dvh - 17rem)); /* o que sobra depois do título, do botão e das margens */
         height: var(--altura);
     }
 }
 
 @media (max-width: 899px) {
-/* celular e tablet: sem sidebar, a página rola; a altura da cena é a do campo */
-.dash-campo {
+    /* celular e tablet: sem sidebar, a página rola; a altura da cena é a do campo */
+    .dash-campo {
         padding-inline: .4rem;
     }
 
-/* faixas "MAIOR DE TODOS" mais finas, para o campo ganhar largura */
-.dash-campo .home-campo-faixas {
-        gap: .2rem;
-    }
+        /* faixas "MAIOR DE TODOS" mais finas, para o campo ganhar largura */
+        .dash-campo .home-campo-faixas {
+            gap: .2rem;
+        }
 
-.dash-campo .home-faixa {
-        font-size: .58rem;
-        letter-spacing: .04em;
-        padding: .45rem .15rem .9rem;
-    }
+        .dash-campo .home-faixa {
+            font-size: .58rem;
+            letter-spacing: .04em;
+            padding: .45rem .15rem .9rem;
+        }
 }
 
 /* ===== Home: cartões nítidos (sem sombra desfocada nem profundidade que rasteriza mole) ===== */
@@ -542,10 +555,10 @@
     filter: none;
 }
 
-/* ===== Sombra dos cartões (deslocada e sem desfoque, para a borda continuar nítida) ===== */
-.dash-campo .slot-btn.cheio {
-    filter: drop-shadow(2px 4px 0 rgba(0,0,0,.5)) drop-shadow(0 6px 0 rgba(0,0,0,.18));
-}
+    /* ===== Sombra dos cartões (deslocada e sem desfoque, para a borda continuar nítida) ===== */
+    .dash-campo .slot-btn.cheio {
+        filter: drop-shadow(2px 4px 0 rgba(0,0,0,.5)) drop-shadow(0 6px 0 rgba(0,0,0,.18));
+    }
 
 /* ===== Home: painel do elenco com cor uniforme (sem faixa mais clara sob o título) ===== */
 .cartao.dash-elenco .dash-elenco-topo {
@@ -557,9 +570,9 @@
 }
 
 .regras-modal-topo h2 {
-        margin: 0;
-        font-size: 1.05rem;
-    }
+    margin: 0;
+    font-size: 1.05rem;
+}
 
 .pers-corpo h3 {
     margin: .35rem 0 .1rem;
@@ -568,8 +581,8 @@
 }
 
 @media (max-width: 860px) {
-/* camadas (coluna da direita) */
-.ed-camadas h3 {
+    /* camadas (coluna da direita) */
+    .ed-camadas h3 {
         border-bottom: 0;
         padding-bottom: 0;
         margin: .2rem .3rem .5rem;
@@ -600,8 +613,8 @@
 }
 
 .adm2-vidro h3 {
-        margin: 0 0 .3rem;
-    }
+    margin: 0 0 .3rem;
+}
 
 .adm2-ico.cartao {
     width: 20px;
@@ -611,10 +624,10 @@
 }
 
 .chg2-cab-txt h3 {
-        margin: 0;
-        font-size: 1.2rem;
-        color: var(--branco);
-    }
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--branco);
+}
 
 /* ===== Chegada: cartão da partida em vidro e listas sem corte ===== */
 .chg2 > .cartao {
@@ -627,7 +640,7 @@
 }
 
 @media (min-width: 900px) {
-.chg2-cab-txt h3 {
+    .chg2-cab-txt h3 {
         font-size: 1.35rem;
     }
 }
@@ -637,49 +650,49 @@
 }
 
 .previa-campo .campo {
-        --slot: clamp(46px, 5.6vw, 84px);
-        max-width: 100%;
-        aspect-ratio: 300 / 370;
-    }
+    --slot: clamp(46px, 5.6vw, 84px);
+    max-width: 100%;
+    aspect-ratio: 300 / 370;
+}
 
 @media (max-width: 640px) {
-.previa-campo .campo {
+    .previa-campo .campo {
         --slot: clamp(40px, 12vw, 64px);
         aspect-ratio: 300 / 400;
     }
 }
 
 @media (min-width: 900px) and (min-height: 620px) {
-.previa-campo .campo {
-            --slot: clamp(30px, calc(var(--h) / 8.6), 70px);
-            height: var(--h);
-            width: calc(var(--h) * 0.81);
-            max-width: 100%;
-            aspect-ratio: auto;
-            margin-inline: auto;
-        }
-}
-
-@media (max-width: 899px) {
-.chg2-pop-cab h3 {
-            margin: 0;
-            font-size: 1.1rem;
-            color: var(--branco);
-        }
-}
-
-.sm2-placar img {
-        width: 58px;
-        height: 58px;
-        object-fit: contain;
-        filter: drop-shadow(0 3px 6px rgba(0,0,0,.4));
+    .previa-campo .campo {
+        --slot: clamp(30px, calc(var(--h) / 8.6), 70px);
+        height: var(--h);
+        width: calc(var(--h) * 0.81);
+        max-width: 100%;
+        aspect-ratio: auto;
+        margin-inline: auto;
     }
+}
 
 @media (max-width: 899px) {
+    .chg2-pop-cab h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: var(--branco);
+    }
+}
+
 .sm2-placar img {
-            width: 44px;
-            height: 44px;
-        }
+    width: 58px;
+    height: 58px;
+    object-fit: contain;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,.4));
+}
+
+@media (max-width: 899px) {
+    .sm2-placar img {
+        width: 44px;
+        height: 44px;
+    }
 }
 
 /* ===== Molduras dos cartões sem blur: brilhos e sombras desfocadas removidos ===== */
@@ -693,11 +706,15 @@
 }
 
 .pc2-moldura .campo.prev-moldura {
-        margin: 0 auto;
-        --slot: 58px;
-    }
+    margin: 0 auto;
+    --slot: 58px;
+}
 
-.rk-campo-faixas .home-faixa:first-child { transform: rotate(180deg); }
+.rk-campo-faixas .home-faixa:first-child {
+    transform: rotate(180deg);
+}
 
 .rk-personalizacao .home-estadio,
-    .rk-personalizacao .home-grito { margin: 0; }
+.rk-personalizacao .home-grito {
+    margin: 0;
+}

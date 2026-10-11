@@ -21,23 +21,26 @@
                 case 1:
                     <h2 id="tut-titulo">Monte o seu time</h2>
                     <p>Na aba <strong>Escalar</strong>, escolha o esquema tático e preencha as <strong>12 vagas</strong>: goleiro, 10 jogadores de linha e o técnico. Toque numa vaga para ver os atletas daquela posição.</p>
-                    <p>Você tem <strong>@Formato.Moeda(Valorizacao.Orcamento)</strong> para gastar. Goleiro e técnico não custam nada, então o orçamento vale para os jogadores de linha. Atacante é caro e zagueiro é barato, e é aí que está a escolha.</p>
+                    <p>Você tem <strong>@Formato.Moeda(Valorizacao.Orcamento)</strong> para gastar. O técnico não custa nada. O goleiro custa R$ 5,00, atacante é caro e zagueiro é barato, e é aí que está a escolha.</p>
                     break;
 
                 case 2:
                     <h2 id="tut-titulo">Capitão e salvar</h2>
-                    <p>Toque num atleta escalado para escolher o <strong>capitão</strong>.</p>
+                    <p>Toque num atleta escalado para escolher o <strong>capitão</strong>. Os pontos dele valem <strong>×1,5</strong>.</p>
                     <p>O botão <strong>Salvar escalação</strong> só libera com as 12 vagas preenchidas e dentro do orçamento. Depois de salvar, o seu time vale para a próxima rodada.</p>
                     <p>O administrador abre e fecha o <strong>mercado</strong>. Com ele fechado, a escalação não muda mais.</p>
                     break;
 
                 case 3:
                     <h2 id="tut-titulo">Como os atletas pontuam</h2>
-                    <p>Em cada jogo, todo atleta de linha começa com <strong>7 pontos</strong> e o goleiro com <strong>12</strong>. Depois:</p>
+                    <p>Em cada jogo, todo atleta de linha começa com <strong>4 pontos</strong> e o goleiro com <strong>8</strong>. Depois:</p>
                     <ul>
-                        <li>Time fez gol: <strong>+2</strong> para quem joga na linha e <strong>+1</strong> para o goleiro. Quem fez o gol ganha <strong>+4</strong>.</li>
-                        <li>Time tomou gol: <strong>−4</strong> para a linha e <strong>−2</strong> para o goleiro.</li>
+                        <li>Time fez gol: <strong>+0,5</strong> por gol para a linha (o goleiro não ganha). Quem fez o gol ganha <strong>+5</strong>.</li>
+                        <li>Time tomou gol: <strong>−0,5</strong> por gol para a linha e <strong>−1</strong> para o goleiro.</li>
+                        <li>Assistência <strong>+3</strong>, chute ao gol <strong>+0,5</strong> e defesa <strong>+1</strong>.</li>
                         <li>Cartão amarelo <strong>−2</strong>, azul <strong>−3</strong> e vermelho <strong>−5</strong>.</li>
+                        <li>Pênalti cometido ou perdido: <strong>−3</strong> cada. Gol contra: <strong>−5</strong>.</li>
+                        <li>Técnico: pontua pela média do time, a soma dos pontos dos seus 11 jogadores ÷ 11.</li>
                     </ul>
                     <p>A pontuação do seu time é a soma dos pontos dos seus atletas.</p>
                     break;

@@ -1,15 +1,71 @@
-@* Vaga a vaga da escalação em linhas. Tocar numa linha abre a lista de atletas daquela posição. *@
-@foreach (var pos in Enum.GetValues<PosicaoCampo>())
+@using System.Globalization
+@inject ServicoMercado Mercado
+@* Duas listas com o mesmo layout (foto - nome - posição - pontos):
+   - Minha escalação: vaga a vaga. Tocar numa linha abre a lista de atletas daquela posição (mercado aberto)
+     ou o extrato de pontos do atleta, logo abaixo (mercado fechado).
+   - Pontuação da rodada (ModoRodada): todos os atletas que jogaram a última partida. Tocar numa linha expande o extrato dele. *@
+@if (ModoRodada)
 {
-    foreach (var i in Enumerable.Range(0, Escalacao.Tatica.Qtd(pos)))
+    @if (CarregandoRodada)
     {
-        var vaga = new SlotRef(pos, i);
-        var at = Escalacao.Obter(pos, i);
-        <button type="button" class="esc-lista-item @(at is null ? "vazio" : "") @(Selecionado == vaga ? "sel" : "")" @onclick="() => OnSlot.InvokeAsync(vaga)">
-            <span class="esc-lista-pos">@pos.Sigla()</span>
-            <span class="esc-lista-nome">@(at?.Nome ?? "Escolher " + pos.Nome().ToLowerInvariant())@(at is not null && at.Id == Escalacao.CapitaoId ? " (C)" : "")</span>
-            <span class="esc-lista-valor">@(at is null ? "+" : Formato.Moeda(at.Valor))</span>
-        </button>
+        <p class="suave esc-linha-msg">Carregando pontuação…</p>
+    }
+    else if (ErroRodada is not null)
+    {
+        <p class="erro esc-linha-msg">@ErroRodada</p>
+    }
+    else if (Rodada is null || Rodada.Atletas.Count == 0)
+    {
+        <p class="suave esc-linha-msg">Ainda não há partida finalizada com pontuação.</p>
+    }
+    else
+    {
+        <p class="esc-extrato-sub esc-linha-sub">Última partida@(Rodada.Data is { } d ? " · " + d.ToString("dd/MM") : "") · @Rodada.Atletas.Count atletas</p>
+        @foreach (var a in Rodada.Atletas)
+        {
+            var atleta = Elenco.FirstOrDefault(x => x.Id == a.Id);
+            var aberto = rodadaAberta == a.Id;
+            <button type="button" class="esc-lista-item esc-linha @(Escalacao.EstaNoCampo(a.Id) ? "meu" : "") @(aberto ? "sel" : "")" aria-expanded="@aberto.ToString().ToLowerInvariant()" @onclick="() => AlternarRodada(a.Id)">
+                <span class="esc-linha-foto">@if (atleta is not null) { <FotoAtleta Atleta="atleta" Tamanho="26" /> }</span>
+                <span class="esc-lista-nome">@a.Nome@(a.Id == Escalacao.CapitaoId ? " (C)" : "")</span>
+                <span class="esc-linha-pos">@a.Posicao</span>
+                <span class="esc-linha-pontos @Classe(a.Pontos)">@Fmt(a.Pontos)</span>
+            </button>
+            @if (aberto)
+            {
+                @PainelExtrato(extratoRodada, carregandoExtratoRodada, erroExtratoRodada)
+            }
+        }
+    }
+}
+else
+{
+    @foreach (var pos in Enum.GetValues<PosicaoCampo>())
+    {
+        foreach (var i in Enumerable.Range(0, Escalacao.Tatica.Qtd(pos)))
+        {
+            var vaga = new SlotRef(pos, i);
+            var at = Escalacao.Obter(pos, i);
+            var aberto = at is not null && ExtratoSlot == vaga;
+            <button type="button" class="esc-lista-item esc-linha @(at is null ? "vazio" : "") @(Selecionado == vaga || aberto ? "sel" : "")" aria-expanded="@(at is null ? null : aberto.ToString().ToLowerInvariant())" @onclick="() => OnSlot.InvokeAsync(vaga)">
+                <span class="esc-linha-foto">@if (at is not null) { <FotoAtleta Atleta="at" Posicao="pos" Tamanho="26" /> }</span>
+                <span class="esc-lista-nome">@(at?.Nome ?? "Escolher " + pos.Nome().ToLowerInvariant())@(at is not null && at.Id == Escalacao.CapitaoId ? " (C)" : "")</span>
+                <span class="esc-linha-pos">@pos.Sigla()</span>
+                @if (at is null)
+                {
+                    <span class="esc-linha-pontos">+</span>
+                }
+                else
+                {
+                    var p = PontosDaVaga(pos, at);
+                    <span class="esc-linha-pontos @(p is null ? "" : Classe(p.Value))">@(p is null ? "—" : Fmt(p.Value))</span>
+                }
+            </button>
+            @if (aberto)
+            {
+                @PainelExtrato(Extrato, Carregando, Erro)
+            }
+        }
     }
 }
 
@@ -17,4 +73,99 @@
     [Parameter, EditorRequired] public EscalacaoMontada Escalacao { get; set; } = default!;
     [Parameter] public SlotRef? Selecionado { get; set; }
     [Parameter] public EventCallback<SlotRef> OnSlot { get; set; }
+
+    /// <summary>Vaga cujo extrato está aberto embaixo do nome.</summary>
+    [Parameter] public SlotRef? ExtratoSlot { get; set; }
+    [Parameter] public ExtratoJogo? Extrato { get; set; }
+    [Parameter] public bool Carregando { get; set; }
+    [Parameter] public string? Erro { get; set; }
+
+    /// <summary>Aba "Pontuação da rodada": mostra todos os atletas da última partida em vez das vagas do time.</summary>
+    [Parameter] public bool ModoRodada { get; set; }
+    [Parameter] public PontuacaoDaRodada? Rodada { get; set; }
+    [Parameter] public bool CarregandoRodada { get; set; }
+    [Parameter] public string? ErroRodada { get; set; }
+    /// <summary>Elenco do mercado, para achar a foto de cada atleta da rodada.</summary>
+    [Parameter] public List<AtletaEscalavel> Elenco { get; set; } = new();
+
+    // extrato do atleta aberto na aba da rodada (carregado aqui mesmo)
+    private string? rodadaAberta;
+    private ExtratoJogo? extratoRodada;
+    private bool carregandoExtratoRodada;
+    private string? erroExtratoRodada;
+
+    private static readonly CultureInfo Br = new("pt-BR");
+    private static string Fmt(decimal v) => v.ToString("0.00", Br);
+    private static string Classe(LinhaExtrato l) => l.Pontua ? Classe(l.Pontos) : "zero";
+    private static string Classe(decimal v) => v > 0 ? "pos" : v < 0 ? "neg" : "zero";
+
+    /// <summary>Pontos da última partida na vaga. O técnico pontua pela média do time.</summary>
+    private decimal? PontosDaVaga(PosicaoCampo pos, AtletaEscalavel at) =>
+        pos == PosicaoCampo.Tecnico ? SumulaCartolaProject.Servicos.PontosDoTecnico.Valor(Escalacao) : at.UltimaPontuacao;
+
+    private async Task AlternarRodada(string id)
+    {
+        if (rodadaAberta == id) { rodadaAberta = null; return; }
+        rodadaAberta = id;
+        extratoRodada = null;
+        erroExtratoRodada = null;
+        carregandoExtratoRodada = true;
+        try
+        {
+            var resultado = await Mercado.ObterExtratoAsync(id);
+            if (rodadaAberta == id) extratoRodada = resultado;    // ignora resposta de um atleta já fechado
+        }
+        catch (ErroMercadoException ex) { if (rodadaAberta == id) erroExtratoRodada = ex.Message; }
+        finally { if (rodadaAberta == id) carregandoExtratoRodada = false; }
+    }
+
+    /// <summary>Extrato de pontos (usado pelas duas listas).</summary>
+    private RenderFragment PainelExtrato(ExtratoJogo? extrato, bool carregando, string? erro) => @<div class="esc-extrato">
+        @if (carregando)
+        {
+            <p class="suave">Carregando extrato…</p>
+        }
+        else if (erro is not null)
+        {
+            <p class="erro">@erro</p>
+        }
+        else if (extrato is null)
+        {
+            <p class="suave">Ainda sem partida finalizada.</p>
+        }
+        else
+        {
+            <p class="esc-extrato-sub">Última partida@(extrato.Data is { } d ? " · " + d.ToString("dd/MM") : "")</p>
+            <ul>
+                @foreach (var l in extrato.Linhas)
+                {
+                    <li><span>@l.Texto</span><b class="@Classe(l)">@Fmt(l.Pontos)</b></li>
+                }
+            </ul>
+            <div class="esc-extrato-total"><span>Total</span><b class="@Classe(extrato.Total)">@Fmt(extrato.Total)</b></div>
+        }
+    </div>;
 }
+
+<style>
+    .esc-linha { grid-template-columns: 2rem 1fr auto auto; padding: .45rem .8rem; }   /* foto - nome - posição - pontos */
+    .esc-linha.meu { border-color: var(--amarelo); }
+    .esc-linha-foto { display: flex; align-items: center; justify-content: center; }
+    .esc-linha-pos { font-weight: 800; font-size: .8rem; color: var(--amarelo); white-space: nowrap; }
+    .esc-linha-pontos { font-weight: 800; color: var(--acento); }
+    .esc-linha-pontos.pos { color: #2fbf71; }
+    .esc-linha-pontos.neg { color: #e5484d; }
+    .esc-linha-pontos.zero { opacity: .55; }
+    .esc-linha-msg { margin: .4rem 0; }
+    .esc-linha-sub { margin: 0 0 .35rem; }
+
+    .esc-extrato { margin: -.1rem 0 .5rem; padding: .35rem .9rem .6rem; border: 1px solid rgba(255,255,255,.08); border-top: 0; border-radius: 0 0 10px 10px; background: rgba(255,255,255,.03); }
+    .esc-extrato ul { list-style: none; margin: 0; padding: 0; }
+    .esc-extrato li, .esc-extrato-total { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: .4rem 0; font-size: .95rem; }
+    .esc-extrato li { border-bottom: 1px solid rgba(255,255,255,.07); }
+    .esc-extrato-total { font-weight: 700; padding-bottom: 0; }
+    .esc-extrato-sub { margin: 0 0 .15rem; opacity: .65; font-size: .8rem; }
+    .esc-extrato b.pos { color: #2fbf71; }
+    .esc-extrato b.neg { color: #e5484d; }
+    .esc-extrato b.zero { opacity: .55; }
+</style>

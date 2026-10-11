@@ -2,22 +2,22 @@
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
 
 .adm-cartao.am.on {
-        background: var(--amarelo);
-        border-color: var(--amarelo);
-        color: var(--grafite);
-    }
+    background: var(--amarelo);
+    border-color: var(--amarelo);
+    color: var(--grafite);
+}
 
 .adm-cartao.az.on {
-        background: #2a6fdb;
-        border-color: #2a6fdb;
-        color: var(--branco);
-    }
+    background: #2a6fdb;
+    border-color: #2a6fdb;
+    color: var(--branco);
+}
 
 .adm-cartao.ver.on {
-        background: var(--vermelho);
-        border-color: var(--vermelho);
-        color: var(--branco);
-    }
+    background: var(--vermelho);
+    border-color: var(--vermelho);
+    color: var(--branco);
+}
 
 /* Súmula: só a lista de jogadores rola */
 .fixa > .sum-rola {
@@ -34,14 +34,14 @@
 }
 
 @media (min-width: 720px) {
-.sum-filtros {
+    .sum-filtros {
         display: grid;
         grid-template-columns: auto 1fr auto 1fr;
         align-items: center;
         gap: .4rem .6rem;
     }
 
-.sum-filtros > .adm-dica {
+        .sum-filtros > .adm-dica {
             grid-column: 1 / -1;
         }
 }
@@ -81,7 +81,7 @@
     gap: .3rem;
 }
 
-.sj .adm-passo span {
+    .sj .adm-passo span {
         font-size: 1.05rem;
     }
 
@@ -96,11 +96,11 @@
 }
 
 @media (min-width: 860px) {
-.adm:has(.sj) {
+    .adm:has(.sj) {
         max-width: 1000px;
     }
 
-.sj .adm-jogador-corpo {
+    .sj .adm-jogador-corpo {
         order: 0;
         flex: none;
         flex-basis: auto;
@@ -108,7 +108,7 @@
         justify-content: flex-start;
     }
 
-.sj .adm-icone {
+    .sj .adm-icone {
         order: 0;
     }
 }
@@ -123,26 +123,26 @@
     border-radius: .5rem;
 }
 
-.sj .adm-cart small {
+    .sj .adm-cart small {
         font-size: .7rem;
         opacity: .7;
     }
 
-.sj .adm-cart .adm-passo {
+    .sj .adm-cart .adm-passo {
         gap: .2rem;
     }
 
-.sj .adm-cart.on.am {
+    .sj .adm-cart.on.am {
         border-color: #e6b800;
         background: rgba(230, 184, 0, .15);
     }
 
-.sj .adm-cart.on.az {
+    .sj .adm-cart.on.az {
         border-color: #2f7fe0;
         background: rgba(47, 127, 224, .15);
     }
 
-.sj .adm-cart.on.ver {
+    .sj .adm-cart.on.ver {
         border-color: #d63a3a;
         background: rgba(214, 58, 58, .15);
     }
@@ -161,32 +161,32 @@
     row-gap: .2rem;
 }
 
-.sj .adm-passo span {
+    .sj .adm-passo span {
         grid-column: 1;
         grid-row: 1 / 3;
         min-width: 1.4rem;
     }
 
-.sj .adm-passo button:last-child {
+    .sj .adm-passo button:last-child {
         grid-column: 2;
         grid-row: 1;
     }
 
-.sj .adm-passo button:first-child {
+    .sj .adm-passo button:first-child {
         grid-column: 2;
         grid-row: 2;
     }
 
-/* ===== Ajustes: botões retangulares, sem rolagem lateral, camisa branca ===== */
-.sj .adm-passo button,
-.sj .adm-cart .adm-passo button {
-    width: 2.7rem;
-    height: 1.55rem;
-    border-radius: 5px;
-    font-size: 1.05rem;
-    line-height: 1;
-    padding: 0;
-}
+    /* ===== Ajustes: botões retangulares, sem rolagem lateral, camisa branca ===== */
+    .sj .adm-passo button,
+    .sj .adm-cart .adm-passo button {
+        width: 2.7rem;
+        height: 1.55rem;
+        border-radius: 5px;
+        font-size: 1.05rem;
+        line-height: 1;
+        padding: 0;
+    }
 
 .sum-rola,
 .adm:has(.sj) {
@@ -208,7 +208,7 @@
     -ms-overflow-style: none; /* Edge antigo */
 }
 
-.fixa > .sum-rola::-webkit-scrollbar,
+    .fixa > .sum-rola::-webkit-scrollbar,
     .fixa .previa::-webkit-scrollbar,
     .fixa .chg-nomes::-webkit-scrollbar,
     .fixa .chg-rola::-webkit-scrollbar {
@@ -218,9 +218,9 @@
     }
 
 @media (min-width: 900px) {
-.esc-topo .esc-stat small {
-                font-size: .74rem;
-            }
+    .esc-topo .esc-stat small {
+        font-size: .74rem;
+    }
 }
 
 .cor-am {
@@ -236,17 +236,17 @@
 }
 
 @media print {
-.hist-area .cor-am {
-                color: #8a6d00 !important;
-            }
+    .hist-area .cor-am {
+        color: #8a6d00 !important;
+    }
 
-.hist-area .cor-az {
-                color: #0b5cad !important;
-            }
+    .hist-area .cor-az {
+        color: #0b5cad !important;
+    }
 
-.hist-area .cor-ve {
-                color: #b00020 !important;
-            }
+    .hist-area .cor-ve {
+        color: #b00020 !important;
+    }
 }
 
 .adm2-ico.am {
@@ -262,17 +262,17 @@
 }
 
 .chg2-card .adm-abas button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: .5rem;
-        padding: .75rem .6rem;
-        border-radius: 14px;
-        font-size: .95rem;
-        background: rgba(255,255,255,.04);
-        border: 1px solid rgba(255,255,255,.14);
-        color: var(--texto-claro);
-    }
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .75rem .6rem;
+    border-radius: 14px;
+    font-size: .95rem;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.14);
+    color: var(--texto-claro);
+}
 
 .chg2-card .chg-nome-txt small {
     font-size: .8rem;
@@ -286,25 +286,25 @@
 }
 
 @media (min-width: 900px) {
-.chg2 .chg-nome-txt small {
+    .chg2 .chg-nome-txt small {
         font-size: .88rem;
     }
 
-.chg2-item .adm-seg button {
+    .chg2-item .adm-seg button {
         padding: .45rem .8rem;
         font-size: .82rem;
     }
 }
 
 @media (min-width: 900px) and (min-height: 620px) {
-/* Prévia no campo (computador): o campo se ajusta à altura da janela, sem rolagem */
-.previa.previa-larga {
+    /* Prévia no campo (computador): o campo se ajusta à altura da janela, sem rolagem */
+    .previa.previa-larga {
         overflow-y: hidden;
     }
 }
 
 @media (min-width: 900px) {
-.pagina.adm.fixa {
+    .pagina.adm.fixa {
         flex: 1;
         min-height: 0;
         padding: .8rem 1.2rem .9rem;
@@ -313,11 +313,11 @@
 }
 
 @media (max-width: 899px) {
-.chg2-item .adm-seg button {
-                flex: 1;
-                min-height: 2.3rem;
-                padding: .35rem .8rem;
-            }
+    .chg2-item .adm-seg button {
+        flex: 1;
+        min-height: 2.3rem;
+        padding: .35rem .8rem;
+    }
 }
 
 /* =====================================================================
@@ -366,7 +366,7 @@
     color: var(--texto-claro);
 }
 
-.sm2-campo select {
+    .sm2-campo select {
         appearance: none;
         -webkit-appearance: none;
         border: 0;
@@ -385,12 +385,12 @@
         background-size: 1rem;
     }
 
-.sm2-campo select option {
+        .sm2-campo select option {
             background: #0b1a14;
             color: var(--texto-claro);
         }
 
-.sm2-campo select:disabled {
+        .sm2-campo select:disabled {
             opacity: .6;
             cursor: not-allowed;
         }
@@ -403,7 +403,7 @@
     max-width: 30rem;
 }
 
-.sm2-rodada select {
+    .sm2-rodada select {
         width: 100%;
     }
 
@@ -420,16 +420,16 @@
     background: #8aa39a;
 }
 
-.sm2-dot.em_andamento {
+    .sm2-dot.em_andamento {
         background: var(--menta);
         box-shadow: 0 0 8px var(--menta);
     }
 
-.sm2-dot.finalizada {
+    .sm2-dot.finalizada {
         background: #7aa7ff;
     }
 
-.sm2-dot.cancelada {
+    .sm2-dot.cancelada {
         background: #ff6b63;
     }
 
@@ -469,18 +469,18 @@
     gap: .5rem;
 }
 
-.sm2-abas button img {
-            width: 28px;
-            height: 28px;
-            object-fit: contain;
-        }
+    .sm2-abas button img {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+    }
 
-.sm2-abas button.ativa {
-            background: linear-gradient(135deg, #12b57d, #0a9467);
-            border-color: var(--menta);
-            color: var(--branco);
-            box-shadow: 0 0 16px rgba(31,227,160,.25);
-        }
+    .sm2-abas button.ativa {
+        background: linear-gradient(135deg, #12b57d, #0a9467);
+        border-color: var(--menta);
+        color: var(--branco);
+        box-shadow: 0 0 16px rgba(31,227,160,.25);
+    }
 
 /* lista */
 .sm2-lista {
@@ -531,25 +531,25 @@
     border: 1px solid transparent;
 }
 
-.sm2-papel.titular {
+    .sm2-papel.titular {
         color: var(--menta);
         background: rgba(31,227,160,.12);
         border-color: rgba(31,227,160,.4);
     }
 
-.sm2-papel.sai {
+    .sm2-papel.sai {
         color: #ffb74d;
         background: rgba(255,183,77,.12);
         border-color: rgba(255,183,77,.45);
     }
 
-.sm2-papel.entra {
+    .sm2-papel.entra {
         color: #6db6ff;
         background: rgba(109,182,255,.12);
         border-color: rgba(109,182,255,.45);
     }
 
-.sm2-papel.semvaga {
+    .sm2-papel.semvaga {
         color: rgba(232,239,235,.7);
         background: rgba(255,255,255,.06);
         border-color: rgba(255,255,255,.2);
@@ -577,7 +577,7 @@
     cursor: text;
 }
 
-.sm2-camisa svg {
+    .sm2-camisa svg {
         position: absolute;
         inset: 0;
         width: 100%;
@@ -589,11 +589,11 @@
         filter: drop-shadow(0 2px 4px rgba(0,0,0,.45));
     }
 
-.sm2-camisa.amarelo svg {
+    .sm2-camisa.amarelo svg {
         fill: var(--amarelo);
     }
 
-.sm2-camisa input {
+    .sm2-camisa input {
         position: absolute;
         left: 50%;
         top: 58%;
@@ -612,23 +612,23 @@
         appearance: textfield;
     }
 
-.sm2-camisa input::-webkit-outer-spin-button,
+        .sm2-camisa input::-webkit-outer-spin-button,
         .sm2-camisa input::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
 
-.sm2-camisa.amarelo input {
+    .sm2-camisa.amarelo input {
         color: var(--grafite);
     }
 
-.sm2-camisa.vazio input::placeholder {
+    .sm2-camisa.vazio input::placeholder {
         color: rgba(255,255,255,.75);
         font-size: .8rem;
         font-weight: 700;
     }
 
-.sm2-camisa.amarelo.vazio input::placeholder {
+    .sm2-camisa.amarelo.vazio input::placeholder {
         color: rgba(0,0,0,.6);
     }
 
@@ -698,13 +698,13 @@
     gap: .2rem;
 }
 
-.sm2-grupo .adm-passo {
+    .sm2-grupo .adm-passo {
         display: flex;
         align-items: center;
         gap: .45rem;
     }
 
-.sm2-grupo .adm-passo span {
+        .sm2-grupo .adm-passo span {
             min-width: 1.6ch;
             text-align: center;
             font-weight: 800;
@@ -712,7 +712,7 @@
             color: var(--branco);
         }
 
-.sm2-grupo .adm-passo button {
+        .sm2-grupo .adm-passo button {
             width: 34px;
             height: 34px;
             padding: 0;
@@ -726,21 +726,29 @@
             line-height: 1;
         }
 
-.sm2-grupo .adm-passo button:disabled {
+            .sm2-grupo .adm-passo button:disabled {
                 opacity: .35;
             }
 
+/* eventos extras (assistência, chutes, defesas, pênaltis): segunda fileira, alinhada aos contadores de cima */
+.sm2-extras {
+    grid-column: 3 / 8;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    column-gap: 1rem;
+}
+
 .sm2-grupo.am.on .adm-passo span {
-        color: var(--amarelo);
-    }
+    color: var(--amarelo);
+}
 
 .sm2-grupo.az.on .adm-passo span {
-        color: #5ea0ff;
-    }
+    color: #5ea0ff;
+}
 
 .sm2-grupo.ver.on .adm-passo span {
-        color: #ff6b63;
-    }
+    color: #ff6b63;
+}
 
 .sm2-remover {
     width: 40px;
@@ -798,14 +806,14 @@
     color: var(--branco);
 }
 
-.sm2-salvar:disabled {
+    .sm2-salvar:disabled {
         opacity: .45;
         cursor: not-allowed;
     }
 
 @media (min-width: 900px) {
-/* computador: só a lista rola */
-.pagina.adm.fixa.sm2 > .sm2-lista {
+    /* computador: só a lista rola */
+    .pagina.adm.fixa.sm2 > .sm2-lista {
         flex: 1 1 0;
         min-height: 0;
         overflow-y: auto;
@@ -814,81 +822,87 @@
         -ms-overflow-style: none;
     }
 
-.pagina.adm.fixa.sm2 > .sm2-lista::-webkit-scrollbar {
+        .pagina.adm.fixa.sm2 > .sm2-lista::-webkit-scrollbar {
             display: none;
         }
 }
 
 @media (max-width: 899px) {
-/* celular: duas linhas por atleta */
-.sm2-filtros {
+    /* celular: duas linhas por atleta */
+    .sm2-filtros {
         padding: .5rem .6rem;
     }
 
-.sm2-rodada {
+    .sm2-rodada {
         max-width: none;
     }
 
-.sm2-status {
+    .sm2-status {
         flex: 1 1 100%;
     }
 
-.sm2-status select {
+        .sm2-status select {
             flex: 1;
         }
 
-.sm2-placar {
+    .sm2-placar {
         gap: .6rem;
         padding: .6rem;
     }
 
-.sm2-nome {
+    .sm2-nome {
         font-size: .9rem;
     }
 }
 
 @media (max-width: 719px) {
-.sm2-linha {
+    .sm2-linha {
         gap: .5rem .3rem;
         padding: .6rem .6rem;
     }
 
-.sm2-camisa {
+    .sm2-camisa {
         grid-column: 1;
         grid-row: 1;
     }
 
-.sm2-atleta {
+    .sm2-atleta {
         grid-row: 1;
     }
 
-.sm2-remover {
+    .sm2-remover {
         grid-row: 1;
     }
 
-.sm2-grupo {
+    .sm2-linha > .sm2-grupo {
         grid-row: 2;
     }
 
-.sm2-grupo .adm-passo {
-            gap: .25rem;
+    .sm2-extras {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        column-gap: .3rem;
+    }
+
+    .sm2-grupo .adm-passo {
+        gap: .25rem;
+    }
+
+        .sm2-grupo .adm-passo button {
+            width: 28px;
+            height: 28px;
         }
 
-.sm2-grupo .adm-passo button {
-                width: 28px;
-                height: 28px;
-            }
+        .sm2-grupo .adm-passo span {
+            font-size: 1rem;
+        }
 
-.sm2-grupo .adm-passo span {
-                font-size: 1rem;
-            }
-
-.sm2-barra {
+    .sm2-barra {
         flex-direction: column;
         align-items: stretch;
     }
 
-.sm2-barra-gap {
+    .sm2-barra-gap {
         display: none;
     }
 }
@@ -903,15 +917,15 @@
 }
 
 @media (max-width: 719px) {
-.sm2-linha {
+    .sm2-linha {
         grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 
-.sm2-atleta {
+    .sm2-atleta {
         grid-column: 2 / 5;
     }
 
-.sm2-remover {
+    .sm2-remover {
         grid-column: 5;
     }
 }

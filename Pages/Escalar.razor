@@ -19,7 +19,21 @@
                 <small>Você ainda tem</small>
                 <strong>@Formato.Moeda(Restante)</strong>
             </div>
+            <div class="esc-stat">
+                <small>Total de pontos</small>
+                <strong>@TotalPontos</strong>
+            </div>
         </div>
+
+        @if (!mercadoAberto)
+        {
+            <div class="esc-mercado" role="status">
+                <span class="esc-mercado-texto">
+                    <strong>Mercado fechado</strong>
+                    <small>Escalação só para consulta até o admin abrir</small>
+                </span>
+            </div>
+        }
 
         <div class="esc-barra">
             <label class="esc-select" aria-label="Esquema tático">
@@ -47,7 +61,7 @@
                 </button>
                 @if (personalizando)
                 {
-                    <PersonalizarCampo Clube="clube" Torc="@(Torcidas.Cache?.Torcida ?? 0)" Cards="cards" Escalacao="escalacao"
+                    <PersonalizarCampo Clube="clube" Torc="@Torc" Cards="cards" Escalacao="escalacao"
                                        OnCards="c => { cards = c; StateHasChanged(); }"
                                        OnMudou="c => { clube = c; StateHasChanged(); }"
                                        OnFechar="() => personalizando = false" />
@@ -58,7 +72,7 @@
 
     <div class="escalar-grade">
         <div class="escalar-campo @(verLista ? "com-lista" : "")">
-            <p class="esc-dica">
+            <p class="esc-dica @(CapitaoNome is null && mercadoAberto ? "aviso" : "")">
                 <IconeUi Nome="lampada" Tamanho="16" />
                 @if (CapitaoNome is not null)
                 {
@@ -66,16 +80,9 @@
                 }
                 else
                 {
-                    <span>Toque num atleta escalado para definir o capitão.</span>
+                    <span>Falta selecionar o capitão: toque num atleta escalado e escolha Capitão.</span>
                 }
             </p>
-
-            @if (!mercadoAberto)
-            {
-                <div class="erro" role="status">
-                    Mercado fechado. Você pode ver a sua escalação, mas não dá para alterar até o admin abrir de novo.
-                </div>
-            }
 
             @if (Restante < 0)
             {
@@ -88,15 +95,32 @@
             {
                 @* celular: a lista substitui o campo (no computador ela abre ao lado dele) *@
                 <div class="esc-lista esc-lista-mob">
-                    <ListaEscalacao Escalacao="escalacao" OnSlot="AbrirSlot" />
+                    @ConteudoLista
                 </div>
             }
-            <CampoTatico Escalacao="escalacao" Selecionado="slot" OnSlot="AbrirSlot" Cards="cards"
-                         Estilo="@clube.Campo" Moldura="@clube.Moldura" LinhasCor="@clube.CampoLinhas" Estadio="@clube.EstadioModelo"
-                         CorGrama1="@clube.CampoCor1" CorGrama2="@clube.CampoCor2" CorMoldura="@clube.MolduraCor"
-                         CorEstadio1="@clube.EstadioCor1" CorEstadio2="@clube.EstadioCor2"
-                         FaixaEsq="@(FaixasLiberadas ? clube.Esquerda() : null)" FaixaDir="@(FaixasLiberadas ? clube.Direita() : null)"
-                         FaixaCor1="@clube.FaixaCor1" FaixaCor2="@clube.FaixaCor2" EscudoFaixa="Provedor.Perfil?.Escudo" EscudoCard="Provedor.Perfil?.Escudo" />
+            @* mesmo campo da Home: estádio, faixas laterais fora do campo e o campo no meio *@
+            <div class="dash-campo">
+                @if (!string.IsNullOrWhiteSpace(clube.Estadio) && Torc >= Torcida.MinDourado)
+                {
+                    <p class="home-estadio">Estádio <strong>@clube.Estadio</strong></p>
+                }
+                <div class="home-campo-faixas">
+                    @if (TemFaixa)
+                    {
+                        <FaixaLateral Modelo="@clube.Esquerda()" Cor1="@clube.FaixaCor1" Cor2="@clube.FaixaCor2" Escudo="Provedor.Perfil?.Escudo" />
+                    }
+                    <div class="home-campo">
+                        <CampoTatico Escalacao="escalacao" Selecionado="slot" OnSlot="AbrirSlot" Cards="cards"
+                                     Estilo="@clube.Campo" Moldura="@clube.Moldura" LinhasCor="@clube.CampoLinhas" Estadio="@clube.EstadioModelo"
+                                     CorGrama1="@clube.CampoCor1" CorGrama2="@clube.CampoCor2" CorMoldura="@clube.MolduraCor"
+                                     CorEstadio1="@clube.EstadioCor1" CorEstadio2="@clube.EstadioCor2" EscudoCard="Provedor.Perfil?.Escudo" />
+                    </div>
+                    @if (TemFaixa)
+                    {
+                        <FaixaLateral Modelo="@clube.Direita()" Cor1="@clube.FaixaCor1" Cor2="@clube.FaixaCor2" Escudo="Provedor.Perfil?.Escudo" />
+                    }
+                </div>
+            </div>
 
             @if (carregando)
             {
@@ -120,9 +144,24 @@
             @if (!PodeSalvar && !salvando)
             {
                 <p class="suave centro esc-ajuda">
-                    @if (!mercadoAberto) { <span>Mercado fechado: a escalação não pode ser alterada.</span> }
-                    else if (escalacao.Preenchidos < escalacao.TotalVagas) { <span>Preencha as @escalacao.TotalVagas vagas para salvar.</span> }
-                    else { <span>Reduza o valor do time para caber no orçamento.</span> }
+                    @if (!mercadoAberto)
+                    {
+                        <span>Mercado fechado: a escalação não pode ser alterada.</span>
+                    }
+                    else if (escalacao.Preenchidos < escalacao.TotalVagas)
+                    {
+
+                        <span>Preencha as @escalacao.TotalVagas vagas para salvar.</span>
+                    }
+                    else if (!TemCapitao)
+                    {
+                        <span class="esc-aviso">Falta selecionar o capitão. Toque num atleta escalado e escolha Capitão para poder salvar.</span>
+                    }
+                    else
+                    {
+
+                        <span>Reduza o valor do time para caber no orçamento.</span>
+                    }
                 </p>
             }
         </div>
@@ -138,7 +177,7 @@
                     Saldo: <strong>@Formato.Moeda(Restante)</strong> · @escalacao.Preenchidos/@escalacao.TotalVagas escalados
                 </div>
                 <div class="esc-lista-painel">
-                    <ListaEscalacao Escalacao="escalacao" OnSlot="AbrirSlot" />
+                    @ConteudoLista
                 </div>
             </aside>
         }
@@ -176,20 +215,26 @@
 
                 <h4>Preço inicial</h4>
                 <ul>
-                    <li>Zagueiro: R$ 6,00 · Lateral: R$ 7,00 · Meia: R$ 10,00 · Atacante: R$ 20,00.</li>
-                    <li>Goleiros e técnicos são grátis.</li>
+                    <li>Goleiro: R$ 5,00 · Zagueiro: R$ 6,00 · Lateral: R$ 7,00 · Meia: R$ 10,00 · Atacante: R$ 20,00.</li>
+                    <li>Técnicos são grátis.</li>
                     <li>Quem joga em mais de uma posição fica com o preço da mais barata.</li>
                 </ul>
 
                 <h4>Pontos de cada jogo</h4>
                 <ul>
-                    <li>Todos começam com <strong>7 pontos</strong>. O goleiro começa com <strong>12</strong>. Técnicos não pontuam.</li>
-                    <li><strong>Time fez gol:</strong> jogadores de linha ganham +2 e o goleiro +1. Quem fez o gol ganha +4 a mais.</li>
-                    <li><strong>Time tomou gol:</strong> jogadores de linha perdem 4 e o goleiro perde 2.</li>
+                    <li>Todos começam com <strong>4 pontos</strong>. O goleiro começa com <strong>8</strong>.</li>
+                    <li><strong>Técnico:</strong> pontua pela média do time, a soma dos pontos dos seus 11 jogadores dividida por 11.</li>
+                    <li><strong>Time fez gol:</strong> jogadores de linha ganham +0,5 por gol. O goleiro não ganha.</li>
+                    <li><strong>Time tomou gol:</strong> jogadores de linha perdem 0,5 por gol e o goleiro perde 1.</li>
+                    <li><strong>Gol:</strong> quem fez o gol ganha +5.</li>
+                    <li><strong>Assistência:</strong> +3. <strong>Chute ao gol:</strong> +0,5. <strong>Defesa:</strong> +1.</li>
                     <li><strong>Cartões:</strong> amarelo −2, azul −3 e vermelho −5.</li>
-                    <li>Faltas e assistências ainda não pontuam.</li>
+                    <li><strong>Pênalti:</strong> cometido −3 e perdido −3.</li>
+                    <li><strong>Gol contra:</strong> −5 para quem fez, e o gol conta para o time adversário.</li>
+                    <li><strong>Capitão:</strong> os pontos dele valem ×1,5.</li>
+                    <li>Faltas ainda não pontuam.</li>
                 </ul>
-                        </div>
+            </div>
         </div>
     }
 </div>
@@ -201,17 +246,30 @@
     private string? erro;
     private SlotRef? slot;
     private bool verLista;
+    private bool verRodada;                       // aba "Pontuação da rodada" da lista
+    private PontuacaoDaRodada? rodada;
+    private bool carregandoRodada;
+    private string? erroRodada;
+    private const decimal MultCapitao = 1.5m;   // o capitão vale ×1,5
     private bool mostrarRegras;
     private bool personalizando;
     private bool salvando;
     private bool mercadoAberto = true;
     private string? erroSalvar;
+    private SlotRef? extratoSlot;
+    private ExtratoJogo? extrato;
+    private bool carregandoExtrato;
+    private string? erroExtrato;
 
     private bool PodeSalvar => !salvando && !carregando && mercadoAberto
-        && escalacao.Preenchidos == escalacao.TotalVagas && Restante >= 0;
+        && escalacao.Preenchidos == escalacao.TotalVagas && TemCapitao && Restante >= 0;
+
+    /// <summary>A escalação só pode ser salva com o capitão escolhido.</summary>
+    private bool TemCapitao => CapitaoNome is not null;
 
     private ClubeConfig clube = new();
-    private bool FaixasLiberadas => (Torcidas.Cache?.Torcida ?? 0) >= Torcida.MinTextos;
+    private int Torc => Torcidas.Cache?.Torcida ?? 0;
+    private bool TemFaixa => clube.TemFaixa() && Torc >= Torcida.MinTextos;   // mesma regra da Home
     private CardsConfig cards = new();
 
     protected override async Task OnInitializedAsync()
@@ -269,6 +327,17 @@
 
     private AtletaEscalavel? Atual => slot is null ? null : escalacao.Obter(slot.Pos, slot.Indice);
 
+    // Soma dos números que aparecem em cima dos cartões (pontos de cada atleta na última partida), igual à "Pontuação" da Início
+    private string TotalPontos
+    {
+        get
+        {
+            var tecnico = PontosDoTecnico.Valor(escalacao) ?? 0m;
+            var total = tecnico + escalacao.EmCampo().Where(a => a.UltimaPontuacao.HasValue && a.Id != escalacao.Obter(PosicaoCampo.Tecnico, 0)?.Id).Sum(a => a.UltimaPontuacao!.Value * (a.Id == escalacao.CapitaoId ? MultCapitao : 1m));
+            return total.ToString("0.00", new System.Globalization.CultureInfo("pt-BR"));
+        }
+    }
+
     private decimal Gasto => escalacao.EmCampo().Sum(a => a.Valor);
     private decimal Restante => Valorizacao.Orcamento - Gasto;
     private int PercentualGasto => (int)Math.Clamp(Gasto / Valorizacao.Orcamento * 100, 0, 100);
@@ -289,7 +358,55 @@
         slot = null;
     }
 
-    private void AbrirSlot(SlotRef s) { if (mercadoAberto) slot = s; }
+    // Mercado aberto: abre a troca da vaga. Fechado: abre/fecha o extrato do atleta embaixo do nome, na lista.
+    /// <summary>Conteúdo da lista (celular e computador): abas "Minha escalação" e "Pontuação da rodada".</summary>
+    private RenderFragment ConteudoLista => @<text>
+        <div class="esc-abas-lista" role="tablist">
+            <button type="button" role="tab" class="@(!verRodada ? "ativa" : "")" aria-selected="@(!verRodada)" @onclick="() => verRodada = false">Minha escalação</button>
+            <button type="button" role="tab" class="@(verRodada ? "ativa" : "")" aria-selected="@verRodada" @onclick="AbrirRodada">Pontuação da rodada</button>
+        </div>
+        @if (verRodada)
+        {
+            <ListaEscalacao ModoRodada="true" Escalacao="escalacao" Elenco="elenco" Rodada="rodada" CarregandoRodada="carregandoRodada" ErroRodada="@erroRodada" />
+        }
+        else
+        {
+            <ListaEscalacao Escalacao="escalacao" OnSlot="AbrirSlot" ExtratoSlot="extratoSlot" Extrato="extrato" Carregando="carregandoExtrato" Erro="@erroExtrato" />
+        }
+    </text>;
+
+    private async Task AbrirRodada()
+    {
+        verRodada = true;
+        if (rodada is not null || carregandoRodada) return;
+        carregandoRodada = true;
+        erroRodada = null;
+        try { rodada = await Mercado.ObterRodadaAsync(); }
+        catch (ErroMercadoException ex) { erroRodada = ex.Message; }
+        finally { carregandoRodada = false; }
+    }
+
+    private async Task AbrirSlot(SlotRef s)
+    {
+        if (mercadoAberto) { slot = s; return; }
+
+        var a = escalacao.Obter(s.Pos, s.Indice);
+        if (a is null) return;
+        if (extratoSlot == s) { extratoSlot = null; return; }
+
+        verLista = true;
+        extratoSlot = s;
+        extrato = null;
+        erroExtrato = null;
+        carregandoExtrato = true;
+        try
+        {
+            var resultado = await Mercado.ObterExtratoAsync(a.Id);
+            if (extratoSlot == s) extrato = resultado;   // ignora resposta de um atleta já trocado
+        }
+        catch (ErroMercadoException ex) { if (extratoSlot == s) erroExtrato = ex.Message; }
+        finally { if (extratoSlot == s) carregandoExtrato = false; }
+    }
     private void Fechar() => slot = null;
 
     private void Escolher(AtletaEscalavel a)
@@ -333,3 +450,65 @@
         }
     }
 }
+
+<style>
+    .esc-dica.aviso { border-color: var(--amarelo); color: var(--amarelo); }
+    .esc-ajuda .esc-aviso { color: var(--amarelo); font-weight: 700; }
+    .esc-abas-lista { display: flex; gap: .4rem; margin: 0 0 .6rem; }
+    .esc-abas-lista button { flex: 1; padding: .5rem .6rem; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); background: rgba(8,20,15,.7); color: var(--texto); font-weight: 700; font-size: .85rem; cursor: pointer; }
+    .esc-abas-lista button.ativa { border-color: var(--amarelo); color: var(--amarelo); }
+    /* Aviso de mercado fechado na barra de cima: neutro, sem aparência de erro */
+    .esc-mercado {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .55rem;
+        padding: .45rem .7rem;
+        text-align: left;
+        border: 1px solid rgba(255,255,255,.1);
+        border-top: 0;
+        background: rgba(8,20,15,.62);
+        color: var(--suave, #9fb3aa);
+    }
+
+        .esc-mercado::before {
+            content: "";
+            flex: none;
+            width: .5rem;
+            height: .5rem;
+            border-radius: 50%;
+            background: #f0b429;
+        }
+
+    .esc-mercado-texto {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+        min-width: 0;
+    }
+
+        .esc-mercado-texto strong {
+            font-size: .85rem;
+            color: var(--texto, #e8efe9);
+        }
+
+        .esc-mercado-texto small {
+            font-size: .72rem;
+        }
+
+    @@media (min-width: 900px) {
+        .esc-topo .esc-mercado {
+            order: 1;
+            padding: 0 0 0 1.2rem;
+            border: 0;
+            border-left: 1px solid rgba(255,255,255,.1);
+            background: transparent;
+            justify-content: flex-start;
+            min-width: 0;
+        }
+
+        .esc-topo .esc-mercado-texto small {
+            max-width: 13rem;
+        }
+    }
+</style>

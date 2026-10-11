@@ -14,8 +14,15 @@
     }
     else if (partida is null)
     {
-        @if (!string.IsNullOrEmpty(erro)) { <p class="erro">@erro</p> }
-        else { <div class="cartao"><p class="suave">Nenhuma partida cadastrada ainda.</p></div> }
+        @if (!string.IsNullOrEmpty(erro))
+        {
+            <p class="erro">@erro</p>
+        }
+        else
+        {
+
+            <div class="cartao"><p class="suave">Nenhuma partida cadastrada ainda.</p></div>
+        }
     }
     else
     {
@@ -40,7 +47,10 @@
                     <option value="cancelada">Cancelada</option>
                 </select>
             </label>
-            @if (sujo) { <span class="sm2-aviso-sujo">Salve ou descarte para trocar de rodada.</span> }
+            @if (sujo)
+            {
+                <span class="sm2-aviso-sujo">Salve ou descarte para trocar de rodada.</span>
+            }
         </div>
 
         <div class="sm2-placar" aria-label="Placar">
@@ -53,8 +63,14 @@
             <img src="img/time-amarelo.png" alt="" />
         </div>
 
-        @if (!string.IsNullOrEmpty(erro)) { <p class="erro">@erro</p> }
-        @if (!string.IsNullOrEmpty(aviso)) { <p class="adm-ok">@aviso</p> }
+        @if (!string.IsNullOrEmpty(erro))
+        {
+            <p class="erro">@erro</p>
+        }
+        @if (!string.IsNullOrEmpty(aviso))
+        {
+            <p class="adm-ok">@aviso</p>
+        }
 
         <div class="sm2-abas" role="tablist">
             <button type="button" role="tab" class="@(lado == LinhaSumula.Casa ? "ativa" : "")" @onclick="() => lado = LinhaSumula.Casa">
@@ -66,53 +82,81 @@
         </div>
 
         <div class="sm2-lista">
-        @{ var papeis = PapeisDoLado(); }
-        @foreach (var l in LinhasDoLado)
-        {
-            <div class="sm2-linha @TimePelada.Css(l.Lado) @(papeis.TryGetValue(l.AtletaId, out var pl) ? pl.Css : "")" @key="l.AtletaId">
-                <label class="sm2-camisa @TimePelada.Css(l.Lado) @(confirmados.Contains(l.AtletaId) ? "" : "vazio")" title="Toque para definir o número da camisa">
-                    <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M22 6 L8 12 L2 26 L12 31 L16 26 L16 58 L48 58 L48 26 L52 31 L62 26 L56 12 L42 6 C40 11 36 13 32 13 C28 13 24 11 22 6 Z" /></svg>
-                    <input type="number" min="1" max="@LinhaSumula.MaxNumero" inputmode="numeric"
-                           value="@(confirmados.Contains(l.AtletaId) ? l.Numero.ToString() : "")" @onchange="e => MudarNumero(l, e)" placeholder="Nº" aria-label="Número da camisa" />
-                    @if (!confirmados.Contains(l.AtletaId)) { <span class="sm2-camisa-dica" aria-hidden="true">✎</span> }
-                </label>
-                <div class="sm2-atleta">
-                    <strong>@l.Nome</strong>
-                    @if (papeis.TryGetValue(l.AtletaId, out var papel))
-                    {
-                        <small class="sm2-papel @papel.Css">@papel.Rotulo</small>
-                    }
-                </div>
+            @{
+                var papeis = PapeisDoLado();
+            }
+            @foreach (var l in LinhasDoLado)
+            {
+                <div class="sm2-linha @TimePelada.Css(l.Lado) @(papeis.TryGetValue(l.AtletaId, out var pl) ? pl.Css : "")" @key="l.AtletaId">
+                    <label class="sm2-camisa @TimePelada.Css(l.Lado) @(confirmados.Contains(l.AtletaId) ? "" : "vazio")" title="Toque para definir o número da camisa">
+                        <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M22 6 L8 12 L2 26 L12 31 L16 26 L16 58 L48 58 L48 26 L52 31 L62 26 L56 12 L42 6 C40 11 36 13 32 13 C28 13 24 11 22 6 Z" /></svg>
+                        <input type="number" min="1" max="@LinhaSumula.MaxNumero" inputmode="numeric"
+                               value="@(confirmados.Contains(l.AtletaId) ? l.Numero.ToString() : "")" @onchange="e => MudarNumero(l, e)" placeholder="Nº" aria-label="Número da camisa" />
+                        @if (!confirmados.Contains(l.AtletaId))
+                        {
+                            <span class="sm2-camisa-dica" aria-hidden="true">✎</span>
+                        }
+                    </label>
+                    <div class="sm2-atleta">
+                        <strong>@l.Nome</strong>
+                        @if (papeis.TryGetValue(l.AtletaId, out var papel))
+                        {
+                            <small class="sm2-papel @papel.Css">@papel.Rotulo</small>
+                        }
+                    </div>
 
-                <div class="sm2-grupo">
-                    <span>Gols</span>
-                    <ContadorPasso @bind-Valor="l.Gols" @bind-Valor:after="Marcar" />
-                </div>
-                <div class="sm2-grupo gc @(l.GolsContra > 0 ? "on" : "")">
-                    <span title="Gol contra">G.C.</span>
-                    <ContadorPasso @bind-Valor="l.GolsContra" @bind-Valor:after="Marcar" />
-                </div>
-                <div class="sm2-grupo am @(l.Amarelos > 0 ? "on" : "")">
-                    <span>AM</span>
-                    <ContadorPasso @bind-Valor="l.Amarelos" @bind-Valor:after="Marcar" />
-                </div>
-                <div class="sm2-grupo az @(l.Azuis > 0 ? "on" : "")">
-                    <span>AZ</span>
-                    <ContadorPasso @bind-Valor="l.Azuis" @bind-Valor:after="Marcar" />
-                </div>
-                <div class="sm2-grupo ver @(l.Vermelhos > 0 ? "on" : "")">
-                    <span>VER</span>
-                    <ContadorPasso @bind-Valor="l.Vermelhos" @bind-Valor:after="Marcar" />
-                </div>
+                    <div class="sm2-grupo">
+                        <span>Gols</span>
+                        <ContadorPasso @bind-Valor="l.Gols" @bind-Valor:after="Marcar" />
+                    </div>
+                    <div class="sm2-grupo gc @(l.GolsContra > 0 ? "on" : "")">
+                        <span title="Gol contra">G.C.</span>
+                        <ContadorPasso @bind-Valor="l.GolsContra" @bind-Valor:after="Marcar" />
+                    </div>
+                    <div class="sm2-grupo am @(l.Amarelos > 0 ? "on" : "")">
+                        <span>AM</span>
+                        <ContadorPasso @bind-Valor="l.Amarelos" @bind-Valor:after="Marcar" />
+                    </div>
+                    <div class="sm2-grupo az @(l.Azuis > 0 ? "on" : "")">
+                        <span>AZ</span>
+                        <ContadorPasso @bind-Valor="l.Azuis" @bind-Valor:after="Marcar" />
+                    </div>
+                    <div class="sm2-grupo ver @(l.Vermelhos > 0 ? "on" : "")">
+                        <span>VER</span>
+                        <ContadorPasso @bind-Valor="l.Vermelhos" @bind-Valor:after="Marcar" />
+                    </div>
 
-                <button type="button" class="sm2-remover" @onclick="() => Remover(l)" aria-label="Remover da súmula">✕</button>
-            </div>
-        }
+                    <button type="button" class="sm2-remover" @onclick="() => Remover(l)" aria-label="Remover da súmula">✕</button>
 
-        @if (!LinhasDoLado.Any())
-        {
-            <p class="suave sm2-vazio">Nenhum atleta neste time. Registre a chegada na <a href="admin/chegada?partida=@partida.Id">ordem de chegada</a> ou adicione abaixo.</p>
-        }
+                    <div class="sm2-extras">
+                        <div class="sm2-grupo">
+                            <span title="Assistências">ASS</span>
+                            <ContadorPasso @bind-Valor="l.Assistencias" @bind-Valor:after="Marcar" Max="30" />
+                        </div>
+                        <div class="sm2-grupo">
+                            <span title="Chutes ao gol">CHUT</span>
+                            <ContadorPasso @bind-Valor="l.ChutesGol" @bind-Valor:after="Marcar" />
+                        </div>
+                        <div class="sm2-grupo">
+                            <span title="Defesas do goleiro">DEF</span>
+                            <ContadorPasso @bind-Valor="l.Defesas" @bind-Valor:after="Marcar" />
+                        </div>
+                        <div class="sm2-grupo">
+                            <span title="Pênalti cometido">P.C.</span>
+                            <ContadorPasso @bind-Valor="l.PenaltisCometidos" @bind-Valor:after="Marcar" Max="20" />
+                        </div>
+                        <div class="sm2-grupo">
+                            <span title="Pênalti perdido">P.P.</span>
+                            <ContadorPasso @bind-Valor="l.PenaltisPerdidos" @bind-Valor:after="Marcar" Max="20" />
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (!LinhasDoLado.Any())
+            {
+                <p class="suave sm2-vazio">Nenhum atleta neste time. Registre a chegada na <a href="admin/chegada?partida=@partida.Id">ordem de chegada</a> ou adicione abaixo.</p>
+            }
         </div>
 
         <div class="sm2-barra">
@@ -144,7 +188,10 @@
                         <button type="button" class="@(aba == "novo" ? "ativa" : "")" @onclick="@(() => aba = "novo")">+ Novo atleta</button>
                     </div>
 
-                    @if (!string.IsNullOrEmpty(erroModal)) { <p class="erro">@erroModal</p> }
+                    @if (!string.IsNullOrEmpty(erroModal))
+                    {
+                        <p class="erro">@erroModal</p>
+                    }
 
                     @if (aba == "lista")
                     {
@@ -183,7 +230,9 @@
                                 {
                                     var sg = sigla;
                                     <button type="button" class="adm-chip @(novasPosicoes.Contains(sg) ? "on" : "")" aria-pressed="@novasPosicoes.Contains(sg)"
-                                            @onclick="() => AlternarPosicao(sg)">@sigla <small>@nome</small></button>
+                                            @onclick="() => AlternarPosicao(sg)">
+                                        @sigla <small>@nome</small>
+                                    </button>
                                 }
                             </div>
 

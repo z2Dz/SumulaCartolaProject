@@ -4,6 +4,16 @@ using SumulaCartolaProject.Models;
 
 namespace SumulaCartolaProject.Servicos;
 
+/// <summary>Uma linha do extrato de pontos. Pontua = false para eventos que contam na súmula mas não valem ponto.</summary>
+public record LinhaExtrato(string Texto, decimal Pontos, bool Pontua = true);
+
+/// <summary>Extrato do atleta na última partida finalizada.</summary>
+public record ExtratoJogo(DateTimeOffset? Data, decimal Total, List<LinhaExtrato> Linhas);
+
+/// <summary>Um atleta que jogou a última rodada, com os pontos dela (posição já em sigla, ex.: "MEI/ZAG").</summary>
+public record AtletaRodada(string Id, string Nome, string Posicao, decimal Pontos);
+public record PontuacaoDaRodada(DateTimeOffset? Data, List<AtletaRodada> Atletas);
+
 /// <summary>Falha ao carregar o mercado, com texto pronto para mostrar ao usuário.</summary>
 public class ErroMercadoException(string mensagem) : Exception(mensagem);
 
@@ -72,6 +82,107 @@ public class ServicoMercado(Supabase.Client supabase)
                 ValorAntesUltimo: valorAntes));
         }
         return elenco;
+    }
+
+
+    // ----- Extrato de pontos (função extrato_atleta) -----
+    /// <summary>
+    /// Extrato da última partida finalizada do atleta, ou null se ele ainda não tem jogo.
+    /// O banco devolve as linhas já calculadas pela mesma função que gera os pontos (pontuacao_linhas) e o total oficial.
+    /// </summary>
+    public async Task<ExtratoJogo?> ObterExtratoAsync(string atletaId)
+    {
+        JToken token;
+        try
+        {
+            var resp = await supabase.Rpc("extrato_atleta", new Dictionary<string, object> { ["p_atleta"] = atletaId });
+            var conteudo = resp?.Content;
+            if (string.IsNullOrWhiteSpace(conteudo)) return null;
+            using var leitor = new JsonTextReader(new StringReader(conteudo))
+            { FloatParseHandling = FloatParseHandling.Decimal, DateParseHandling = DateParseHandling.None };
+            token = JToken.Load(leitor);
+        }
+        catch (Exception ex)
+        {
+            throw new ErroMercadoException(TraduzirExtrato(ex.Message));
+        }
+
+        if (token is not JObject o) return null;
+
+        var total = Dec(o["total"], 0m);
+        var linhas = new List<LinhaExtrato>();
+        foreach (var l in o["linhas"] as JArray ?? new JArray())
+        {
+            var desc = (string?)l["descricao"] ?? "";
+            if (desc.Trim().Equals("Base", StringComparison.OrdinalIgnoreCase)) desc = "Pontos iniciais";
+            var qtd = l["quantidade"] is { Type: not JTokenType.Null } q ? (int)(decimal)q : 0;
+            linhas.Add(new LinhaExtrato(qtd > 1 ? $"{desc} ×{qtd}" : desc, Dec(l["pontos"], 0m)));
+        }
+
+        // Rede de segurança: se um dia a soma não bater com o total oficial, o extrato mostra a diferença
+        var ajuste = total - linhas.Sum(x => x.Pontos);
+        if (ajuste != 0) linhas.Add(new LinhaExtrato("Outros ajustes", ajuste));
+
+        DateTimeOffset? data = DateTimeOffset.TryParse((string?)o["data_hora"], System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var d) ? d.ToOffset(TimeSpan.FromHours(-3)) : null;
+
+        return new ExtratoJogo(data, total, linhas);
+    }
+
+    // ----- Pontuação da última rodada (função pontuacao_ultima_rodada, arquivo 39) -----
+    /// <summary>Todos os atletas que jogaram a última partida finalizada, do que mais pontuou ao que menos pontuou. Null se não há partida finalizada.</summary>
+    public async Task<PontuacaoDaRodada?> ObterRodadaAsync()
+    {
+        JToken token;
+        try
+        {
+            var resp = await supabase.Rpc("pontuacao_ultima_rodada", new Dictionary<string, object>());
+            var conteudo = resp?.Content;
+            if (string.IsNullOrWhiteSpace(conteudo)) return null;
+            using var leitor = new JsonTextReader(new StringReader(conteudo))
+            { FloatParseHandling = FloatParseHandling.Decimal, DateParseHandling = DateParseHandling.None };
+            token = JToken.Load(leitor);
+        }
+        catch (Exception ex)
+        {
+            var msg = ex.Message;
+            throw new ErroMercadoException(msg.Contains("pontuacao_ultima_rodada", StringComparison.OrdinalIgnoreCase)
+                && (msg.Contains("not find", StringComparison.OrdinalIgnoreCase) || msg.Contains("does not exist", StringComparison.OrdinalIgnoreCase))
+                ? "A função pontuacao_ultima_rodada não existe no banco. Rode o arquivo 39_pontuacao_rodada.sql no SQL Editor do Supabase."
+                : "Não consegui carregar a pontuação da rodada: " + msg);
+        }
+
+        if (token is not JObject o) return null;
+
+        var atletas = new List<AtletaRodada>();
+        foreach (var a in o["atletas"] as JArray ?? new JArray())
+        {
+            var siglas = (a["posicoes"] as JArray ?? new JArray()).Select(p => ((string?)p ?? "").ToUpperInvariant()).Where(s => s.Length > 0);
+            atletas.Add(new AtletaRodada((string?)a["id"] ?? "", (string?)a["nome"] ?? "", string.Join("/", siglas), Dec(a["pontos"], 0m)));
+        }
+
+        DateTimeOffset? data = DateTimeOffset.TryParse((string?)o["data_hora"], System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var d) ? d.ToOffset(TimeSpan.FromHours(-3)) : null;
+
+        return new PontuacaoDaRodada(data, atletas);
+    }
+
+    private static string TraduzirExtrato(string bruto)
+    {
+        var texto = bruto;
+        try
+        {
+            var msg = (string?)JObject.Parse(bruto)["message"];
+            if (!string.IsNullOrWhiteSpace(msg)) texto = msg;
+        }
+        catch { }
+
+        if (texto.Contains("extrato_atleta", StringComparison.OrdinalIgnoreCase)
+            && (texto.Contains("not find", StringComparison.OrdinalIgnoreCase)
+                || texto.Contains("does not exist", StringComparison.OrdinalIgnoreCase)))
+            return "A função extrato_atleta não existe no banco. Rode o arquivo extrato_atleta.sql no SQL Editor do Supabase.";
+
+        return "Não consegui carregar o extrato: " + texto;
     }
 
     /// <summary>

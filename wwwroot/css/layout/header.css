@@ -1,50 +1,151 @@
-/* Cabeçalho do app
+/* Escalação: cabeçalho
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
 
-.topo {
-    position: sticky;
-    top: 0;
-    z-index: 10;
+/* ----- cabeçalho ----- */
+.esc-cab {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: calc(.6rem + env(safe-area-inset-top, 0px)) 1rem .6rem;
-    background: var(--verde);
-    color: var(--branco);
+    gap: 1.2rem;
+    padding: .9rem 1.4rem;
+    margin-bottom: .6rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: linear-gradient(180deg, rgba(20,44,36,.75), rgba(9,22,17,.85));
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
 }
 
-.topo-bola {
-    font-size: 1.4rem;
-}
-
-.topo-escudo {
-    display: flex;
-    line-height: 0;
-}
-
-.nome-time {
-    font-weight: 700;
-    font-size: 1.15rem;
-    margin: .6rem 0;
-}
-
-.lapis-mini {
-    position: absolute;
-    right: -8px;
-    bottom: -2px;
-    width: 22px;
-    height: 22px;
+.esc-cab-icone {
+    flex: none;
     display: grid;
     place-items: center;
-    border-radius: 50%;
-    background: var(--acento);
-    color: #04140d;
+    color: var(--acento);
 }
 
-.lema {
-    font-size: .65rem;
-    letter-spacing: .35em;
+.esc-cab-titulo {
+    flex: 1;
+    min-width: 0;
+}
+
+.esc-tatica {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    padding: .55rem .9rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+    font-size: .75rem;
     color: var(--suave);
-    padding-bottom: .5rem;
-    border-bottom: 2px solid var(--acento);
+    min-width: 150px;
+}
+
+    .esc-tatica select {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--texto);
+        font-size: 1.15rem;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+        .esc-tatica select option {
+            background: var(--cartao);
+            color: var(--texto);
+        }
+
+.esc-num {
+    text-align: center;
+    line-height: 1.15;
+}
+
+    .esc-num:first-child strong {
+        color: var(--acento);
+    }
+
+    .esc-num.estourou strong {
+        color: var(--erro);
+    }
+
+/* ----- dica, regras e botão salvar ----- */
+.esc-dica {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    width: fit-content;
+    max-width: 100%;
+    margin: .6rem auto;
+    padding: .45rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.04);
+    font-size: .88rem;
+    color: var(--texto);
+}
+
+    .esc-dica svg {
+        flex: none;
+        color: #f6c53a;
+    }
+
+.botao.esc-salvar:disabled {
+    opacity: .9;
+    cursor: not-allowed;
+    filter: saturate(.85);
+}
+
+.esc-ajuda {
+    margin: .5rem 0 0;
+    font-size: .82rem;
+}
+
+/* ===== Escalar: cabeçalho com 3 números + barra (esquema, vista campo/lista) ===== */
+.esc-topo {
+    margin-bottom: .6rem;
+}
+
+    /* com a barra de esquema/vistas embaixo, só os cantos de cima são arredondados */
+    .esc-topo .esc-stats {
+        border-radius: 14px 14px 0 0;
+    }
+
+.esc-stat.estourou strong {
+    color: var(--erro);
+}
+
+.esc-select {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+    .esc-select select {
+        appearance: none;
+        -webkit-appearance: none;
+        padding: .45rem 2.2rem .45rem .5rem;
+        border: 0;
+        background: transparent;
+        color: var(--acento);
+        font-size: 1.15rem;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+        .esc-select select option {
+            background: var(--cartao);
+            color: var(--texto);
+        }
+
+/* o campo sobe por baixo do cabeçalho no celular: o cabeçalho precisa ficar por cima para receber os toques */
+.esc-topo {
+    position: relative;
+    z-index: 6;
+}
+
+/* ===== Escalar: botão "?" e janela com as regras de valor ===== */
+.esc-ajuda-btn {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
 }

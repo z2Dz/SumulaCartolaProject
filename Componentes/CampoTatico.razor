@@ -35,7 +35,7 @@
 
             <div class="linha-base">
                 <div class="base-tec">
-                    <SlotCampo EscudoTime="EscudoCard" UsaMolde="!EhGala" Ornado="@(Ef(PosicaoCampo.Tecnico, 0) == "ornado")" Rubro="@(Ef(PosicaoCampo.Tecnico, 0) == "rubro")" Tema="@TemaDe(PosicaoCampo.Tecnico, 0)" Posicao="PosicaoCampo.Tecnico" Atleta="Escalacao.Obter(PosicaoCampo.Tecnico, 0)" Ativo="@(Selecionado == new SlotRef(PosicaoCampo.Tecnico, 0))"
+                    <SlotCampo EscudoTime="EscudoCard" UsaMolde="!EhGala" Ornado="@(Ef(PosicaoCampo.Tecnico, 0) == "ornado")" Rubro="@(Ef(PosicaoCampo.Tecnico, 0) == "rubro")" Tema="@TemaDe(PosicaoCampo.Tecnico, 0)" Posicao="PosicaoCampo.Tecnico" PontosTecnico="SumulaCartolaProject.Servicos.PontosDoTecnico.Valor(Escalacao)" Atleta="Escalacao.Obter(PosicaoCampo.Tecnico, 0)" Ativo="@(Selecionado == new SlotRef(PosicaoCampo.Tecnico, 0))"
                                OnClick="() => OnSlot.InvokeAsync(new SlotRef(PosicaoCampo.Tecnico, 0))" />
                 </div>
                 <div class="base-gol">

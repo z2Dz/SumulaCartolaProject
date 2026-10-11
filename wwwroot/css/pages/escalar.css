@@ -1,20 +1,21 @@
 /* Página Escalar
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
 
-/* Escalar: fundo desfocado só na área de conteúdo (fora do menu lateral), com as manchas mais ao centro */
+/* Escalar: manchas de luz no fundo, só na área de conteúdo (fora do menu lateral).
+   SEM filter: blur(). Uma camada fixa do tamanho da janela com filtro de desfoque fazia o navegador
+   rasterizar os cartões 3D do campo em baixa qualidade (borrados); só a Escalar tinha essa camada.
+   As manchas já são degradês suaves, sem precisar de filtro. */
 .pagina.escalar::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    filter: blur(70px);
-    clip-path: inset(0);
-    background: radial-gradient(circle 22vmax at 32% 30%, rgba(25,201,138,.40), transparent 70%), radial-gradient(circle 20vmax at 68% 28%, rgba(20,150,170,.32), transparent 70%), radial-gradient(circle 24vmax at 50% 78%, rgba(15,110,80,.45), transparent 70%), radial-gradient(circle 14vmax at 50% 50%, rgba(25,201,138,.18), transparent 70%);
+    background: radial-gradient(circle 17.2vmax at 32% 30%, rgba(25,201,138,0.280) 0%, rgba(25,201,138,0.246) 20%, rgba(25,201,138,0.174) 40%, rgba(25,201,138,0.095) 60%, rgba(25,201,138,0.034) 80%, rgba(25,201,138,0.000) 100%), radial-gradient(circle 15.6vmax at 68% 28%, rgba(20,150,170,0.220) 0%, rgba(20,150,170,0.194) 20%, rgba(20,150,170,0.136) 40%, rgba(20,150,170,0.075) 60%, rgba(20,150,170,0.026) 80%, rgba(20,150,170,0.000) 100%), radial-gradient(circle 18.6vmax at 50% 78%, rgba(15,110,80,0.320) 0%, rgba(15,110,80,0.282) 20%, rgba(15,110,80,0.198) 40%, rgba(15,110,80,0.109) 60%, rgba(15,110,80,0.038) 80%, rgba(15,110,80,0.000) 100%), radial-gradient(circle 10.8vmax at 50% 50%, rgba(25,201,138,0.120) 0%, rgba(25,201,138,0.106) 20%, rgba(25,201,138,0.074) 40%, rgba(25,201,138,0.041) 60%, rgba(25,201,138,0.014) 80%, rgba(25,201,138,0.000) 100%);
 }
 
 @media (min-width: 900px) {
-.pagina.escalar::before {
+    .pagina.escalar::before {
         left: 250px; /* largura do menu lateral */
     }
 }
@@ -25,22 +26,29 @@
    features/escalacao/campo-3d.css; aqui só o que é desta tela.
    ===================================================================== */
 .pagina.escalar {
-    --vao-campo: 1rem;      /* espaço entre o estádio e o botão Salvar */
+    --vao-campo: 1rem; /* espaço entre o estádio e o botão Salvar */
 }
 
 /* ----- celular e tablet em pé ----- */
 @media (max-width: 899px) {
     .pagina.escalar .campo-cena {
-        pointer-events: none;            /* a área vazia do campo não rouba toques... */
+        pointer-events: none; /* a área vazia do campo não rouba toques... */
     }
 
-    .pagina.escalar .campo-cena .slot-btn {
-        pointer-events: auto;            /* ...só os cartões respondem */
-    }
+        .pagina.escalar .campo-cena .slot-btn {
+            pointer-events: auto; /* ...só os cartões respondem */
+        }
 
-    .pagina.escalar .escalar-campo.com-lista > .campo-cena {
-        display: none;                   /* vista em lista: a lista substitui o campo */
+    .pagina.escalar .escalar-campo.com-lista > .dash-campo {
+        display: none; /* vista em lista: a lista substitui o campo */
     }
+}
+
+/* O campo da Escalar é o mesmo da Home (.dash-campo > .home-campo-faixas > .home-campo): mesmo tamanho,
+   mesma inclinação e mesmos cartões. A Home trava os toques (.home-campo { pointer-events: none }),
+   aqui o campo precisa responder, então liga de volta. */
+.pagina.escalar .dash-campo .home-campo {
+    pointer-events: auto;
 }
 
 /* ----- computador: a página tem a altura da janela e o campo ocupa o espaço que sobra ----- */
@@ -54,14 +62,26 @@
         min-width: 0;
     }
 
-    .pagina.escalar .escalar-campo > * {
-        flex: none;
+        .pagina.escalar .escalar-campo > * {
+            flex: none;
+        }
+
+        /* O campo ocupa TODO o espaço que sobra na coluna (a Home reserva uma altura fixa, 100dvh - 17rem, e deixa
+       sobra aqui). Funciona por encaixe, sem número mágico: o que sobra depois da dica, do botão e do aviso é do
+       campo, então nunca passa da janela. Abaixo de 340px de altura o campo para de diminuir. */
+        .pagina.escalar .escalar-campo > .dash-campo {
+            flex: 1 1 0;
+            min-height: 0;
+        }
+
+    .pagina.escalar .dash-campo .home-campo-faixas {
+        flex: 1 1 0;
+        min-height: 0;
     }
 
-    .pagina.escalar .escalar-campo > .campo-cena {
-        flex: 1 1 0;
-        height: 0;
-        min-height: 0;
+    .pagina.escalar .dash-campo .campo-cena {
+        height: calc(100% - var(--vao-campo));
+        min-height: 340px;
     }
 
     .pagina.escalar .escalar-campo > .esc-dica,

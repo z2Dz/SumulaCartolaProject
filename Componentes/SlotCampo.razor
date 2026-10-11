@@ -215,6 +215,8 @@
     [Parameter] public PosicaoCampo Posicao { get; set; }
     [Parameter] public AtletaEscalavel? Atleta { get; set; }
     [Parameter] public bool EhCapitao { get; set; }
+    /// <summary>Só para o técnico: pontos calculados pela média do time (ele não tem pontos próprios).</summary>
+    [Parameter] public decimal? PontosTecnico { get; set; }
     [Parameter] public bool Ativo { get; set; }
     /// <summary>Moldura "Ornamentada": contorno recortado com coroa, painel interno e placa de nome metálica.</summary>
     [Parameter] public bool Ornado { get; set; }
@@ -233,8 +235,11 @@
     private bool Molde => UsaMolde && Atleta is not null && !Ornado && !Rubro && string.IsNullOrEmpty(Tema);
 
     // Pontuação do atleta na última partida, na etiqueta acima da foto: verde positiva, vermelha negativa, cinza zerada ou sem jogo
-    private string Pontos => Formato.Pontos(Atleta?.UltimaPontuacao);
-    private string ClassePontos => Atleta?.UltimaPontuacao switch { > 0 => "pos", < 0 => "neg", _ => "zero" };
+    // Sempre com duas casas e vírgula (0,00); sem jogo mostra "—"
+    private static readonly CultureInfo Br = new("pt-BR");
+    private decimal? PontosExibidos => Posicao == PosicaoCampo.Tecnico ? PontosTecnico : Atleta?.UltimaPontuacao;
+    private string Pontos => PontosExibidos is { } p ? p.ToString("0.00", Br) : "—";
+    private string ClassePontos => PontosExibidos switch { > 0 => "pos", < 0 => "neg", _ => "zero" };
 
     // Evolução do cartão: todo atleta começa de bronze.
     //   Bronze: ainda sem jogos, ou média abaixo da base da posição.
