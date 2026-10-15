@@ -1,105 +1,14 @@
 /* Página Home
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 /* ===== Home: escudo | última escalação | pontuação e patrimônio ===== */
 .pagina.home {
     max-width: 1500px;
 }
 
-.home-grade {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr) minmax(0, 1fr);
-    grid-template-areas: "time meio pontos";
-    gap: 1.1rem;
-    align-items: stretch;
-    min-height: calc(100vh - 11rem); /* preenche a tela: cabeçalho + menu inferior */
-    min-height: calc(100dvh - 11rem);
-}
-
-    .home-grade > .cartao {
-        margin-bottom: 0;
-    }
-
-.home-time {
-    grid-area: time;
-}
-
-.home-meio {
-    grid-area: meio;
-}
-
-.home-pontos {
-    grid-area: pontos;
-}
-
-/* esquerda */
-.home-time {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: .7rem;
-    text-align: center;
-    padding: 2rem 1.2rem;
-}
-
-.home-lapis {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: var(--verde-2);
-    color: var(--branco);
-    text-decoration: none;
-}
-
-    .home-lapis:focus-visible {
-        outline: 2px solid var(--amarelo);
-        outline-offset: 2px;
-    }
-
-.home-nome {
-    font-size: 1.5rem;
-    overflow-wrap: anywhere;
-}
-
-/* meio */
-.home-meio {
-    display: flex;
-    flex-direction: column;
-    gap: .8rem;
-}
-
-.home-meio-topo {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: .6rem;
-}
-
-    .home-meio-topo h3 {
-        margin: 0;
-    }
-
-.home-tatica {
-    font-size: .8rem;
-    font-weight: 700;
-    padding: .2rem .6rem;
-    border-radius: 999px;
-    background: var(--verde-2);
-    color: var(--branco);
-}
-
 .home-campo {
     width: 100%;
-    pointer-events: none; /* só visualização; para mudar, use "Montar outra escalação" */
-}
-
-.home-editar {
-    align-self: center;
-    text-decoration: none;
+    pointer-events: none;
+    /* só visualização; para mudar, use "Montar outra escalação" */
 }
 
 .home-vazio {
@@ -135,33 +44,6 @@
         filter: drop-shadow(2px 0 0 var(--branco)) drop-shadow(-2px 0 0 var(--branco)) drop-shadow(0 2px 0 var(--branco)) drop-shadow(0 -2px 0 var(--branco)) drop-shadow(1.5px 1.5px 0 var(--branco)) drop-shadow(-1.5px -1.5px 0 var(--branco)) drop-shadow(1.5px -1.5px 0 var(--branco)) drop-shadow(-1.5px 1.5px 0 var(--branco));
     }
 
-/* direita */
-.home-pontos {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 1.8rem;
-    text-align: center;
-    padding: 2rem 1.2rem;
-}
-
-.home-bloco {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .2rem;
-}
-
-    .home-bloco + .home-bloco {
-        padding-top: 1.8rem;
-        border-top: 1px solid rgba(128,128,128,.25);
-    }
-
-.home-grande {
-    font-size: 2.8rem;
-    line-height: 1.1;
-}
-
 .home-var {
     font-size: 1rem;
     font-weight: 600;
@@ -179,27 +61,7 @@
         color: var(--suave);
     }
 
-@media (max-width: 899px) {
-    /* celular e tablet: escudo e pontuação lado a lado; a escalação ocupa a largura toda embaixo */
-    .home-grade {
-        min-height: 0;
-        gap: .8rem;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        grid-template-areas:
-            "time pontos"
-            "meio meio";
-    }
-}
-
 @media (max-width: 420px) {
-    .home-grande {
-        font-size: 1.6rem;
-    }
-
-    .home-time {
-        padding: 1rem .6rem;
-    }
-
     .home-var {
         font-size: .78rem;
     }
@@ -272,13 +134,6 @@
     font-size: .95rem;
 }
 
-.home-grito {
-    margin: 0;
-    text-align: center;
-    font-style: italic;
-    font-weight: 600;
-}
-
 .home-campo-faixas {
     display: flex;
     gap: .5rem;
@@ -290,41 +145,6 @@
         min-width: 0;
         width: auto;
     }
-
-.home-faixa {
-    writing-mode: vertical-rl;
-    background: var(--f1, #0b3d2e);
-    color: var(--f2, var(--amarelo));
-    font-weight: 800;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    font-size: .85rem;
-    padding: .8rem .35rem 1.4rem;
-    clip-path: polygon(0 0, 100% 0, 100% 90%, 50% 100%, 0 90%);
-    align-self: flex-start;
-    max-height: 100%;
-    overflow: hidden;
-    text-align: center;
-}
-
-    .home-faixa.oculta {
-        display: none;
-    }
-
-.home-campo-faixas .home-faixa:first-child {
-    transform: rotate(180deg);
-}
-
-.home-torcida {
-    gap: .45rem;
-}
-
-@media (max-width: 560px) {
-    .home-faixa {
-        font-size: .7rem;
-        padding: .6rem .25rem 1.1rem;
-    }
-}
 
 /* painel da Home */
 .dash {
@@ -427,7 +247,9 @@
     align-self: start;
 }
 
-    .dash-ico.moeda, .dash-ico.estrela, .dash-ico.torcida {
+    .dash-ico.moeda,
+    .dash-ico.estrela,
+    .dash-ico.torcida {
         background: rgba(245,197,24,.14);
         color: var(--amarelo);
     }
@@ -526,7 +348,8 @@
 @media (min-width: 900px) {
     /* computador: a cena ocupa a altura que a janela deixa; o campo cabe nela */
     .dash-campo .campo-cena {
-        --altura: max(340px, calc(100dvh - 17rem)); /* o que sobra depois do título, do botão e das margens */
+        --altura: max(340px, calc(100dvh - 17rem));
+        /* o que sobra depois do título, do botão e das margens */
         height: var(--altura);
     }
 }
@@ -536,16 +359,9 @@
     .dash-campo {
         padding-inline: .4rem;
     }
-
         /* faixas "MAIOR DE TODOS" mais finas, para o campo ganhar largura */
         .dash-campo .home-campo-faixas {
             gap: .2rem;
-        }
-
-        .dash-campo .home-faixa {
-            font-size: .58rem;
-            letter-spacing: .04em;
-            padding: .45rem .15rem .9rem;
         }
 }
 
@@ -710,11 +526,6 @@
     --slot: 58px;
 }
 
-.rk-campo-faixas .home-faixa:first-child {
-    transform: rotate(180deg);
-}
-
-.rk-personalizacao .home-estadio,
-.rk-personalizacao .home-grito {
+.rk-personalizacao .home-estadio {
     margin: 0;
 }

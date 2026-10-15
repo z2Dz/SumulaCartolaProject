@@ -1,6 +1,5 @@
 /* Escalação: posição do jogador
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 .carta-pos {
     top: 36%;
     font-size: calc(var(--slot) * .16);
@@ -22,8 +21,10 @@
 }
 
 /* escurece o texto do cartão para combinar com o ouro/prata */
-.slot-btn.ouro .carta-nota, .slot-btn.ouro .carta-pos,
-.slot-btn.prata .carta-nota, .slot-btn.prata .carta-pos {
+.slot-btn.ouro .carta-nota,
+.slot-btn.ouro .carta-pos,
+.slot-btn.prata .carta-nota,
+.slot-btn.prata .carta-pos {
     color: var(--grafite);
 }
 
@@ -38,16 +39,17 @@
 }
 
 .slot-btn.bronze .carta-nota,
-    .slot-btn.bronze .carta-pos {
-        color: #2a1606;
-    }
+.slot-btn.bronze .carta-pos {
+    color: #2a1606;
+}
 
 /* Base do cartão: elipse fina com a sigla da posição no centro (como a base dos cartões de referência) */
 .slot-marca {
     --marca: #3aa0ff;
     position: absolute;
     left: 50%;
-    bottom: calc(var(--slot) * -.25); /* o topo da elipse entra um pouco sob a ponta do cartão */
+    bottom: calc(var(--slot) * -.25);
+    /* o topo da elipse entra um pouco sob a ponta do cartão */
     /* o cartão fica em pé (gira -tilt); a base gira de volta e deita no gramado, a partir da ponta do cartão */
     transform-origin: 50% 0;
     transform: translateX(-50%) rotateX(var(--tilt, 0deg));
@@ -71,23 +73,13 @@
     pointer-events: none;
 }
 
-.slot-marca.marca-gol {
-        --marca: #ffb020;
-    }
+.slot-marca.marca-gol { --marca: #ffb020; }
 
 .slot-marca.marca-zag,
-    .slot-marca.marca-lat {
-        --marca: #3aa0ff;
-    }
+.slot-marca.marca-lat {
+    --marca: #3aa0ff;
+}
 
-.slot-marca.marca-mei {
-        --marca: var(--acento);
-    }
-
-.slot-marca.marca-ata {
-        --marca: #ff5a5a;
-    }
-
-.slot-marca.marca-tec {
-        --marca: #b57bff;
-    }
+.slot-marca.marca-mei { --marca: var(--acento); }
+.slot-marca.marca-ata { --marca: #ff5a5a; }
+.slot-marca.marca-tec { --marca: #b57bff; }

@@ -143,6 +143,21 @@ public class LinhaSumula
     public int PenaltisCometidos { get; set; }
     public int PenaltisPerdidos { get; set; }
 
+    /// <summary>Quantos desses eventos foram no 1T / 2T. O que sobra do total (total - 1T - 2T) é "sem tempo" (lance antigo ou tempo não informado).</summary>
+    /// <summary>Gols deste atleta que tiveram assistência (quem deu e em que tempo), para mostrar "gol + assistência" juntos na linha do tempo.</summary>
+    public List<GolAssistido> GolsAssistidos { get; set; } = new();
+
+    public int Assistencias1T { get; set; }
+    public int Assistencias2T { get; set; }
+    public int ChutesGol1T { get; set; }
+    public int ChutesGol2T { get; set; }
+    public int Defesas1T { get; set; }
+    public int Defesas2T { get; set; }
+    public int PenaltisCometidos1T { get; set; }
+    public int PenaltisCometidos2T { get; set; }
+    public int PenaltisPerdidos1T { get; set; }
+    public int PenaltisPerdidos2T { get; set; }
+
     /// <summary>Total de gols. Ao editar, grava tudo em gols_1t e zera gols_2t (a tela não separa por tempo).</summary>
     public int Gols
     {
@@ -189,3 +204,6 @@ public class HistoricoLinha
     public int Vermelhos { get; set; }
     public int PartidasMes { get; set; }
 }
+
+/// <summary>Quem deu a assistência de um gol e em que tempo (1 ou 2).</summary>
+public record GolAssistido(Guid Assistente, int Tempo);

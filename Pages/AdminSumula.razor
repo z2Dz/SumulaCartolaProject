@@ -51,6 +51,8 @@
             {
                 <span class="sm2-aviso-sujo">Salve ou descarte para trocar de rodada.</span>
             }
+            <span class="sm2-barra-gap"></span>
+            <button type="button" class="sm2-add" @onclick="AbrirModal"><IconeUi Nome="mais" Tamanho="18" /> Adicionar atleta</button>
         </div>
 
         <div class="sm2-placar" aria-label="Placar">
@@ -71,99 +73,90 @@
         {
             <p class="adm-ok">@aviso</p>
         }
+        @if (partida.Finalizada && !statusMudou)
+        {
+            <p class="adm-dica">Partida finalizada. Ao salvar, ela é reaberta e finalizada de novo para recalcular placar e pontos.</p>
+        }
 
-        <div class="sm2-abas" role="tablist">
-            <button type="button" role="tab" class="@(lado == LinhaSumula.Casa ? "ativa" : "")" @onclick="() => lado = LinhaSumula.Casa">
-                <img src="img/time-vermelho.png" alt="" /> Vermelho (@Contar(LinhaSumula.Casa))
+        <div class="adm-abas sm2-abas">
+            <button type="button" class="vermelho" @onclick="() => AbrirLance(LinhaSumula.Casa)">
+                <img src="img/time-vermelho.png" alt="" /> Vermelho <IconeUi Nome="mais" Tamanho="16" />
             </button>
-            <button type="button" role="tab" class="@(lado == LinhaSumula.Visitante ? "ativa" : "")" @onclick="() => lado = LinhaSumula.Visitante">
-                <img src="img/time-amarelo.png" alt="" /> Amarelo (@Contar(LinhaSumula.Visitante))
+            <button type="button" class="amarelo" @onclick="() => AbrirLance(LinhaSumula.Visitante)">
+                <img src="img/time-amarelo.png" alt="" /> Amarelo <IconeUi Nome="mais" Tamanho="16" />
             </button>
         </div>
 
         <div class="sm2-lista">
             @{
-                var papeis = PapeisDoLado();
+                var itens = LinhaDoTempo();
             }
-            @foreach (var l in LinhasDoLado)
+            <div class="sm2-tl" aria-label="Linha do tempo da partida">
+                @foreach (var it in itens)
+                {
+                    var lc = it.Ev;
+                    var num = NumeroDe(lc.AtletaId);
+                    <div class="sm2-tl-item @(lc.Lado == LinhaSumula.Casa ? "sm2-tl-esq" : "sm2-tl-dir") @ClasseTipo(lc.Tipo)" @key="lc.Id">
+                        <div class="sm2-tl-no">
+                            @if (EhGol(lc.Tipo))
+                            {
+                                <span>@($"{it.Casa}-{it.Visitante}")</span>
+                                <IconeUi Nome="bola" Tamanho="14" />
+                            }
+                            else
+                            {
+                                <span>@TempoTxt(lc)</span>
+                            }
+                        </div>
+                        <div class="sm2-tl-txt">
+                            <div class="sm2-tl-corpo">
+                                <span class="sm2-tl-chips">
+                                    <span class="sm2-tl-tempo">@TempoTxt(lc)</span>
+                                    @if (num is not null)
+                                    {
+                                        <span class="sm2-tl-num" title="Camisa neste jogo">@num</span>
+                                    }
+                                    <button type="button" class="sm2-tl-edit" title="Editar lance" aria-label="Editar lance" @onclick="() => AbrirEdicao(lc)">✎</button>
+                                    <button type="button" class="sm2-tl-x" title="Desfazer lance" aria-label="Desfazer lance" @onclick="() => DesfazerLance(lc)">✕</button>
+                                </span>
+                                <span class="sm2-tl-nomes">
+                                    <strong>@NomeDe(lc.AtletaId)</strong>
+                                    @if (lc.AssistenteId is { } idAss)
+                                    {
+                                        <span class="sm2-tl-assist" title="Assistência">@NomeDe(idAss)</span>
+                                    }
+                                </span>
+                                <small class="sm2-tl-sub">@RotuloDe(lc.Tipo)</small>
+                            </div>
+                            @if (EhCartao(lc.Tipo) || EhGol(lc.Tipo))
+                            {
+                                <div class="sm2-tl-ico" aria-hidden="true">
+                                    @if (EhCartao(lc.Tipo))
+                                    {
+                                        <span class="sm2-tl-carta"></span>
+                                    }
+                                    else
+                                    {
+                                        <IconeUi Nome="bola" Tamanho="26" />
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (itens.Count == 0)
+                {
+                    <p class="suave sm2-vazio">Nenhum lance ainda. Toque em Vermelho ou Amarelo para registrar gol ou cartão.</p>
+                }
+            </div>
+            @if (lances.Any(x => x.Reconstruido))
             {
-                <div class="sm2-linha @TimePelada.Css(l.Lado) @(papeis.TryGetValue(l.AtletaId, out var pl) ? pl.Css : "")" @key="l.AtletaId">
-                    <label class="sm2-camisa @TimePelada.Css(l.Lado) @(confirmados.Contains(l.AtletaId) ? "" : "vazio")" title="Toque para definir o número da camisa">
-                        <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M22 6 L8 12 L2 26 L12 31 L16 26 L16 58 L48 58 L48 26 L52 31 L62 26 L56 12 L42 6 C40 11 36 13 32 13 C28 13 24 11 22 6 Z" /></svg>
-                        <input type="number" min="1" max="@LinhaSumula.MaxNumero" inputmode="numeric"
-                               value="@(confirmados.Contains(l.AtletaId) ? l.Numero.ToString() : "")" @onchange="e => MudarNumero(l, e)" placeholder="Nº" aria-label="Número da camisa" />
-                        @if (!confirmados.Contains(l.AtletaId))
-                        {
-                            <span class="sm2-camisa-dica" aria-hidden="true">✎</span>
-                        }
-                    </label>
-                    <div class="sm2-atleta">
-                        <strong>@l.Nome</strong>
-                        @if (papeis.TryGetValue(l.AtletaId, out var papel))
-                        {
-                            <small class="sm2-papel @papel.Css">@papel.Rotulo</small>
-                        }
-                    </div>
-
-                    <div class="sm2-grupo">
-                        <span>Gols</span>
-                        <ContadorPasso @bind-Valor="l.Gols" @bind-Valor:after="Marcar" />
-                    </div>
-                    <div class="sm2-grupo gc @(l.GolsContra > 0 ? "on" : "")">
-                        <span title="Gol contra">G.C.</span>
-                        <ContadorPasso @bind-Valor="l.GolsContra" @bind-Valor:after="Marcar" />
-                    </div>
-                    <div class="sm2-grupo am @(l.Amarelos > 0 ? "on" : "")">
-                        <span>AM</span>
-                        <ContadorPasso @bind-Valor="l.Amarelos" @bind-Valor:after="Marcar" />
-                    </div>
-                    <div class="sm2-grupo az @(l.Azuis > 0 ? "on" : "")">
-                        <span>AZ</span>
-                        <ContadorPasso @bind-Valor="l.Azuis" @bind-Valor:after="Marcar" />
-                    </div>
-                    <div class="sm2-grupo ver @(l.Vermelhos > 0 ? "on" : "")">
-                        <span>VER</span>
-                        <ContadorPasso @bind-Valor="l.Vermelhos" @bind-Valor:after="Marcar" />
-                    </div>
-
-                    <button type="button" class="sm2-remover" @onclick="() => Remover(l)" aria-label="Remover da súmula">✕</button>
-
-                    <div class="sm2-extras">
-                        <div class="sm2-grupo">
-                            <span title="Assistências">ASS</span>
-                            <ContadorPasso @bind-Valor="l.Assistencias" @bind-Valor:after="Marcar" Max="30" />
-                        </div>
-                        <div class="sm2-grupo">
-                            <span title="Chutes ao gol">CHUT</span>
-                            <ContadorPasso @bind-Valor="l.ChutesGol" @bind-Valor:after="Marcar" />
-                        </div>
-                        <div class="sm2-grupo">
-                            <span title="Defesas do goleiro">DEF</span>
-                            <ContadorPasso @bind-Valor="l.Defesas" @bind-Valor:after="Marcar" />
-                        </div>
-                        <div class="sm2-grupo">
-                            <span title="Pênalti cometido">P.C.</span>
-                            <ContadorPasso @bind-Valor="l.PenaltisCometidos" @bind-Valor:after="Marcar" Max="20" />
-                        </div>
-                        <div class="sm2-grupo">
-                            <span title="Pênalti perdido">P.P.</span>
-                            <ContadorPasso @bind-Valor="l.PenaltisPerdidos" @bind-Valor:after="Marcar" Max="20" />
-                        </div>
-                    </div>
-                </div>
-            }
-
-            @if (!LinhasDoLado.Any())
-            {
-                <p class="suave sm2-vazio">Nenhum atleta neste time. Registre a chegada na <a href="admin/chegada?partida=@partida.Id">ordem de chegada</a> ou adicione abaixo.</p>
+                <p class="adm-dica">Ao reabrir uma súmula salva, o banco lembra o tempo (1T/2T) de cada lance, mas não a ordem dentro do tempo (ela é aproximada). Lances antigos, gravados sem tempo, aparecem com — no início da linha.</p>
             }
         </div>
 
         <div class="sm2-barra">
-            @if (!partida.Finalizada)
-            {
-                <button type="button" class="sm2-add" @onclick="AbrirModal"><IconeUi Nome="mais" Tamanho="18" /> Adicionar atleta ao time @TimePelada.Rotulo(lado)</button>
-            }
             <span class="sm2-barra-gap"></span>
             @if (sujo || statusMudou)
             {
@@ -174,6 +167,283 @@
             </button>
         </div>
 
+        @if (modalLance)
+        {
+            var jogadores = LinhasDe(lado).ToList();
+            var faltam = SemCamisa(lado);
+            <div class="previa-fundo" @onclick="FecharLance">
+                <div class="previa" role="dialog" aria-modal="true" aria-label="Registrar lance" @onclick:stopPropagation="true">
+                    <div class="previa-topo">
+                        <h3>@TimePelada.Rotulo(lado) (@Contar(lado))</h3>
+                        <button type="button" class="adm-icone" @onclick="FecharLance" aria-label="Fechar">✕</button>
+                    </div>
+
+                    <div class="adm-seg adm-seg-largo sm2-seg" role="tablist" aria-label="Seção do popup">
+                        <button type="button" role="tab" aria-selected="@(!abaLista)" class="@TimePelada.Css(lado) @(!abaLista ? "on" : "")" @onclick="() => abaLista = false">Ações do jogo</button>
+                        <button type="button" role="tab" aria-selected="@abaLista" class="@TimePelada.Css(lado) @(abaLista ? "on" : "")" @onclick="() => abaLista = true">
+                            Lista do time
+                            @if (faltam > 0)
+                            {
+                                <span class="sm2-papel sai" title="Camisas sem número definido">⚠ @faltam</span>
+                            }
+                        </button>
+                    </div>
+
+                    @if (abaLista)
+                    {
+                        var papeis = PapeisDe(lado);
+                        @if (camisasIndisponivel)
+                        {
+                            <p class="erro">As camisas por partida ainda não estão ativas no banco. Rode o arquivo camisas_por_partida.sql no Supabase.</p>
+                        }
+                        @if (faltam > 0)
+                        {
+                            <span class="sm2-papel sai" role="status">⚠ Faltam @faltam número(s) de camisa neste time</span>
+                        }
+                        else if (jogadores.Count > 0)
+                        {
+                            <span class="sm2-papel titular" role="status">✓ Todas as camisas definidas</span>
+                        }
+                        @if (camisasPendentes)
+                        {
+                            <span class="sm2-papel sai" role="status">● Camisas alteradas, ainda não salvas</span>
+                        }
+                        <span class="adm-rotulo">Na ordem de chegada. A camisa só fica preenchida depois de salva. O ✕ tira o atleta da súmula.</span>
+                        <ul class="chg-nomes">
+                            @foreach (var j in jogadores)
+                            {
+                                var jog = j;
+                                var atl = atletas.FirstOrDefault(a => a.Id == jog.AtletaId);
+                                var goleiro = EhGoleiro(jog.AtletaId);
+                                <li @key="jog.AtletaId">
+                                    <label class="sm2-camisa @TimePelada.Css(jog.Lado) @(confirmados.Contains(jog.AtletaId) ? "" : "vazio")" title="Número da camisa neste jogo">
+                                        <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M22 6 L8 12 L2 26 L12 31 L16 26 L16 58 L48 58 L48 26 L52 31 L62 26 L56 12 L42 6 C40 11 36 13 32 13 C28 13 24 11 22 6 Z" /></svg>
+                                        <input type="number" min="1" inputmode="numeric"
+                                               value="@(confirmados.Contains(jog.AtletaId) ? jog.Numero.ToString() : "")" @onchange="e => MudarNumero(jog, e)" placeholder="Nº" aria-label="Número da camisa" />
+                                        @if (!confirmados.Contains(jog.AtletaId))
+                                        {
+                                            <span class="sm2-camisa-dica" aria-hidden="true">✎</span>
+                                        }
+                                    </label>
+                                    <FotoJogador Nome="@jog.Nome" FotoUrl="@atl?.FotoUrl" Posicoes="@atl?.Posicoes" Tamanho="32" />
+                                    <span class="chg-nome-txt">
+                                        <strong>@jog.Nome</strong>
+                                        @if (goleiro)
+                                        {
+                                            <small>Goleiro</small>
+                                        }
+                                        else if (papeis.TryGetValue(jog.AtletaId, out var papel))
+                                        {
+                                            <small>@papel.Rotulo</small>
+                                        }
+                                    </span>
+                                    <button type="button" class="sm2-remover" @onclick="() => Remover(jog)" aria-label="Tirar @jog.Nome da súmula" title="Tirar da súmula">✕</button>
+                                </li>
+                            }
+                        </ul>
+                        @if (jogadores.Count == 0)
+                        {
+                            <p class="suave sm2-vazio">Nenhum atleta neste time. Registre a chegada na <a href="admin/chegada?partida=@partida.Id">ordem de chegada</a> ou use o botão abaixo.</p>
+                        }
+                        @if (!string.IsNullOrEmpty(erroCamisas))
+                        {
+                            <p class="erro">@erroCamisas</p>
+                        }
+                        @if (!string.IsNullOrEmpty(avisoCamisas))
+                        {
+                            <p class="adm-ok">@avisoCamisas</p>
+                        }
+                        <div class="sm2-barra">
+                            <button type="button" class="sm2-add" @onclick="AbrirAdicionarDoLance"><IconeUi Nome="mais" Tamanho="18" /> Adicionar atleta</button>
+                            <span class="sm2-barra-gap"></span>
+                            <button type="button" class="sm2-salvar" disabled="@(!camisasPendentes || salvando || camisasIndisponivel)" @onclick="SalvarCamisas">
+                                @(salvando ? "Salvando…" : "Salvar camisas")
+                            </button>
+                        </div>
+                    }
+                    else if (jogadorLance is null)
+                    {
+                        <span class="adm-rotulo">Quem fez o lance?</span>
+                        <ul class="chg-nomes">
+                            @foreach (var j in jogadores)
+                            {
+                                var jog = j;
+                                var atl = atletas.FirstOrDefault(a => a.Id == jog.AtletaId);
+                                <li>
+                                    <button type="button" class="chg-nome" @onclick="() => jogadorLance = jog.AtletaId">
+                                        <FotoJogador Nome="@jog.Nome" FotoUrl="@atl?.FotoUrl" Posicoes="@atl?.Posicoes" Tamanho="32" />
+                                        <span class="chg-nome-txt">
+                                            <strong>@jog.Nome</strong>
+                                            <small>@Camisa(jog)</small>
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                        @if (jogadores.Count == 0)
+                        {
+                            <p class="suave sm2-vazio">Nenhum atleta neste time ainda.</p>
+                            <button type="button" class="sm2-add" @onclick="() => abaLista = true"><IconeUi Nome="mais" Tamanho="18" /> Ir para a lista do time</button>
+                        }
+                    }
+                    else
+                    {
+                        var atual = linhas.FirstOrDefault(x => x.AtletaId == jogadorLance);
+                        var atlAtual = atletas.FirstOrDefault(a => a.Id == jogadorLance);
+                        @if (atual is null)
+                        {
+                            <p class="suave">Atleta não encontrado.</p>
+                        }
+                        else
+                        {
+                            <div class="chg-nome">
+                                <FotoJogador Nome="@atual.Nome" FotoUrl="@atlAtual?.FotoUrl" Posicoes="@atlAtual?.Posicoes" Tamanho="32" />
+                                <span class="chg-nome-txt">
+                                    <strong>@atual.Nome</strong>
+                                    <small>@Camisa(atual)</small>
+                                </span>
+                                <button type="button" class="botao-sec" @onclick="TrocarJogador">Trocar</button>
+                            </div>
+
+                            <span class="adm-rotulo">Tempo</span>
+                            <div class="adm-seg adm-seg-largo sm2-seg" role="group" aria-label="Tempo do lance">
+                                <button type="button" class="@TimePelada.Css(lado) @(tempoLance == 1 ? "on" : "")" aria-pressed="@(tempoLance == 1)" @onclick="() => tempoLance = 1">1º tempo</button>
+                                <button type="button" class="@TimePelada.Css(lado) @(tempoLance == 2 ? "on" : "")" aria-pressed="@(tempoLance == 2)" @onclick="() => tempoLance = 2">2º tempo</button>
+                            </div>
+
+                            @if (!escolhendoAssist)
+                            {
+                                <span class="adm-rotulo">O que ele fez?</span>
+                                <div class="sm2-acoes sm2-acoes-1">
+                                    <button type="button" class="sm2-acao grande gol" @onclick="EscolherGol">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">@IconeAcao(TipoLance.Gol)</svg>
+                                        <span>Gol</span>
+                                    </button>
+                                    <button type="button" class="sm2-acao grande gol-contra" @onclick="() => RegistrarLance(TipoLance.GolContra)">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">@IconeAcao(TipoLance.GolContra)</svg>
+                                        <span>Gol contra</span>
+                                    </button>
+                                </div>
+                                <div class="sm2-acoes sm2-acoes-3">
+                                    @foreach (var tc in new[] { TipoLance.Amarelo, TipoLance.Azul, TipoLance.Vermelho })
+                                    {
+                                        var t3 = tc;
+                                        <button type="button" class="sm2-acao @ClasseAcao(t3)" @onclick="() => RegistrarLance(t3)">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">@IconeAcao(t3)</svg>
+                                            <span>@RotuloDe(t3)</span>
+                                        </button>
+                                    }
+                                </div>
+
+                                <span class="adm-rotulo">Outras ações</span>
+                                <div class="sm2-acoes">
+                                    @foreach (var tp in AcoesRapidas)
+                                    {
+                                        var t2 = tp;
+                                        <button type="button" class="sm2-acao @ClasseAcao(t2)" @onclick="() => RegistrarLance(t2)">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">@IconeAcao(t2)</svg>
+                                            <span>@RotuloDe(t2)</span>
+                                        </button>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="adm-rotulo">Quem deu a assistência? (opcional)</span>
+                                <ul class="chg-nomes">
+                                    @foreach (var j in jogadores.Where(x => x.AtletaId != jogadorLance))
+                                    {
+                                        var jog = j;
+                                        var atl = atletas.FirstOrDefault(a => a.Id == jog.AtletaId);
+                                        <li>
+                                            <button type="button" class="chg-nome" aria-pressed="@(assistLance == jog.AtletaId)" @onclick="() => AlternarAssist(jog.AtletaId)">
+                                                <FotoJogador Nome="@jog.Nome" FotoUrl="@atl?.FotoUrl" Posicoes="@atl?.Posicoes" Tamanho="32" />
+                                                <span class="chg-nome-txt">
+                                                    <strong>@jog.Nome</strong>
+                                                    <small>@Camisa(jog)</small>
+                                                </span>
+                                                <span class="chg-mais" aria-hidden="true">@(assistLance == jog.AtletaId ? "✓" : "+")</span>
+                                            </button>
+                                        </li>
+                                    }
+                                </ul>
+                                <div class="sm2-barra">
+                                    <button type="button" class="sm2-sec" @onclick="() => escolhendoAssist = false">Voltar</button>
+                                    <span class="sm2-barra-gap"></span>
+                                    <button type="button" class="sm2-salvar" @onclick="() => RegistrarLance(TipoLance.Gol, assistLance)">
+                                        @(assistLance is null ? "Registrar gol" : "Registrar gol com assistência")
+                                    </button>
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+            </div>
+        }
+
+        @if (lanceEditando is not null)
+        {
+            <div class="previa-fundo" @onclick="FecharEdicao">
+                <div class="previa" role="dialog" aria-modal="true" aria-label="Editar lance" @onclick:stopPropagation="true">
+                    <div class="previa-topo">
+                        <h3>Editar lance</h3>
+                        <button type="button" class="adm-icone" @onclick="FecharEdicao" aria-label="Fechar">✕</button>
+                    </div>
+
+                    <label class="sm2-campo" for="edit-atleta">
+                        <small>Atleta</small>
+                        <select id="edit-atleta" @bind="editAtleta">
+                            @foreach (var j in linhas.OrderBy(x => x.Lado).ThenBy(x => x.Nome))
+                            {
+                                <option value="@j.AtletaId">@j.Nome (@TimePelada.Rotulo(j.Lado))</option>
+                            }
+                        </select>
+                    </label>
+
+                    <label class="sm2-campo" for="edit-tipo">
+                        <small>Lance</small>
+                        <select id="edit-tipo" @bind="editTipo">
+                            @foreach (var t in Enum.GetValues<TipoLance>())
+                            {
+                                <option value="@t">@RotuloDe(t)</option>
+                            }
+                        </select>
+                    </label>
+
+                    @if (editTipo == TipoLance.Gol)
+                    {
+                        var ladoEdit = linhas.FirstOrDefault(y => y.AtletaId == editAtleta)?.Lado ?? lanceEditando.Lado;
+                        <label class="sm2-campo" for="edit-assist">
+                            <small>Assistência</small>
+                            <select id="edit-assist" @bind="editAssist">
+                                <option value="">Sem assistência</option>
+                                @foreach (var j in linhas.Where(x => x.Lado == ladoEdit && x.AtletaId != editAtleta).OrderBy(x => x.Nome))
+                                {
+                                    <option value="@j.AtletaId">@j.Nome</option>
+                                }
+                            </select>
+                        </label>
+                    }
+
+                    <span class="adm-rotulo">Tempo</span>
+                    <div class="adm-seg adm-seg-largo sm2-seg" role="group" aria-label="Tempo do lance">
+                        <button type="button" class="@TimePelada.Css(lanceEditando.Lado) @(editTempo == 1 ? "on" : "")" aria-pressed="@(editTempo == 1)" @onclick="() => editTempo = 1">1º tempo</button>
+                        <button type="button" class="@TimePelada.Css(lanceEditando.Lado) @(editTempo == 2 ? "on" : "")" aria-pressed="@(editTempo == 2)" @onclick="() => editTempo = 2">2º tempo</button>
+                        @if (!ComTempo.Contains(editTipo))
+                        {
+                            <button type="button" class="@TimePelada.Css(lanceEditando.Lado) @(editTempo == 0 ? "on" : "")" aria-pressed="@(editTempo == 0)" @onclick="() => editTempo = 0">Sem tempo</button>
+                        }
+                    </div>
+
+                    <div class="sm2-barra">
+                        <button type="button" class="sm2-sec" @onclick="FecharEdicao">Cancelar</button>
+                        <span class="sm2-barra-gap"></span>
+                        <button type="button" class="sm2-salvar" @onclick="SalvarEdicao">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        }
+
         @if (modal)
         {
             <div class="previa-fundo" @onclick="FecharModal">
@@ -181,6 +451,11 @@
                     <div class="previa-topo">
                         <h3>Adicionar ao time @TimePelada.Rotulo(lado)</h3>
                         <button type="button" class="adm-icone" @onclick="FecharModal" aria-label="Fechar">✕</button>
+                    </div>
+
+                    <div class="adm-seg adm-seg-largo" role="group" aria-label="Time do atleta">
+                        <button type="button" class="vermelho @(lado == LinhaSumula.Casa ? "on" : "")" aria-pressed="@(lado == LinhaSumula.Casa)" @onclick="() => lado = LinhaSumula.Casa">Vermelho</button>
+                        <button type="button" class="amarelo @(lado == LinhaSumula.Visitante ? "on" : "")" aria-pressed="@(lado == LinhaSumula.Visitante)" @onclick="() => lado = LinhaSumula.Visitante">Amarelo</button>
                     </div>
 
                     <div class="adm-abas">
@@ -283,6 +558,398 @@
     // Modal "Adicionar atleta"
     private AtletaResumo? editando;
 
+    // ----- Linha do tempo / popup de lance -----
+    private enum TipoLance { Gol, GolContra, Assistencia, ChuteGol, Defesa, PenaltiCometido, PenaltiPerdido, Amarelo, Azul, Vermelho }
+
+    /// <summary>Um lance da linha do tempo. Tempo 0 = sem tempo gravado (o banco só guarda por tempo gols, gols contra e cartões).</summary>
+    private class Lance
+    {
+        public Guid Id { get; } = Guid.NewGuid();
+        public Guid AtletaId { get; set; }
+        public string Lado { get; set; } = LinhaSumula.Casa;
+        public TipoLance Tipo { get; set; }
+        public int Tempo { get; set; } = 1;
+        public bool Reconstruido { get; set; }
+        /// <summary>Só para gol: quem deu a assistência (mostrada junto do gol na linha do tempo).</summary>
+        public Guid? AssistenteId { get; set; }
+    }
+
+    private record ItemLinha(Lance Ev, int Casa, int Visitante);
+
+    private static readonly TipoLance[] ComTempo = { TipoLance.Gol, TipoLance.GolContra, TipoLance.Amarelo, TipoLance.Azul, TipoLance.Vermelho };
+    /// <summary>Botões de "Outras ações" no popup. A assistência não tem botão: vai junto do gol (ou pelo ✎ do gol).</summary>
+    private static readonly TipoLance[] AcoesRapidas = { TipoLance.ChuteGol, TipoLance.Defesa, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido };
+
+    private static string ClasseAcao(TipoLance t) => t switch
+    {
+        TipoLance.ChuteGol => "chute",
+        TipoLance.Defesa => "defesa",
+        TipoLance.PenaltiCometido => "pen-com",
+        TipoLance.PenaltiPerdido => "pen-perd",
+        TipoLance.Gol => "gol",
+        TipoLance.GolContra => "gol-contra",
+        TipoLance.Amarelo => "cartao-am",
+        TipoLance.Azul => "cartao-az",
+        TipoLance.Vermelho => "cartao-ver",
+        _ => ""
+    };
+
+    private static MarkupString IconeAcao(TipoLance t) => new(t switch
+    {
+        TipoLance.ChuteGol => "<circle cx=\"12\" cy=\"12\" r=\"9\"/><circle cx=\"12\" cy=\"12\" r=\"4\"/><circle cx=\"12\" cy=\"12\" r=\"0.8\" fill=\"currentColor\"/>",
+        TipoLance.Defesa => "<path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"/>",
+        TipoLance.PenaltiCometido => "<path d=\"M12 3l10 18H2z\"/><path d=\"M12 10v5\"/><circle cx=\"12\" cy=\"18\" r=\"0.8\" fill=\"currentColor\"/>",
+        TipoLance.PenaltiPerdido => "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M8.5 8.5l7 7M15.5 8.5l-7 7\"/>",
+        TipoLance.Gol => "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8l3.5 2.5-1.3 4h-4.4l-1.3-4z\"/><path d=\"M12 8V3.5M15.5 10.5l4-1.3M14.2 14.5l2.4 3.3M9.8 14.5l-2.4 3.3M8.5 10.5l-4-1.3\"/>",
+        TipoLance.GolContra => "<path d=\"M9 14l-4-4 4-4\"/><path d=\"M5 10h9a5 5 0 010 10h-3\"/>",
+        TipoLance.Amarelo or TipoLance.Azul or TipoLance.Vermelho => "<rect x=\"7\" y=\"3\" width=\"10\" height=\"18\" rx=\"2\" fill=\"currentColor\" fill-opacity=\".9\"/>",
+        _ => ""
+    });
+
+    private static readonly TipoLance[] OutrasAcoes = { TipoLance.Assistencia, TipoLance.ChuteGol, TipoLance.Defesa, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido };
+
+    private readonly List<Lance> lances = new();
+    private bool modalLance, escolhendoAssist, abaLista;
+    private Guid? jogadorLance, assistLance;
+    private int tempoLance = 1;
+
+    private static bool EhGol(TipoLance t) => t is TipoLance.Gol or TipoLance.GolContra;
+    private static bool EhCartao(TipoLance t) => t is TipoLance.Amarelo or TipoLance.Azul or TipoLance.Vermelho;
+
+    private static string ClasseTipo(TipoLance t) => t switch
+    {
+        TipoLance.Amarelo => "sm2-tl-am",
+        TipoLance.Azul => "sm2-tl-az",
+        TipoLance.Vermelho => "sm2-tl-ver",
+        TipoLance.Gol => "sm2-tl-gol",
+        TipoLance.GolContra => "sm2-tl-gc",
+        _ => "sm2-tl-out"
+    };
+
+    private static string TempoTxt(Lance lc) => lc.Tempo == 0 ? "—" : $"{lc.Tempo}T";
+
+    /// <summary>Camisa do atleta neste jogo; nulo enquanto o número ainda não foi definido.</summary>
+    private int? NumeroDe(Guid id)
+    {
+        var l = linhas.FirstOrDefault(x => x.AtletaId == id);
+        if (l is null || !confirmados.Contains(id)) return null;
+        return l.Numero;
+    }
+
+    private static string RotuloDe(TipoLance t) => t switch
+    {
+        TipoLance.Gol => "Gol",
+        TipoLance.GolContra => "Gol contra",
+        TipoLance.Assistencia => "Assistência",
+        TipoLance.ChuteGol => "Chute ao gol",
+        TipoLance.Defesa => "Defesa",
+        TipoLance.PenaltiCometido => "Pênalti cometido",
+        TipoLance.PenaltiPerdido => "Pênalti perdido",
+        TipoLance.Amarelo => "Cartão amarelo",
+        TipoLance.Azul => "Cartão azul",
+        _ => "Cartão vermelho"
+    };
+
+    private static string SiglaDe(TipoLance t) => t switch
+    {
+        TipoLance.Assistencia => "ASS",
+        TipoLance.ChuteGol => "CHUT",
+        TipoLance.Defesa => "DEF",
+        TipoLance.PenaltiCometido => "P.C.",
+        TipoLance.PenaltiPerdido => "P.P.",
+        _ => ""
+    };
+
+    private static int Maximo(TipoLance t) => t switch
+    {
+        TipoLance.Assistencia => 30,
+        TipoLance.PenaltiCometido or TipoLance.PenaltiPerdido => 20,
+        _ => 99
+    };
+
+    private int SemCamisa(string ld) => linhas.Count(l => l.Lado == ld && !confirmados.Contains(l.AtletaId));
+
+    private string Camisa(LinhaSumula l) => confirmados.Contains(l.AtletaId) ? $"Camisa {l.Numero}" : "Sem número definido";
+
+    private string NomeDe(Guid id) => linhas.FirstOrDefault(l => l.AtletaId == id)?.Nome ?? "?";
+
+    /// <summary>Contador do atleta para o tipo. Só gol, gol contra e cartão separam por tempo.</summary>
+    private static int Qtd(LinhaSumula l, TipoLance tipo, int tempo) => tipo switch
+    {
+        TipoLance.Gol => tempo == 1 ? l.Gols1T : l.Gols2T,
+        TipoLance.GolContra => tempo == 1 ? l.GolsContra1T : l.GolsContra2T,
+        TipoLance.Amarelo => tempo == 1 ? l.Amarelo1T : l.Amarelo2T,
+        TipoLance.Azul => tempo == 1 ? l.Azul1T : l.Azul2T,
+        TipoLance.Vermelho => tempo == 1 ? l.Vermelho1T : l.Vermelho2T,
+        TipoLance.Assistencia => l.Assistencias,
+        TipoLance.ChuteGol => l.ChutesGol,
+        TipoLance.Defesa => l.Defesas,
+        TipoLance.PenaltiCometido => l.PenaltisCometidos,
+        _ => l.PenaltisPerdidos
+    };
+
+    /// <summary>Soma ou tira do contador. Devolve false quando não mudou (limite ou já zerado).</summary>
+    private static bool Ajustar(LinhaSumula l, TipoLance tipo, int tempo, int delta)
+    {
+        var atual = Qtd(l, tipo, tempo);
+        var v = Math.Clamp(atual + delta, 0, Maximo(tipo));
+        if (v == atual) return false;
+
+        switch (tipo)
+        {
+            case TipoLance.Gol: if (tempo == 1) l.Gols1T = v; else l.Gols2T = v; break;
+            case TipoLance.GolContra: if (tempo == 1) l.GolsContra1T = v; else l.GolsContra2T = v; break;
+            case TipoLance.Amarelo: if (tempo == 1) l.Amarelo1T = v; else l.Amarelo2T = v; break;
+            case TipoLance.Azul: if (tempo == 1) l.Azul1T = v; else l.Azul2T = v; break;
+            case TipoLance.Vermelho: if (tempo == 1) l.Vermelho1T = v; else l.Vermelho2T = v; break;
+            case TipoLance.Assistencia: l.Assistencias = v; break;
+            case TipoLance.ChuteGol: l.ChutesGol = v; break;
+            case TipoLance.Defesa: l.Defesas = v; break;
+            case TipoLance.PenaltiCometido: l.PenaltisCometidos = v; break;
+            default: l.PenaltisPerdidos = v; break;
+        }
+
+        // Assistência, chute, defesa e pênalti também guardam quantos foram no 1T e no 2T
+        if (!ComTempo.Contains(tipo) && tempo is 1 or 2)
+            AjustarPorTempo(l, tipo, tempo, v - atual);
+        return true;
+    }
+
+    private static int PorTempo(LinhaSumula l, TipoLance tipo, int tempo) => (tipo, tempo) switch
+    {
+        (TipoLance.Assistencia, 1) => l.Assistencias1T,
+        (TipoLance.Assistencia, 2) => l.Assistencias2T,
+        (TipoLance.ChuteGol, 1) => l.ChutesGol1T,
+        (TipoLance.ChuteGol, 2) => l.ChutesGol2T,
+        (TipoLance.Defesa, 1) => l.Defesas1T,
+        (TipoLance.Defesa, 2) => l.Defesas2T,
+        (TipoLance.PenaltiCometido, 1) => l.PenaltisCometidos1T,
+        (TipoLance.PenaltiCometido, 2) => l.PenaltisCometidos2T,
+        (TipoLance.PenaltiPerdido, 1) => l.PenaltisPerdidos1T,
+        (TipoLance.PenaltiPerdido, 2) => l.PenaltisPerdidos2T,
+        _ => 0
+    };
+
+    private static void AjustarPorTempo(LinhaSumula l, TipoLance tipo, int tempo, int delta)
+    {
+        var v = Math.Max(0, PorTempo(l, tipo, tempo) + delta);
+        switch (tipo, tempo)
+        {
+            case (TipoLance.Assistencia, 1): l.Assistencias1T = v; break;
+            case (TipoLance.Assistencia, 2): l.Assistencias2T = v; break;
+            case (TipoLance.ChuteGol, 1): l.ChutesGol1T = v; break;
+            case (TipoLance.ChuteGol, 2): l.ChutesGol2T = v; break;
+            case (TipoLance.Defesa, 1): l.Defesas1T = v; break;
+            case (TipoLance.Defesa, 2): l.Defesas2T = v; break;
+            case (TipoLance.PenaltiCometido, 1): l.PenaltisCometidos1T = v; break;
+            case (TipoLance.PenaltiCometido, 2): l.PenaltisCometidos2T = v; break;
+            case (TipoLance.PenaltiPerdido, 1): l.PenaltisPerdidos1T = v; break;
+            case (TipoLance.PenaltiPerdido, 2): l.PenaltisPerdidos2T = v; break;
+        }
+    }
+
+    /// <summary>Quantos lances do tipo existem naquele tempo (0 = sem tempo gravado: o total menos o que tem 1T/2T).</summary>
+    private static int QtdNoTempo(LinhaSumula l, TipoLance tipo, int tempo)
+    {
+        if (ComTempo.Contains(tipo)) return tempo == 0 ? 0 : Qtd(l, tipo, tempo);
+        if (tempo != 0) return PorTempo(l, tipo, tempo);
+        return Math.Max(0, Qtd(l, tipo, 0) - PorTempo(l, tipo, 1) - PorTempo(l, tipo, 2));
+    }
+
+    /// <summary>Monta os lances a partir dos contadores salvos: sem tempo primeiro, depois 1T e 2T. Dentro do tempo a ordem é aproximada.</summary>
+    private void ReconstruirLances()
+    {
+        lances.Clear();
+        var ordenados = linhas.OrderBy(x => x.Lado).ThenBy(x => x.Numero).ToList();
+
+        foreach (var tipo in OutrasAcoes)
+            foreach (var l in ordenados)
+                for (var i = 0; i < QtdNoTempo(l, tipo, 0); i++)
+                    lances.Add(new Lance { AtletaId = l.AtletaId, Lado = l.Lado, Tipo = tipo, Tempo = 0, Reconstruido = true });
+
+        foreach (var tempo in new[] { 1, 2 })
+        {
+            var ligadas = new Dictionary<Guid, int>();   // assistências deste tempo que já estão coladas a um gol
+
+            foreach (var tipo in ComTempo.Concat(OutrasAcoes))
+                foreach (var l in ordenados)
+                {
+                    var qtd = QtdNoTempo(l, tipo, tempo);
+                    if (tipo == TipoLance.Assistencia) qtd = Math.Max(0, qtd - ligadas.GetValueOrDefault(l.AtletaId));
+                    var pares = tipo == TipoLance.Gol ? l.GolsAssistidos.Where(g => g.Tempo == tempo).ToList() : new List<GolAssistido>();
+
+                    for (var i = 0; i < qtd; i++)
+                    {
+                        var lance = new Lance { AtletaId = l.AtletaId, Lado = l.Lado, Tipo = tipo, Tempo = tempo, Reconstruido = true };
+                        if (i < pares.Count && linhas.FirstOrDefault(x => x.AtletaId == pares[i].Assistente) is { } ass)
+                        {
+                            lance.AssistenteId = ass.AtletaId;
+                            ligadas[ass.AtletaId] = ligadas.GetValueOrDefault(ass.AtletaId) + 1;
+                        }
+                        lances.Add(lance);
+                    }
+                }
+        }
+    }
+
+    /// <summary>Do lance mais novo para o mais antigo, já com o placar corrido de cada gol.</summary>
+    private List<ItemLinha> LinhaDoTempo()
+    {
+        int c = 0, v = 0;
+        var cronologica = new List<ItemLinha>();
+        foreach (var lc in lances.OrderBy(x => x.Tempo))   // OrderBy é estável: mantém a ordem de registro dentro do tempo
+        {
+            if (lc.Tipo == TipoLance.Gol) { if (lc.Lado == LinhaSumula.Casa) c++; else v++; }
+            else if (lc.Tipo == TipoLance.GolContra) { if (lc.Lado == LinhaSumula.Casa) v++; else c++; }
+            cronologica.Add(new ItemLinha(lc, c, v));
+        }
+        return Enumerable.Reverse(cronologica).ToList();
+    }
+
+    private void AbrirLance(string ld)
+    {
+        lado = ld;
+        modalLance = true;
+        abaLista = false;
+        jogadorLance = null;
+        escolhendoAssist = false;
+        assistLance = null;
+    }
+
+    private void FecharLance()
+    {
+        modalLance = false;
+        jogadorLance = null;
+        escolhendoAssist = false;
+        assistLance = null;
+    }
+
+    private void TrocarJogador() { jogadorLance = null; escolhendoAssist = false; assistLance = null; }
+    private void EscolherGol() { escolhendoAssist = true; assistLance = null; }
+    private void AlternarAssist(Guid id) => assistLance = assistLance == id ? null : id;
+
+    private void AbrirAdicionarDoLance() { FecharLance(); AbrirModal(); }
+
+    /// <summary>
+    /// Soma (+1) ou desfaz (-1) um lance nos contadores. Gol com assistente mexe também na assistência dele
+    /// e no registro de "gol assistido" do autor. Devolve false (sem alterar nada) se algum contador estourar o limite.
+    /// </summary>
+    private bool AplicarLance(TipoLance tipo, LinhaSumula autor, int tempo, LinhaSumula? assistente, int delta)
+    {
+        if (!Ajustar(autor, tipo, tempo, delta)) return false;
+        if (tipo != TipoLance.Gol || assistente is null) return true;
+
+        if (!Ajustar(assistente, TipoLance.Assistencia, tempo, delta))
+        {
+            Ajustar(autor, tipo, tempo, -delta);   // volta o gol
+            return false;
+        }
+
+        if (delta > 0) autor.GolsAssistidos.Add(new GolAssistido(assistente.AtletaId, tempo));
+        else
+        {
+            var k = autor.GolsAssistidos.FindIndex(g => g.Assistente == assistente.AtletaId && g.Tempo == tempo);
+            if (k >= 0) autor.GolsAssistidos.RemoveAt(k);
+        }
+        return true;
+    }
+
+    /// <summary>Registra o lance do jogador escolhido. Gol com assistente vira um cartão só (gol + assistência).</summary>
+    private void RegistrarLance(TipoLance tipo, Guid? assistenteId = null)
+    {
+        var l = linhas.FirstOrDefault(x => x.AtletaId == jogadorLance);
+        if (l is null) return;
+
+        var ass = tipo == TipoLance.Gol && assistenteId is { } aid ? linhas.FirstOrDefault(x => x.AtletaId == aid) : null;
+        if (!AplicarLance(tipo, l, tempoLance, ass, +1))
+        {
+            if (ass is not null && AplicarLance(tipo, l, tempoLance, null, +1))
+            {
+                aviso = $"{ass.Nome} já está no limite de assistências: o gol foi registrado sem assistência.";
+                ass = null;
+            }
+            else
+            {
+                aviso = $"{RotuloDe(tipo)}: {l.Nome} já está no limite.";
+                FecharLance();
+                return;
+            }
+        }
+
+        lances.Add(new Lance { AtletaId = l.AtletaId, Lado = l.Lado, Tipo = tipo, Tempo = tempoLance, AssistenteId = ass?.AtletaId });
+
+        // Começou a registrar lance numa partida agendada: sugere "Em andamento" (só vale ao salvar)
+        if (status == "agendada") { status = "em_andamento"; statusMudou = true; }
+
+        Marcar();
+        FecharLance();
+    }
+
+    // ----- Edição de lance -----
+    private Lance? lanceEditando;
+    private Guid editAtleta;
+    private TipoLance editTipo;
+    private int editTempo = 1;
+    private Guid? editAssist;
+
+    private void AbrirEdicao(Lance lc)
+    {
+        lanceEditando = lc;
+        editAtleta = lc.AtletaId;
+        editTipo = lc.Tipo;
+        editTempo = lc.Tempo;
+        editAssist = lc.AssistenteId;
+    }
+
+    private void FecharEdicao() => lanceEditando = null;
+
+    /// <summary>Muda atleta, lance, tempo ou assistente: desfaz o lance antigo e aplica o novo (se o novo estourar o limite, volta tudo).</summary>
+    private void SalvarEdicao()
+    {
+        var lc = lanceEditando;
+        if (lc is null) return;
+
+        var antiga = linhas.FirstOrDefault(x => x.AtletaId == lc.AtletaId);
+        var nova = linhas.FirstOrDefault(x => x.AtletaId == editAtleta);
+        if (antiga is null || nova is null) { lanceEditando = null; return; }
+
+        var assAntiga = lc.AssistenteId is { } a0 ? linhas.FirstOrDefault(x => x.AtletaId == a0) : null;
+        var assNova = editTipo == TipoLance.Gol && editAssist is { } a1
+            ? linhas.FirstOrDefault(x => x.AtletaId == a1 && x.AtletaId != nova.AtletaId) : null;
+
+        // Gol e cartão sempre têm tempo; os demais lances podem ficar "sem tempo"
+        var tempoNovo = ComTempo.Contains(editTipo) && editTempo == 0 ? 1 : editTempo;
+        if (antiga == nova && lc.Tipo == editTipo && lc.Tempo == tempoNovo && assAntiga?.AtletaId == assNova?.AtletaId)
+        { lanceEditando = null; return; }
+
+        var tirou = AplicarLance(lc.Tipo, antiga, lc.Tempo, assAntiga, -1);
+        if (!AplicarLance(editTipo, nova, tempoNovo, assNova, +1))
+        {
+            if (tirou) AplicarLance(lc.Tipo, antiga, lc.Tempo, assAntiga, +1);
+            aviso = $"{RotuloDe(editTipo)}: {nova.Nome} ou o assistente já está no limite.";
+            lanceEditando = null;
+            return;
+        }
+
+        lc.AtletaId = nova.AtletaId;
+        lc.Lado = nova.Lado;
+        lc.Tipo = editTipo;
+        lc.Tempo = tempoNovo;
+        lc.AssistenteId = assNova?.AtletaId;
+        lc.Reconstruido = false;
+        lanceEditando = null;
+        Marcar();
+    }
+
+    private void DesfazerLance(Lance lc)
+    {
+        var l = linhas.FirstOrDefault(x => x.AtletaId == lc.AtletaId);
+        var ass = lc.AssistenteId is { } aid ? linhas.FirstOrDefault(x => x.AtletaId == aid) : null;
+        if (l is not null) AplicarLance(lc.Tipo, l, lc.Tempo, ass, -1);
+        lances.Remove(lc);
+        Marcar();
+    }
+
     private void AplicarEdicao(AtletaResumo novo)
     {
         foreach (var a in atletas.Where(x => x.Id == novo.Id)) { a.Nome = novo.Nome; a.FotoUrl = novo.FotoUrl; a.Posicoes = novo.Posicoes; }
@@ -295,23 +962,27 @@
     private string? erroModal, fotoPrevia;
     private HashSet<string> novasPosicoes = new();
     private byte[]? fotoBytes;
-    private readonly HashSet<Guid> confirmados = new();   // número da camisa já conferido nesta sessão
+    private readonly HashSet<Guid> confirmados = new();   // camisa com número definido: salvo no banco (sumula_camisas) ou digitado agora
+    private bool camisasPendentes, camisasIndisponivel;   // pendentes = digitou e ainda não salvou; indisponível = SQL das camisas não rodou
+    private string? erroCamisas, avisoCamisas;
     private readonly HashSet<Guid> novos = new();   // entraram agora: número ainda é o automático
 
     // Goleiros primeiro; técnicos nunca aparecem na súmula
-    private HashSet<Guid> IdsGoleiros => atletas.Where(AnaliseTime.EhSoGoleiro).Select(a => a.Id).ToHashSet();
     private static bool EhTecnico(AtletaResumo a) =>
         a.Posicoes.Count > 0 && a.Posicoes.All(x => AnaliseTime.Normalizar(x) == "TEC");
 
-    private IEnumerable<LinhaSumula> LinhasDoLado
+    /// <summary>Atletas do time na ordem de chegada (a mesma da tela de chegada); quem entrou só na súmula vem depois.</summary>
+    private IEnumerable<LinhaSumula> LinhasDe(string ld)
     {
-        get
-        {
-            var gol = IdsGoleiros;
-            return linhas.Where(l => l.Lado == lado)
-                         .OrderBy(l => gol.Contains(l.AtletaId) ? 0 : 1)
-                         .ThenBy(l => l.Numero);
-        }
+        var ordem = new Dictionary<Guid, int>();
+        for (var k = 0; k < chegada.Count; k++) ordem.TryAdd(chegada[k].Id, k);
+
+        var goleiros = atletas.Where(AnaliseTime.EhSoGoleiro).Select(a => a.Id).ToHashSet();
+
+        return linhas.Where(l => l.Lado == ld)
+                     .OrderBy(l => goleiros.Contains(l.AtletaId) ? 0 : 1)   // goleiro no topo
+                     .ThenBy(l => ordem.TryGetValue(l.AtletaId, out var pos) ? pos : int.MaxValue)
+                     .ThenBy(l => linhas.IndexOf(l));
     }
     private List<AtletaResumo> Disponiveis => atletas
         .Where(a => linhas.All(l => l.AtletaId != a.Id))
@@ -321,10 +992,10 @@
         .ToList();
     private record PapelJogo(string Css, string Rotulo);
 
-    /// <summary>Titulares (10 primeiros da chegada, só linha) e quem entra/sai no 2º tempo, para o time da aba aberta.</summary>
-    private Dictionary<Guid, PapelJogo> PapeisDoLado()
+    /// <summary>Titulares (10 primeiros da chegada, só linha) e quem entra/sai no 2º tempo, para o time informado.</summary>
+    private Dictionary<Guid, PapelJogo> PapeisDe(string ld)
     {
-        var noLado = linhas.Where(l => l.Lado == lado).ToList();
+        var noLado = linhas.Where(l => l.Lado == ld).ToList();
         var ids = noLado.Select(l => l.AtletaId).ToHashSet();
         var goleiros = atletas.Where(AnaliseTime.EhSoGoleiro).Select(a => a.Id).ToHashSet();
 
@@ -345,6 +1016,8 @@
         foreach (var a in plano.SemVaga) mapa[a.Id] = new("semvaga", "Reserva · sem vaga");
         return mapa;
     }
+
+    private bool EhGoleiro(Guid atletaId) => atletas.Any(a => a.Id == atletaId && AnaliseTime.EhSoGoleiro(a));
 
     private int Contar(string ld) => linhas.Count(l => l.Lado == ld);
     // Placar: gols do lado + gols contra cometidos pelo adversário.
@@ -386,10 +1059,32 @@
             linhas = await Servico.ObterSumulaAsync(partida!.Id);
             var tecnicos = atletas.Where(EhTecnico).Select(a => a.Id).ToHashSet();
             linhas.RemoveAll(l => tecnicos.Contains(l.AtletaId));   // técnico não entra na súmula
+            ReconstruirLances();
             try { chegada = await Servico.ObterChegadaAsync(partida.Id); }
-            catch (Exception) { chegada = new(); }   // sem a chegada, só não aparecem as marcações
+            catch (Exception)
+            {
+                chegada = new();   // sem a chegada, as listas caem na ordem do banco (por número de camisa)
+                aviso = "Não consegui ler a ordem de chegada desta partida: as listas estão fora dessa ordem.";
+            }
             novos.Clear();
             confirmados.Clear();
+            camisasPendentes = camisasIndisponivel = false;
+            erroCamisas = avisoCamisas = null;
+
+            // A camisa só aparece preenchida se o admin já a salvou nesta partida. O "numero" da súmula é provisório.
+            try
+            {
+                var salvas = await Servico.ObterCamisasAsync(partida.Id);
+                foreach (var l in linhas)
+                    if (salvas.TryGetValue(l.AtletaId, out var c) && c.Lado == l.Lado)
+                    {
+                        l.Numero = c.Numero;
+                        confirmados.Add(l.AtletaId);
+                    }
+            }
+            catch (ErroAdminException) { camisasIndisponivel = true; }   // SQL das camisas ainda não rodou: tudo fica sem camisa
+            AjustarProvisorios(LinhaSumula.Casa);
+            AjustarProvisorios(LinhaSumula.Visitante);
             status = partida.Status;
             sujo = statusMudou = false;
 
@@ -400,6 +1095,7 @@
                 status = "em_andamento";
                 statusMudou = true;
             }
+
         }
         catch (ErroAdminException ex) { erro = ex.Message; }
     }
@@ -493,17 +1189,89 @@
         registrando = false;
     }
 
-    private void Remover(LinhaSumula l) { linhas.Remove(l); Marcar(); }
+    private void Remover(LinhaSumula l)
+    {
+        // gols dele que tinham assistência: a assistência do colega sai junto
+        foreach (var gol in lances.Where(x => x.AtletaId == l.AtletaId && x.AssistenteId is not null).ToList())
+            if (linhas.FirstOrDefault(x => x.AtletaId == gol.AssistenteId) is { } colega)
+                Ajustar(colega, TipoLance.Assistencia, gol.Tempo, -1);
+        // gols de outros que ele assistiu: ficam sem assistente (a contagem dele sai com ele)
+        foreach (var o in linhas) o.GolsAssistidos.RemoveAll(g => g.Assistente == l.AtletaId);
+        foreach (var gol in lances.Where(x => x.AssistenteId == l.AtletaId)) gol.AssistenteId = null;
+
+        linhas.Remove(l);
+        lances.RemoveAll(x => x.AtletaId == l.AtletaId);
+        if (confirmados.Remove(l.AtletaId)) camisasPendentes = true;
+        Marcar();
+    }
+
+    /// <summary>Quem ainda não tem camisa definida guarda um número provisório (o banco exige um). Aqui ele sai da frente dos números definidos.</summary>
+    private void AjustarProvisorios(string ld)
+    {
+        var usados = linhas.Where(l => l.Lado == ld && confirmados.Contains(l.AtletaId)).Select(l => l.Numero).ToHashSet();
+        foreach (var l in linhas.Where(x => x.Lado == ld && !confirmados.Contains(x.AtletaId)))
+        {
+            if (usados.Contains(l.Numero))
+            {
+                var n = 1;
+                while (usados.Contains(n)) n++;
+                l.Numero = n;
+            }
+            usados.Add(l.Numero);
+        }
+    }
 
     private void MudarNumero(LinhaSumula l, ChangeEventArgs e)
     {
-        if (int.TryParse(e.Value?.ToString(), out var n) && n >= 1 && n <= LinhaSumula.MaxNumero)
+        erroCamisas = avisoCamisas = null;
+        var texto = e.Value?.ToString()?.Trim();
+
+        if (string.IsNullOrEmpty(texto))
         {
-            l.Numero = n;
-            novos.Remove(l.AtletaId);
-            confirmados.Add(l.AtletaId);
-            Marcar();
+            // campo apagado: volta a "sem camisa"
+            if (confirmados.Remove(l.AtletaId)) { camisasPendentes = true; AjustarProvisorios(l.Lado); Marcar(); }
+            return;
         }
+
+        if (!int.TryParse(texto, out var n) || n < 1)
+        {
+            erroCamisas = "Informe um número de camisa válido (1 ou mais).";
+            return;
+        }
+
+        l.Numero = n;
+        novos.Remove(l.AtletaId);
+        confirmados.Add(l.AtletaId);
+        camisasPendentes = true;
+        AjustarProvisorios(l.Lado);
+
+        var outro = linhas.FirstOrDefault(o => o != l && o.Lado == l.Lado && o.Numero == n && confirmados.Contains(o.AtletaId));
+        if (outro is not null) erroCamisas = $"A camisa {n} já está com {outro.Nome} neste time.";
+        Marcar();
+    }
+
+    /// <summary>Grava no banco as camisas definidas (só quem tem camisa; o resto fica sem). Não mexe em gols nem cartões.</summary>
+    private async Task SalvarCamisas()
+    {
+        erroCamisas = avisoCamisas = null;
+
+        var comCamisa = linhas.Where(l => confirmados.Contains(l.AtletaId)).ToList();
+        var repetido = comCamisa.GroupBy(l => (l.Lado, l.Numero)).FirstOrDefault(g => g.Count() > 1);
+        if (repetido is not null)
+        {
+            erroCamisas = $"A camisa {repetido.Key.Numero} está repetida no time {TimePelada.Rotulo(repetido.Key.Lado)}.";
+            return;
+        }
+
+        salvando = true;
+        try
+        {
+            await Servico.SalvarCamisasAsync(partida!.Id, comCamisa);
+            camisasPendentes = false;
+            avisoCamisas = comCamisa.Count == 0 ? "Nenhuma camisa definida." : $"Camisas salvas ({comCamisa.Count}).";
+        }
+        catch (ErroAdminException ex) { erroCamisas = ex.Message; }
+        salvando = false;
     }
 
     private async Task Salvar()
@@ -520,11 +1288,34 @@
         salvando = true;
         try
         {
-            await Servico.SalvarSumulaAsync(partida!.Id, linhas, statusMudou ? status : null);
+            // O banco não aceita alterar súmula de partida finalizada: reabre, salva e finaliza de novo (placar e pontos recalculam)
+            var refinalizar = partida!.Finalizada && !statusMudou;
+            if (refinalizar) await Servico.ReabrirPartidaAsync(partida.Id);
+            try
+            {
+                await Servico.SalvarSumulaAsync(partida.Id, linhas, statusMudou ? status : null);
+            }
+            finally
+            {
+                if (refinalizar) await Servico.FinalizarPartidaAsync(partida.Id);   // mesmo se o salvar falhar, a partida não fica aberta
+            }
             if (statusMudou) partida.Status = status;
             sujo = statusMudou = false;
-            foreach (var l in linhas) confirmados.Add(l.AtletaId);
-            aviso = "Súmula salva.";
+            aviso = refinalizar ? "Súmula salva. A partida foi reaberta e finalizada de novo." : "Súmula salva.";
+
+            if (camisasPendentes)
+            {
+                try
+                {
+                    await Servico.SalvarCamisasAsync(partida.Id, linhas.Where(l => confirmados.Contains(l.AtletaId)));
+                    camisasPendentes = false;
+                }
+                catch (ErroAdminException ex)
+                {
+                    aviso = null;
+                    erro = "Súmula salva, mas as camisas não: " + ex.Message;
+                }
+            }
         }
         catch (ErroAdminException ex) { erro = ex.Message; }
         salvando = false;

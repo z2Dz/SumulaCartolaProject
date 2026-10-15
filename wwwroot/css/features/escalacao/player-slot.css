@@ -1,6 +1,5 @@
 /* Escalação: vaga do jogador no campo
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 .anel-selecao {
     position: absolute;
     inset: 0;
@@ -10,12 +9,12 @@
 }
 
 .anel-selecao rect {
-        fill: none;
-        stroke: var(--branco);
-        stroke-width: 1.2;
-        stroke-dasharray: 3 2;
-        filter: drop-shadow(0 0 1.5px rgba(0,0,0,.9));
-    }
+    fill: none;
+    stroke: var(--branco);
+    stroke-width: 1.2;
+    stroke-dasharray: 3 2;
+    filter: drop-shadow(0 0 1.5px rgba(0,0,0,.9));
+}
 
 .slot {
     display: flex;
@@ -51,9 +50,7 @@
     stroke-dasharray: 4 3;
 }
 
-.slot-btn.vazia .carta-linha {
-    display: none;
-}
+.slot-btn.vazia .carta-linha { display: none; }
 
 /* ===== Capitão: faixa amarela inclinada no canto do cartão (única definição) =====
    O brilho (box-shadow) não existe aqui de propósito: a regra de nitidez mais abaixo
@@ -93,12 +90,9 @@
     text-overflow: ellipsis;
 }
 
-.slot-rotulo.vazio {
-        visibility: hidden;
-    }
+.slot-rotulo.vazio { visibility: hidden; }
 
 /* cartões dourados e prateados, com o nome numa faixa escura por cima do cartão */
-
 .slot-btn.ouro {
     --carta-fundo: url(#cg-ouro);
     --carta-borda: #8a6a00;
@@ -123,7 +117,8 @@
     color: var(--branco);
 }
 
-.slot-btn.ouro .carta-sil, .slot-btn.prata .carta-sil {
+.slot-btn.ouro .carta-sil,
+.slot-btn.prata .carta-sil {
     color: rgba(15,15,15,.88);
 }
 
@@ -144,30 +139,22 @@
     vector-effect: non-scaling-stroke;
 }
 
-.slot-btn.vazia ~ * {
-    display: none;
-}
-
-.slot:has(.slot-btn.vazia) .slot-rotulo {
-    display: none;
-}
+.slot-btn.vazia ~ * { display: none; }
+.slot:has(.slot-btn.vazia) .slot-rotulo { display: none; }
 
 /* vaga selecionada: brilho verde-amarelado e coroa dourada em cima */
-
 .slot-btn.vazia.ativo .camisa-vazia-forma {
-        stroke: #fff3a0;
-        stroke-width: 2px;
-    }
+    stroke: #fff3a0;
+    stroke-width: 2px;
+}
 
 /* cartões e camisas sem sombra desfocada (o filtro deixava a borda mole); só a vaga selecionada brilha */
-
 .pagina.escalar .slot-btn.ativo,
-    .pagina.escalar .slot-btn.vazia.ativo {
-        filter: none;
-    }
+.pagina.escalar .slot-btn.vazia.ativo {
+    filter: none;
+}
 
 /* Capitão: faixa de braço (retângulo amarelo com listras pretas nas pontas e um "C") */
-
 /* ===== Cartão bronze: o ponto de partida da evolução (bronze > prata > ouro) ===== */
 .slot-btn.bronze {
     --carta-fundo: url(#cg-bronze);
@@ -175,23 +162,21 @@
     --carta-linha: rgba(255,230,200,.5);
 }
 
-.slot-btn.bronze .carta-sil {
-        color: rgba(35,18,6,.88);
-    }
+.slot-btn.bronze .carta-sil { color: rgba(35,18,6,.88); }
 
 /* Escalar (computador e celular): sombra nas vagas vazias e nas vagas preenchidas.
    Sombra deslocada e sem blur, como na Home, para a borda continuar nítida. */
-
 /* a vaga selecionada mantém só a sombra deslocada (sem brilho desfocado) */
 .pagina.escalar .slot-btn.cheio.ativo,
-    .pagina.escalar .slot-btn.vazia.ativo {
-        filter: drop-shadow(2px 4px 0 rgba(0,0,0,.5)) drop-shadow(0 6px 0 rgba(0,0,0,.18));
-    }
+.pagina.escalar .slot-btn.vazia.ativo {
+    filter: drop-shadow(2px 4px 0 rgba(0,0,0,.5)) drop-shadow(0 6px 0 rgba(0,0,0,.18));
+}
 
 /* ===== Marca da posição no gramado, embaixo do cartão do jogador ===== */
 .slot {
     position: relative;
-    top: calc(var(--arco, 0) * var(--slot)); /* meia lua da linha (Tatica.Arco); sem --arco fica no lugar */
+    top: calc(var(--arco, 0) * var(--slot));
+    /* meia lua da linha (Tatica.Arco); sem --arco fica no lugar */
 }
 
 .slot-btn,
@@ -199,17 +184,9 @@
     z-index: 1;
 }
 
-.campo .slot-btn .slot-rotulo.nome.nome-m {
-        font-size: max(6.5px, calc(var(--slot) * .145));
-    }
-
-.campo .slot-btn .slot-rotulo.nome.nome-g {
-        font-size: max(6px, calc(var(--slot) * .125));
-    }
-
-.campo .slot-btn .slot-rotulo.nome.nome-gg {
-        font-size: max(5.5px, calc(var(--slot) * .105));
-    }
+.campo .slot-btn .slot-rotulo.nome.nome-m { font-size: max(6.5px, calc(var(--slot) * .145)); }
+.campo .slot-btn .slot-rotulo.nome.nome-g { font-size: max(6px, calc(var(--slot) * .125)); }
+.campo .slot-btn .slot-rotulo.nome.nome-gg { font-size: max(5.5px, calc(var(--slot) * .105)); }
 
 /* =====================================================================
    Cartões nítidos em todas as telas (Home, Escalar, Ranking, prévias):
@@ -240,17 +217,17 @@
 }
 
 .slot-btn .carta-nota,
-    .slot-btn .carta-pos,
-    .slot-btn .slot-rotulo,
-    .campo .slot-btn .slot-rotulo.nome {
-        text-shadow: none !important;
-    }
+.slot-btn .carta-pos,
+.slot-btn .slot-rotulo,
+.campo .slot-btn .slot-rotulo.nome {
+    text-shadow: none !important;
+}
 
 /* vaga selecionada: destaque nítido (contorno), no lugar do brilho desfocado */
 .slot-btn.ativo .carta-svg,
-    .slot-btn.vazia.ativo .camisa-vazia {
-        stroke: #fff3a0;
-    }
+.slot-btn.vazia.ativo .camisa-vazia {
+    stroke: #fff3a0;
+}
 
 /* evita o serrilhado/embaçado de camadas 3D nos cartões */
 .slot-btn {
@@ -266,6 +243,4 @@
     text-shadow: none !important;
 }
 
-.campo-cena .campo .slot-btn.ativo {
-        transform: none;
-    }
+.campo-cena .campo .slot-btn.ativo { transform: none; }

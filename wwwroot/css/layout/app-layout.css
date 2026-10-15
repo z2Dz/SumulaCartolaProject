@@ -1,6 +1,5 @@
 /* Estrutura do app (shell, conteúdo, .pagina)
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 /* Estrutura com menu inferior */
 .app {
     min-height: 100dvh;
@@ -8,9 +7,7 @@
     flex-direction: column;
 }
 
-.conteudo {
-    flex: 1;
-}
+.conteudo { flex: 1; }
 
 .pagina {
     max-width: 640px;
@@ -50,9 +47,7 @@
 }
 
 /* ===== Editor de escudo (layout em painéis) ===== */
-.pagina.larga {
-    max-width: 1120px;
-}
+.pagina.larga { max-width: 1120px; }
 
 .ordem {
     display: flex;
@@ -89,10 +84,10 @@
 }
 
 .fixa > * {
-        flex: none;
-        margin-top: 0;
-        margin-bottom: 0;
-    }
+    flex: none;
+    margin-top: 0;
+    margin-bottom: 0;
+}
 
 .shell {
     display: grid;
@@ -106,6 +101,4 @@
     flex-direction: column;
 }
 
-.conteudo {
-    padding-bottom: 1.5rem;
-}
+.conteudo { padding-bottom: 1.5rem; }

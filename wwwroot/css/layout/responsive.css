@@ -1,73 +1,50 @@
 /* Layout: regras de @media
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 @media (max-width: 899px) {
-.shell {
-        display: block;
-    }
-
-.lateral {
-        display: none;
-    }
-
-.topo-m-time {
-        display: flex;
-    }
-
-.abas-m {
+    .shell { display: block; }
+    .lateral { display: none; }
+    .topo-m-time { display: flex; }
+    .abas-m {
         display: flex;
         padding: .3rem;
         overflow-x: auto;
     }
-
-.abas-m a {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--suave);
-            text-decoration: none;
-        }
-
-.abas-m a.active {
-                color: var(--branco);
-            }
+    .abas-m a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--suave);
+        text-decoration: none;
+    }
+    .abas-m a.active { color: var(--branco); }
 }
 
 @media (min-width: 900px) {
-/* =====================================================================
+    /* =====================================================================
    Escalar no computador: tudo cabe na tela, sem rolagem da página
    ===================================================================== */
-.conteudo:has(.pagina.escalar) {
-        padding-bottom: 0;
+    .conteudo:has(.pagina.escalar) { padding-bottom: 0; } /* o cabeçalho com o avatar sai do fluxo para liberar altura */
+    .principal:has(.pagina.escalar) { position: relative; }
+    .principal:has(.pagina.escalar) .topo-m {
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: .5rem 1rem;
+        z-index: 5;
+        pointer-events: none;
     }
-
-/* o cabeçalho com o avatar sai do fluxo para liberar altura */
-.principal:has(.pagina.escalar) {
-        position: relative;
-    }
-
-.principal:has(.pagina.escalar) .topo-m {
-            position: absolute;
-            top: 0;
-            right: 0;
-            padding: .5rem 1rem;
-            z-index: 5;
-            pointer-events: none;
-        }
-
-.principal:has(.pagina.escalar) .perfil-btn {
-            display: none;
-        }
+    .principal:has(.pagina.escalar) .perfil-btn { display: none; }
 }
 
 @media (max-width: 899px) {
-/* ===== Celular: menu vira barra de navegação fixa embaixo (ícone em cima, texto embaixo) ===== */
-.abas-m {
+    /* ===== Celular: menu vira barra de navegação fixa embaixo (ícone em cima, texto embaixo) ===== */
+    .abas-m {
         position: fixed;
         left: 0;
         right: 0;
         bottom: 0;
-        z-index: 25; /* abaixo das folhas (30), acima do conteúdo */
+        z-index: 25;
+        /* abaixo das folhas (30), acima do conteúdo */
         margin: 0;
         gap: 0;
         padding: .35rem .4rem calc(.35rem + env(safe-area-inset-bottom, 0px));
@@ -79,36 +56,26 @@
         overflow: visible;
         justify-content: space-around;
     }
-
-.abas-m a {
-            flex: 1 1 0;
-            min-width: 0;
-            flex-direction: column;
-            gap: .15rem;
-            padding: .45rem .2rem .35rem;
-            border-radius: 12px;
-            font-size: .68rem;
-            font-weight: 600;
-            line-height: 1.1;
-            text-align: center;
-        }
-
-.abas-m a.active {
-                background: transparent;
-                box-shadow: none;
-                color: var(--acento);
-            }
-
-.abas-m a.active svg {
-                    filter: drop-shadow(0 0 6px rgba(25,201,138,.7));
-                }
-
-/* espaço para o conteúdo não ficar escondido atrás da barra */
-.conteudo {
-        padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    .abas-m a {
+        flex: 1 1 0;
+        min-width: 0;
+        flex-direction: column;
+        gap: .15rem;
+        padding: .45rem .2rem .35rem;
+        border-radius: 12px;
+        font-size: .68rem;
+        font-weight: 600;
+        line-height: 1.1;
+        text-align: center;
     }
-
-.perfil-btn {
+    .abas-m a.active {
+        background: transparent;
+        box-shadow: none;
+        color: var(--acento);
+    }
+    .abas-m a.active svg { filter: drop-shadow(0 0 6px rgba(25,201,138,.7)); } /* espaço para o conteúdo não ficar escondido atrás da barra */
+    .conteudo { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+    .perfil-btn {
         width: auto;
         height: auto;
         display: inline-flex;
@@ -121,46 +88,37 @@
         color: var(--suave);
         font: inherit;
     }
-
-.perfil-btn .pb-desk {
-            display: none;
-        }
-
-.perfil-btn .pb-mob {
-            display: inline-flex;
-            align-items: center;
-            gap: .5rem;
-        }
+    .perfil-btn .pb-desk { display: none; }
+    .perfil-btn .pb-mob {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+    }
 }
 
 @media (min-width: 900px) {
-/* Computador: sem o botão de perfil no cabeçalho (o "Sair" fica no menu lateral); o cabeçalho vazio também some */
-.topo-m {
-        display: none;
-    }
-
-/* =====================================================================
+    /* Computador: sem o botão de perfil no cabeçalho (o "Sair" fica no menu lateral); o cabeçalho vazio também some */
+    .topo-m { display: none; }
+    /* =====================================================================
    Computador: Súmula e Chegada encaixadas na janela (a página não rola,
    só as listas). O layout novo usa .shell/.principal, então o antigo
    .app:has(.fixa) não valia mais.
    ===================================================================== */
-.shell:has(.fixa) {
+    .shell:has(.fixa) {
         height: 100dvh;
         min-height: 0;
         overflow: hidden;
     }
-
-.shell:has(.fixa) .principal {
-            height: 100dvh;
-            min-height: 0;
-            overflow: hidden;
-        }
-
-.shell:has(.fixa) .conteudo {
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            padding-bottom: 0;
-        }
+    .shell:has(.fixa) .principal {
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+    }
+    .shell:has(.fixa) .conteudo {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 0;
+    }
 }

@@ -1,6 +1,5 @@
 /* Janelas, folhas e popovers
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 /* Folha de seleção (bottom sheet) */
 .folha-fundo {
     position: fixed;
@@ -32,9 +31,9 @@
 }
 
 .folha-topo h3 {
-        margin: 0;
-        font-size: 1.1rem;
-    }
+    margin: 0;
+    font-size: 1.1rem;
+}
 
 .folha-atual {
     display: flex;
@@ -62,14 +61,12 @@
 }
 
 .regras-valor summary {
-        cursor: pointer;
-        font-weight: 600;
-    }
+    cursor: pointer;
+    font-weight: 600;
+}
 
 @media (min-width: 861px) {
-.escalar .folha-fundo {
-        display: none;
-    }
+    .escalar .folha-fundo { display: none; }
 }
 
 .regras-valor ul {
@@ -79,12 +76,11 @@
     line-height: 1.5;
 }
 
-.regras-valor li + li {
-    margin-top: .2rem;
-}
+.regras-valor li + li { margin-top: .2rem; }
 
 /* telas internas continuam legíveis no tema escuro */
-.folha, .folha-fundo + .folha {
+.folha,
+.folha-fundo + .folha {
     background: var(--cartao);
     color: var(--texto);
 }
@@ -96,35 +92,23 @@
 }
 
 @media (min-width: 900px) {
-.pagina.escalar .regras-valor {
-            padding: .4rem .8rem;
-        }
-
-/* regras abertas flutuam sobre o campo, em vez de empurrar a tela */
-.pagina.escalar .regras-valor[open] {
-                position: absolute;
-                left: 0;
-                right: 0;
-                z-index: 20;
-                max-height: 62%;
-                overflow-y: auto;
-                background: var(--cartao);
-                box-shadow: 0 10px 30px rgba(0,0,0,.6);
-            }
-
-.pagina.escalar .regras-valor {
-        margin: .4rem 0 1.1rem;
+    .pagina.escalar .regras-valor { padding: .4rem .8rem; } /* regras abertas flutuam sobre o campo, em vez de empurrar a tela */
+    .pagina.escalar .regras-valor[open] {
+        position: absolute;
+        left: 0;
+        right: 0;
+        z-index: 20;
+        max-height: 62%;
+        overflow-y: auto;
+        background: var(--cartao);
+        box-shadow: 0 10px 30px rgba(0,0,0,.6);
     }
-
-.pagina.escalar .regras-valor[open] {
-        bottom: 8.5rem;
-    }
+    .pagina.escalar .regras-valor { margin: .4rem 0 1.1rem; }
+    .pagina.escalar .regras-valor[open] { bottom: 8.5rem; }
 }
 
 @media (max-width: 899px) {
-.pagina.escalar .regras-valor {
-        margin: .5rem 0 1.2rem;
-    }
+    .pagina.escalar .regras-valor { margin: .5rem 0 1.2rem; }
 }
 
 .regras-fundo {
@@ -179,10 +163,8 @@
 }
 
 .regras-modal-corpo ul {
-        margin: 0;
-        padding-left: 1.2rem;
-    }
+    margin: 0;
+    padding-left: 1.2rem;
+}
 
-.regras-modal-corpo li {
-        margin-bottom: .35rem;
-    }
+.regras-modal-corpo li { margin-bottom: .35rem; }

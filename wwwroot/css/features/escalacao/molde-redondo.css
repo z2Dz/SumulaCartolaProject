@@ -3,7 +3,6 @@
    (Ornamentada, Rubro Ouro, temas e Esmeralda mantêm o desenho deles).
    Usa classes próprias (molde-*), então não depende de nenhuma outra regra de cartão.
    Medidas em frações da largura do cartão (--slot); a caixa do botão tem proporção 100 x 156,6. */
-
 .molde-pontos {
     position: absolute;
     left: 50%;
@@ -21,29 +20,21 @@
     pointer-events: none;
 }
 
-    .molde-pontos.pos {
-        color: var(--verde-2);
-    }
+.molde-pontos.pos { color: var(--verde-2); }
+.molde-pontos.neg { color: var(--vermelho); }
+.molde-pontos.zero { color: #7a7f7c; }
 
-    .molde-pontos.neg {
-        color: var(--vermelho);
-    }
-
-    .molde-pontos.zero {
-        color: #7a7f7c;
-    }
-
-    /* biquinho da etiqueta, apontando para a foto */
-    .molde-pontos::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        top: 100%;
-        transform: translateX(-50%);
-        border: calc(var(--slot) * .06) solid transparent;
-        border-top-color: var(--branco);
-        border-bottom: 0;
-    }
+/* biquinho da etiqueta, apontando para a foto */
+.molde-pontos::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    border: calc(var(--slot) * .06) solid transparent;
+    border-top-color: var(--branco);
+    border-bottom: 0;
+}
 
 /* foto redonda com aro branco (o aro acompanha o nível do cartão) */
 .molde-foto {
@@ -64,17 +55,9 @@
 }
 
 /* vaga selecionada: aro amarelo nítido em volta da foto (sem brilho desfocado) */
-.slot-btn.ativo .molde-foto {
-    box-shadow: 0 0 0 calc(var(--slot) * .04) #fff3a0;
-}
-
-.slot-btn.prata .molde-foto {
-    border-color: #cfd6dc;
-}
-
-.slot-btn.ouro .molde-foto {
-    border-color: #f2c230;
-}
+.slot-btn.ativo .molde-foto { box-shadow: 0 0 0 calc(var(--slot) * .04) #fff3a0; }
+.slot-btn.prata .molde-foto { border-color: #cfd6dc; }
+.slot-btn.ouro .molde-foto { border-color: #f2c230; }
 
 /* sem foto: silhueta da posição dentro do círculo */
 .molde-sil {
@@ -83,10 +66,10 @@
     color: #8d9692;
 }
 
-    .molde-sil svg {
-        width: 100%;
-        height: 100%;
-    }
+.molde-sil svg {
+    width: 100%;
+    height: 100%;
+}
 
 /* selo do escudo, no canto inferior direito da foto */
 .molde-escudo {
@@ -99,12 +82,12 @@
     pointer-events: none;
 }
 
-    .molde-escudo .escudo,
-    .molde-escudo .escudo-deco {
-        display: block;
-        width: 100%;
-        height: 100%;
-    }
+.molde-escudo .escudo,
+.molde-escudo .escudo-deco {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
 
 /* nome em pílula verde escura; nomes longos diminuem a letra */
 .molde-nome {
@@ -127,17 +110,9 @@
     pointer-events: none;
 }
 
-    .molde-nome.nome-m {
-        font-size: max(calc(7.5px * var(--ss, 1)), calc(var(--slot) * .165));
-    }
-
-    .molde-nome.nome-g {
-        font-size: max(calc(7px * var(--ss, 1)), calc(var(--slot) * .145));
-    }
-
-    .molde-nome.nome-gg {
-        font-size: max(calc(6.5px * var(--ss, 1)), calc(var(--slot) * .125));
-    }
+.molde-nome.nome-m { font-size: max(calc(7.5px * var(--ss, 1)), calc(var(--slot) * .165)); }
+.molde-nome.nome-g { font-size: max(calc(7px * var(--ss, 1)), calc(var(--slot) * .145)); }
+.molde-nome.nome-gg { font-size: max(calc(6.5px * var(--ss, 1)), calc(var(--slot) * .125)); }
 
 /* capitão: selo redondo amarelo no alto da foto, à direita */
 .molde-capitao {

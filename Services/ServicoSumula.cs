@@ -9,6 +9,9 @@ namespace SumulaCartolaProject.Servicos;
 /// <summary>Erro de negócio com texto pronto para mostrar ao admin.</summary>
 public class ErroAdminException(string mensagem) : Exception(mensagem);
 
+/// <summary>Resultado de iniciar_nova_rodada: se as escalações foram resetadas e o texto pronto para mostrar.</summary>
+public record ResultadoNovaRodada(bool Resetou, string Mensagem);
+
 /// <summary>
 /// Partidas, atletas, ordem de chegada e súmula. Tudo passa por funções RPC do banco (migração 09),
 /// que conferem se o usuário é admin por dentro. Esconder a tela não é a proteção; o banco é.
@@ -103,7 +106,18 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
                 ChutesGol = Inteiro(t["chutes_gol"]) ?? 0,
                 Defesas = Inteiro(t["defesas"]) ?? 0,
                 PenaltisCometidos = Inteiro(t["penaltis_cometidos"]) ?? 0,
-                PenaltisPerdidos = Inteiro(t["penaltis_perdidos"]) ?? 0
+                PenaltisPerdidos = Inteiro(t["penaltis_perdidos"]) ?? 0,
+                GolsAssistidos = LerGolsAssistidos(t["gols_assistidos"]),
+                Assistencias1T = Inteiro(t["assistencias_1t"]) ?? 0,
+                Assistencias2T = Inteiro(t["assistencias_2t"]) ?? 0,
+                ChutesGol1T = Inteiro(t["chutes_gol_1t"]) ?? 0,
+                ChutesGol2T = Inteiro(t["chutes_gol_2t"]) ?? 0,
+                Defesas1T = Inteiro(t["defesas_1t"]) ?? 0,
+                Defesas2T = Inteiro(t["defesas_2t"]) ?? 0,
+                PenaltisCometidos1T = Inteiro(t["penaltis_cometidos_1t"]) ?? 0,
+                PenaltisCometidos2T = Inteiro(t["penaltis_cometidos_2t"]) ?? 0,
+                PenaltisPerdidos1T = Inteiro(t["penaltis_perdidos_1t"]) ?? 0,
+                PenaltisPerdidos2T = Inteiro(t["penaltis_perdidos_2t"]) ?? 0
             }).ToList();
 
     // ----- Partidas -----
@@ -117,6 +131,14 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
 
         var resp = await ChamarAsync("criar_partida", p);
         return Guid.Parse((string)resp!);
+    }
+
+    /// <summary>Depois de criar a partida: fecha as rodadas finalizadas, guarda cópia e limpa as escalações (nova_rodada_reset.sql). Não apaga pontos.</summary>
+    public async Task<ResultadoNovaRodada> IniciarNovaRodadaAsync(Guid partidaNova)
+    {
+        var r = await ChamarAsync("iniciar_nova_rodada", new() { ["p_partida"] = partidaNova }) as JObject;
+        var resetou = r?["resetou"] is { Type: JTokenType.Boolean } b && (bool)b;
+        return new ResultadoNovaRodada(resetou, (string?)r?["mensagem"] ?? "");
     }
 
     public Task FinalizarPartidaAsync(Guid partidaId) => ChamarAsync("finalizar_partida", new() { ["p_partida"] = partidaId });
@@ -214,12 +236,47 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
                 ["chutes_gol"] = l.ChutesGol,
                 ["defesas"] = l.Defesas,
                 ["penaltis_cometidos"] = l.PenaltisCometidos,
-                ["penaltis_perdidos"] = l.PenaltisPerdidos
+                ["penaltis_perdidos"] = l.PenaltisPerdidos,
+                ["gols_assistidos"] = l.GolsAssistidos
+                    .Select(g => new Dictionary<string, object> { ["assistente"] = g.Assistente.ToString(), ["tempo"] = g.Tempo }).ToList(),
+                ["assistencias_1t"] = l.Assistencias1T,
+                ["assistencias_2t"] = l.Assistencias2T,
+                ["chutes_gol_1t"] = l.ChutesGol1T,
+                ["chutes_gol_2t"] = l.ChutesGol2T,
+                ["defesas_1t"] = l.Defesas1T,
+                ["defesas_2t"] = l.Defesas2T,
+                ["penaltis_cometidos_1t"] = l.PenaltisCometidos1T,
+                ["penaltis_cometidos_2t"] = l.PenaltisCometidos2T,
+                ["penaltis_perdidos_1t"] = l.PenaltisPerdidos1T,
+                ["penaltis_perdidos_2t"] = l.PenaltisPerdidos2T
             }).ToList()
         };
         if (status is not null) p["p_status"] = status;
         return ChamarAsync("salvar_sumula", p);
     }
+
+    // ----- Camisas por partida (tabela sumula_camisas; ver camisas_por_partida.sql) -----
+    /// <summary>Camisas que o admin já salvou nesta partida. Atleta fora do dicionário = camisa ainda não definida.</summary>
+    public async Task<Dictionary<Guid, (string Lado, int Numero)>> ObterCamisasAsync(Guid partidaId)
+    {
+        var salvas = new Dictionary<Guid, (string Lado, int Numero)>();
+        foreach (var t in await ChamarArrayAsync("obter_camisas", new() { ["p_partida"] = partidaId }))
+            salvas[Guid.Parse((string)t["atleta_id"]!)] = ((string?)t["lado"] ?? "", Inteiro(t["numero"]) ?? 0);
+        return salvas;
+    }
+
+    /// <summary>Grava as camisas informadas e apaga as demais da partida (quem não vem na lista volta a "sem camisa").</summary>
+    public Task SalvarCamisasAsync(Guid partidaId, IEnumerable<LinhaSumula> comCamisa) =>
+        ChamarAsync("salvar_camisas", new()
+        {
+            ["p_partida"] = partidaId,
+            ["p_itens"] = comCamisa.Select(l => new Dictionary<string, object>
+            {
+                ["atleta_id"] = l.AtletaId.ToString(),
+                ["lado"] = l.Lado,
+                ["numero"] = l.Numero
+            }).ToList()
+        });
 
     // ----- Infra -----
     private static T LerAtleta<T>(JToken t) where T : AtletaResumo, new() => new()
@@ -255,6 +312,16 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
 
     private async Task<JArray> ChamarArrayAsync(string funcao, Dictionary<string, object>? parametros = null) =>
         await ChamarAsync(funcao, parametros) as JArray ?? new JArray();
+
+    private static List<GolAssistido> LerGolsAssistidos(JToken? token)
+    {
+        var lista = new List<GolAssistido>();
+        if (token is not JArray arr) return lista;
+        foreach (var e in arr)
+            if (Guid.TryParse((string?)e["assistente"], out var id))
+                lista.Add(new GolAssistido(id, (int?)e["tempo"] ?? 0));
+        return lista;
+    }
 
     private async Task<JToken?> ChamarAsync(string funcao, Dictionary<string, object>? parametros = null)
     {

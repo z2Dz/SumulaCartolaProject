@@ -28,12 +28,28 @@
         <a class="dismiss">🗙</a>
     </div>
     <script>
-                        // Guarda o aviso de instalação do navegador para o pop-up usar depois do login
-                        var __instalarEvento = null;
-                        window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); __instalarEvento = e; });
-                        window.addEventListener('appinstalled', function () { __instalarEvento = null; localStorage.setItem('app-instalado', '1'); });
+                                // Guarda o aviso de instalação do navegador para o pop-up usar depois do login
+                                var __instalarEvento = null;
+                                window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); __instalarEvento = e; });
+                                window.addEventListener('appinstalled', function () { __instalarEvento = null; localStorage.setItem('app-instalado', '1'); });
     </script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
-    <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
+    <script>
+                // Atualização do app instalado: a versão nova assume sozinha (skipWaiting no service worker)
+                // e, se isso acontecer logo ao abrir, a página recarrega uma vez para já mostrar a versão nova.
+                // Depois de alguns segundos não recarrega, para não derrubar uma súmula em edição: vale na próxima abertura.
+                if ('serviceWorker' in navigator) {
+                    var __jaTinhaControle = !!navigator.serviceWorker.controller;
+                    var __inicio = Date.now();
+                    var __recarregou = false;
+                    navigator.serviceWorker.addEventListener('controllerchange', function () {
+                        if (!__jaTinhaControle || __recarregou || Date.now() - __inicio > 15000) return;
+                        __recarregou = true;
+                        location.reload();
+                    });
+                    navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' })
+                        .then(function (reg) { reg.update(); });
+                }
+    </script>
 </body>
 </html>

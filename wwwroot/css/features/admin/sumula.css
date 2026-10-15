@@ -1,218 +1,21 @@
-/* Admin: súmula
-   Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
-.adm-cartao.am.on {
-    background: var(--amarelo);
-    border-color: var(--amarelo);
-    color: var(--grafite);
-}
-
-.adm-cartao.az.on {
-    background: #2a6fdb;
-    border-color: #2a6fdb;
-    color: var(--branco);
-}
-
-.adm-cartao.ver.on {
-    background: var(--vermelho);
-    border-color: var(--vermelho);
-    color: var(--branco);
-}
-
-/* Súmula: só a lista de jogadores rola */
-.fixa > .sum-rola {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: .6rem;
-}
-
-.sum-rola > * {
-    flex: none;
-}
-
-@media (min-width: 720px) {
-    .sum-filtros {
-        display: grid;
-        grid-template-columns: auto 1fr auto 1fr;
-        align-items: center;
-        gap: .4rem .6rem;
-    }
-
-        .sum-filtros > .adm-dica {
-            grid-column: 1 / -1;
-        }
-}
-
-.sum-rola > .cartao {
-    margin-bottom: 0;
-}
-
-/* Súmula: número da camisa, nome e campos na mesma linha */
-.cartao.sj {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: .6rem .8rem;
-    padding: .6rem .8rem;
-}
-
-.sj .adm-nome {
-    flex: 1;
-    min-width: 6rem;
-}
-
-.sj .adm-jogador-corpo {
-    display: flex;
-    justify-content: space-between;
-    gap: .5rem .8rem;
-    margin: 0;
-    order: 3;
-    flex-basis: 100%;
-}
-
-.sj .adm-icone {
-    order: 2;
-}
-
-.sj .adm-passo {
-    gap: .3rem;
-}
-
-    .sj .adm-passo span {
-        font-size: 1.05rem;
-    }
-
-.sj .adm-par {
-    gap: .3rem;
-}
-
-.sj .adm-cartao {
-    min-height: 2.1rem;
-    min-width: 2.4rem;
-    font-size: .8rem;
-}
-
-@media (min-width: 860px) {
-    .adm:has(.sj) {
-        max-width: 1000px;
-    }
-
-    .sj .adm-jogador-corpo {
-        order: 0;
-        flex: none;
-        flex-basis: auto;
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-    }
-
-    .sj .adm-icone {
-        order: 0;
-    }
-}
-
-/* Súmula: cartões como contadores (sem limite por tempo) */
-.sj .adm-cart {
-    display: flex;
-    align-items: center;
-    gap: .25rem;
-    padding: .15rem .3rem;
-    border: 1px solid transparent;
-    border-radius: .5rem;
-}
-
-    .sj .adm-cart small {
-        font-size: .7rem;
-        opacity: .7;
-    }
-
-    .sj .adm-cart .adm-passo {
-        gap: .2rem;
-    }
-
-    .sj .adm-cart.on.am {
-        border-color: #e6b800;
-        background: rgba(230, 184, 0, .15);
-    }
-
-    .sj .adm-cart.on.az {
-        border-color: #2f7fe0;
-        background: rgba(47, 127, 224, .15);
-    }
-
-    .sj .adm-cart.on.ver {
-        border-color: #d63a3a;
-        background: rgba(214, 58, 58, .15);
-    }
-
-.sj .adm-jogador-corpo {
-    flex-wrap: wrap;
-}
-
-/* Súmula: contador com + em cima e − embaixo, número ao lado */
-.sj .adm-passo {
-    display: grid;
-    grid-template-columns: auto auto;
-    grid-template-rows: auto auto;
-    align-items: center;
-    column-gap: .35rem;
-    row-gap: .2rem;
-}
-
-    .sj .adm-passo span {
-        grid-column: 1;
-        grid-row: 1 / 3;
-        min-width: 1.4rem;
-    }
-
-    .sj .adm-passo button:last-child {
-        grid-column: 2;
-        grid-row: 1;
-    }
-
-    .sj .adm-passo button:first-child {
-        grid-column: 2;
-        grid-row: 2;
-    }
-
-    /* ===== Ajustes: botões retangulares, sem rolagem lateral, camisa branca ===== */
-    .sj .adm-passo button,
-    .sj .adm-cart .adm-passo button {
-        width: 2.7rem;
-        height: 1.55rem;
-        border-radius: 5px;
-        font-size: 1.05rem;
-        line-height: 1;
-        padding: 0;
-    }
-
-.sum-rola,
-.adm:has(.sj) {
-    overflow-x: hidden;
-}
-
-.cartao.sj {
-    overflow-x: clip;
-    max-width: 100%;
-}
+/* Admin: súmula (popup de lance, linha do tempo, chegada e ranking). Carregado por app.css; a ordem dos arquivos importa. */
 
 /* Súmula: barra de rolagem escondida (a lista continua rolando com o dedo ou a roda do mouse) */
-.fixa > .sum-rola,
 .fixa .previa,
 .fixa .chg-nomes,
 .fixa .chg-rola {
     overflow-x: hidden;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* Edge antigo */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* Edge antigo */
 }
 
-    .fixa > .sum-rola::-webkit-scrollbar,
     .fixa .previa::-webkit-scrollbar,
     .fixa .chg-nomes::-webkit-scrollbar,
     .fixa .chg-rola::-webkit-scrollbar {
-        display: none; /* Chrome, Safari, Android, iOS */
+        display: none;
+        /* Chrome, Safari, Android, iOS */
         width: 0;
         height: 0;
     }
@@ -498,24 +301,6 @@
     text-align: center;
 }
 
-.sm2-linha {
-    display: grid;
-    align-items: center;
-    gap: .6rem 1rem;
-    padding: .55rem .9rem;
-    border-radius: 14px;
-    background: rgba(6,18,13,.62);
-    border: 1px solid rgba(255,255,255,.1);
-    flex: none;
-}
-
-.sm2-atleta {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: .15rem;
-}
-
 /* titulares e substituições do 2º tempo */
 .sm2-papel {
     align-self: flex-start;
@@ -554,18 +339,6 @@
         background: rgba(255,255,255,.06);
         border-color: rgba(255,255,255,.2);
     }
-
-.sm2-linha.sai {
-    border-left: 3px solid #ffb74d;
-}
-
-.sm2-linha.entra {
-    border-left: 3px solid #6db6ff;
-}
-
-.sm2-linha.titular {
-    border-left: 3px solid rgba(31,227,160,.6);
-}
 
 /* camisa com número */
 .sm2-camisa {
@@ -690,66 +463,6 @@
     }
 }
 
-/* contadores */
-.sm2-grupo {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .2rem;
-}
-
-    .sm2-grupo .adm-passo {
-        display: flex;
-        align-items: center;
-        gap: .45rem;
-    }
-
-        .sm2-grupo .adm-passo span {
-            min-width: 1.6ch;
-            text-align: center;
-            font-weight: 800;
-            font-size: 1.15rem;
-            color: var(--branco);
-        }
-
-        .sm2-grupo .adm-passo button {
-            width: 34px;
-            height: 34px;
-            padding: 0;
-            display: grid;
-            place-items: center;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,.2);
-            background: rgba(255,255,255,.06);
-            color: var(--texto-claro);
-            font-size: 1.1rem;
-            line-height: 1;
-        }
-
-            .sm2-grupo .adm-passo button:disabled {
-                opacity: .35;
-            }
-
-/* eventos extras (assistência, chutes, defesas, pênaltis): segunda fileira, alinhada aos contadores de cima */
-.sm2-extras {
-    grid-column: 3 / 8;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    column-gap: 1rem;
-}
-
-.sm2-grupo.am.on .adm-passo span {
-    color: var(--amarelo);
-}
-
-.sm2-grupo.az.on .adm-passo span {
-    color: #5ea0ff;
-}
-
-.sm2-grupo.ver.on .adm-passo span {
-    color: #ff6b63;
-}
-
 .sm2-remover {
     width: 40px;
     height: 40px;
@@ -776,7 +489,9 @@
     flex: 1;
 }
 
-.sm2-add, .sm2-sec, .sm2-salvar {
+.sm2-add,
+.sm2-sec,
+.sm2-salvar {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -789,7 +504,8 @@
     cursor: pointer;
 }
 
-.sm2-add, .sm2-sec {
+.sm2-add,
+.sm2-sec {
     border: 1px solid rgba(31,227,160,.45);
     background: rgba(6,18,13,.62);
     color: var(--menta);
@@ -856,46 +572,14 @@
 }
 
 @media (max-width: 719px) {
-    .sm2-linha {
-        gap: .5rem .3rem;
-        padding: .6rem .6rem;
-    }
-
     .sm2-camisa {
         grid-column: 1;
-        grid-row: 1;
-    }
-
-    .sm2-atleta {
         grid-row: 1;
     }
 
     .sm2-remover {
         grid-row: 1;
     }
-
-    .sm2-linha > .sm2-grupo {
-        grid-row: 2;
-    }
-
-    .sm2-extras {
-        grid-column: 1 / -1;
-        grid-row: 3;
-        column-gap: .3rem;
-    }
-
-    .sm2-grupo .adm-passo {
-        gap: .25rem;
-    }
-
-        .sm2-grupo .adm-passo button {
-            width: 28px;
-            height: 28px;
-        }
-
-        .sm2-grupo .adm-passo span {
-            font-size: 1rem;
-        }
 
     .sm2-barra {
         flex-direction: column;
@@ -907,25 +591,482 @@
     }
 }
 
-/* ===== Súmula: campo Gol contra (cole no FIM do wwwroot/css/app.css) ===== */
-.sm2-linha {
-    grid-template-columns: 64px minmax(7rem, 1.2fr) repeat(5, minmax(0, 1fr)) 46px;
-}
-
-.sm2-grupo.gc.on .adm-passo span {
-    color: #ff9f43;
-}
-
 @media (max-width: 719px) {
-    .sm2-linha {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
-
-    .sm2-atleta {
-        grid-column: 2 / 5;
-    }
-
     .sm2-remover {
         grid-column: 5;
     }
 }
+
+/* =====================================================================
+   Súmula: linha do tempo
+   Linha central; cada lance tem um nó sobre ela (tempo ou placar) e um cartão ligado por um conector
+   em "L" com seta. Vermelho na metade esquerda, Amarelo na metade direita, lance mais novo no topo.
+   A cor do nó, do conector, da borda e do ícone vem do tipo do lance (--tl-cor).
+   ===================================================================== */
+.sm2-abas button.vermelho {
+    border-color: var(--vermelho);
+}
+
+.sm2-abas button.amarelo {
+    border-color: var(--amarelo);
+}
+
+.sm2-tl {
+    position: relative;
+    padding: .3rem 0;
+}
+
+    .sm2-tl::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        margin-left: -1px;
+        background: rgba(255,255,255,.18);
+    }
+
+    .sm2-tl:has(.sm2-vazio)::before {
+        display: none;
+    }
+
+.sm2-tl-item {
+    --tl-cor: rgba(255,255,255,.55);
+    --tl-sobre: var(--grafite);
+    --tl-no: 2.4rem;
+    /* altura da linha do nó */
+    --tl-folga: .25rem;
+    /* espaço entre o nó e o cartão */
+    --tl-gap: clamp(.8rem, 6vw, 3.5rem);
+    /* da linha central até a borda do cartão */
+    --tl-entrada: 1.4rem;
+    /* onde a seta entra no cartão, a partir da borda dele */
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: var(--tl-no) auto;
+    row-gap: var(--tl-folga);
+    padding-bottom: .9rem;
+}
+
+.sm2-tl-am {
+    --tl-cor: var(--amarelo);
+    --tl-sobre: var(--grafite);
+}
+
+.sm2-tl-az {
+    --tl-cor: #2f7bf5;
+    --tl-sobre: var(--branco);
+}
+
+.sm2-tl-ver {
+    --tl-cor: #e5322d;
+    --tl-sobre: var(--branco);
+}
+
+.sm2-tl-gol {
+    --tl-cor: var(--menta);
+    --tl-sobre: var(--grafite);
+}
+
+.sm2-tl-gc {
+    --tl-cor: #ff9f43;
+    --tl-sobre: var(--grafite);
+}
+
+/* conector: sai do nó, corre na horizontal e desce em linha até o cartão (sem ponta de seta) */
+.sm2-tl-item::before {
+    content: "";
+    position: absolute;
+}
+
+.sm2-tl-item::before {
+    top: calc(var(--tl-no) / 2);
+    width: calc(var(--tl-gap) + var(--tl-entrada));
+    height: calc(var(--tl-no) / 2 + var(--tl-folga));
+    border-top: 2px solid var(--tl-cor);
+}
+
+.sm2-tl-esq::before {
+    right: 50%;
+    border-left: 2px solid var(--tl-cor);
+    border-top-left-radius: 12px;
+}
+
+.sm2-tl-dir::before {
+    left: 50%;
+    border-right: 2px solid var(--tl-cor);
+    border-top-right-radius: 12px;
+}
+
+/* nó sobre a linha central */
+.sm2-tl-no {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: center;
+    align-self: center;
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    min-width: 3.2rem;
+    min-height: 2.2rem;
+    padding: .2rem .7rem;
+    border: 2px solid var(--tl-cor);
+    border-radius: 12px;
+    background: var(--cartao);
+    background: color-mix(in srgb, var(--tl-cor) 30%, var(--fundo));
+    color: var(--branco);
+    font-weight: 800;
+    font-size: .9rem;
+    white-space: nowrap;
+}
+
+/* cartão do lance */
+.sm2-tl-txt {
+    grid-row: 2;
+    position: relative;
+    width: min(calc(100% - var(--tl-gap)), 20rem);
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: .6rem;
+    padding: .6rem .8rem .6rem .8rem;
+    border: 2px solid var(--tl-cor);
+    border-left-width: 6px;
+    border-radius: 14px;
+    background: rgba(6,18,13,.78);
+    box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+
+.sm2-tl-esq .sm2-tl-txt {
+    grid-column: 1;
+    justify-self: end;
+    margin-right: var(--tl-gap);
+}
+
+.sm2-tl-dir .sm2-tl-txt {
+    grid-column: 2;
+    justify-self: start;
+    margin-left: var(--tl-gap);
+}
+
+.sm2-tl-corpo {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+}
+
+    .sm2-tl-corpo strong {
+        font-size: 1.15rem;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+.sm2-tl-chips {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.sm2-tl-tempo,
+.sm2-tl-num {
+    padding: .1rem .55rem;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: .85rem;
+    line-height: 1.4;
+}
+
+.sm2-tl-tempo {
+    background: var(--tl-cor);
+    color: var(--tl-sobre);
+}
+
+/* camisa do atleta; a borda leva a cor do time (Vermelho / Amarelo) */
+.sm2-tl-num {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.2);
+    color: var(--texto-claro);
+}
+
+.sm2-tl-esq .sm2-tl-num {
+    border-color: var(--vermelho);
+}
+
+.sm2-tl-dir .sm2-tl-num {
+    border-color: var(--amarelo);
+}
+
+.sm2-tl-sub {
+    color: var(--suave);
+    font-size: .85rem;
+}
+
+.sm2-tl-x {
+    margin-left: auto;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--suave);
+    font-size: .7rem;
+    cursor: pointer;
+}
+
+/* ícone do lance, à direita do cartão */
+.sm2-tl-ico {
+    grid-column: 2;
+    display: grid;
+    place-items: center;
+    min-width: 2.4rem;
+    color: var(--tl-cor);
+    font-weight: 800;
+    font-size: .8rem;
+}
+
+.sm2-tl-carta {
+    width: 1.5rem;
+    height: 2.1rem;
+    border-radius: 4px;
+    background: var(--tl-cor);
+    transform: rotate(12deg);
+    box-shadow: 0 3px 10px rgba(0,0,0,.45);
+}
+
+@media (max-width: 480px) {
+    .sm2-tl-txt {
+        padding: .5rem .55rem .5rem .6rem;
+        column-gap: .3rem;
+    }
+
+    .sm2-tl-corpo strong {
+        font-size: 1rem;
+    }
+
+    .sm2-tl-ico {
+        min-width: 1.6rem;
+    }
+
+    .sm2-tl-carta {
+        width: 1.1rem;
+        height: 1.6rem;
+    }
+}
+
+/* Botão de editar lance (ao lado do ✕, mesmo tamanho) */
+.sm2-tl-edit {
+    margin-left: auto;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--suave);
+    font-size: .85rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+    .sm2-tl-edit:hover,
+    .sm2-tl-edit:focus-visible {
+        color: var(--branco);
+        background: rgba(255,255,255,.1);
+    }
+
+    .sm2-tl-edit + .sm2-tl-x {
+        margin-left: 0;
+    }
+
+/* Gol com assistência: quem fez em destaque, quem deu a assistência mais apagado */
+.sm2-tl-nomes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: .5rem;
+}
+
+.sm2-tl-assist {
+    color: var(--suave);
+    font-size: 1.15rem;
+    line-height: 1.2;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+    .sm2-tl-assist {
+        font-size: 1rem;
+    }
+}
+
+/* Outras ações do popup de lance: botões coloridos */
+.sm2-acoes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .6rem;
+}
+
+@media (min-width: 640px) {
+    .sm2-acoes {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.sm2-acao {
+    --acao-rgb: 56, 189, 248;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    min-height: 52px;
+    padding: .5rem .7rem;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--acao-rgb), .55);
+    background: rgba(var(--acao-rgb), .14);
+    color: rgb(var(--acao-rgb));
+    font-weight: 700;
+    font-size: .9rem;
+    line-height: 1.15;
+    text-align: center;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+}
+
+    .sm2-acao:hover,
+    .sm2-acao:focus-visible {
+        background: rgba(var(--acao-rgb), .26);
+    }
+
+    .sm2-acao:active {
+        transform: scale(.97);
+    }
+
+    .sm2-acao svg {
+        width: 22px;
+        height: 22px;
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .sm2-acao.chute {
+        --acao-rgb: 56, 189, 248;
+    }
+    /* azul: chute ao gol */
+    .sm2-acao.defesa {
+        --acao-rgb: 52, 211, 153;
+    }
+    /* verde: defesa */
+    .sm2-acao.pen-com {
+        --acao-rgb: 251, 146, 60;
+    }
+    /* laranja: pênalti cometido */
+    .sm2-acao.pen-perd {
+        --acao-rgb: 251, 113, 133;
+    }
+/* rosa: pênalti perdido */
+
+/* Gol, gol contra e cartões no mesmo estilo dos demais botões */
+.sm2-acoes-1 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* Gol e Gol contra lado a lado */
+}
+
+.sm2-acoes-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sm2-acao.grande {
+    min-height: 60px;
+    font-size: 1.05rem;
+}
+
+    .sm2-acao.grande svg {
+        width: 26px;
+        height: 26px;
+    }
+
+.sm2-acao.gol {
+    --acao-rgb: 34, 197, 94;
+}
+/* verde: gol */
+.sm2-acao.gol-contra {
+    --acao-rgb: 167, 139, 250;
+}
+/* violeta: gol contra */
+.sm2-acao.cartao-am {
+    --acao-rgb: 250, 204, 21;
+}
+/* amarelo */
+.sm2-acao.cartao-az {
+    --acao-rgb: 96, 165, 250;
+}
+/* azul */
+.sm2-acao.cartao-ver {
+    --acao-rgb: 239, 68, 68;
+}
+/* vermelho */
+
+/* Abas (Ações do jogo / Lista do time) e tempo (1º / 2º): mesmo estilo dos botões de ação, na cor do time */
+.adm-seg.sm2-seg {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .6rem;
+}
+
+    .adm-seg.sm2-seg button {
+        --acao-rgb: 148, 163, 184;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .4rem;
+        min-height: 48px;
+        padding: .5rem .7rem;
+        border: 1px solid rgba(var(--acao-rgb), .4);
+        border-radius: 12px;
+        background: rgba(var(--acao-rgb), .08);
+        color: rgb(var(--acao-rgb));
+        font-size: .95rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background .15s, transform .1s;
+    }
+
+        .adm-seg.sm2-seg button.vermelho {
+            --acao-rgb: 239, 68, 68;
+        }
+
+        .adm-seg.sm2-seg button.amarelo {
+            --acao-rgb: 250, 204, 21;
+        }
+
+        .adm-seg.sm2-seg button:hover,
+        .adm-seg.sm2-seg button:focus-visible {
+            background: rgba(var(--acao-rgb), .18);
+        }
+
+        .adm-seg.sm2-seg button:active {
+            transform: scale(.98);
+        }
+
+        /* selecionado: preenchimento mais forte, borda cheia e texto branco */
+        .adm-seg.sm2-seg button.on,
+        .adm-seg.sm2-seg button.vermelho.on,
+        .adm-seg.sm2-seg button.amarelo.on {
+            background: rgba(var(--acao-rgb), .32);
+            border-color: rgb(var(--acao-rgb));
+            color: #fff;
+            box-shadow: 0 0 0 1px rgba(var(--acao-rgb), .35);
+        }

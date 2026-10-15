@@ -1,8 +1,7 @@
 /* Escalação: regras de @media
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 @media (hover: hover) {
-.slot-btn:hover {
+    .slot-btn:hover {
         transform: translateY(-2px);
     }
 }
@@ -18,12 +17,12 @@
 }
 
 @media (min-width: 861px) {
-.escalar-grade {
+    .escalar-grade {
         display: grid;
         align-items: start;
     }
 
-.painel-atletas,
+    .painel-atletas,
     .painel-atletas.aberto {
         display: block;
         position: sticky;
@@ -40,7 +39,7 @@
         box-shadow: none;
     }
 
-.painel-vazio {
+    .painel-vazio {
         padding: 2rem 1rem;
     }
 }
@@ -53,13 +52,13 @@
 }
 
 @media (min-width: 861px) {
-/* ----- grade: campo à esquerda, painel à direita ----- */
-.pagina.escalar .escalar-grade {
+    /* ----- grade: campo à esquerda, painel à direita ----- */
+    .pagina.escalar .escalar-grade {
         grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
         gap: 1.2rem;
     }
 
-.pagina.escalar .painel-atletas,
+    .pagina.escalar .painel-atletas,
     .pagina.escalar .painel-atletas.aberto {
         margin: 0;
         top: 1rem;
@@ -77,75 +76,35 @@
 }
 
 @media (max-width: 860px) {
-/* ----- celular ----- */
-.esc-cab {
-        flex-wrap: wrap;
-        gap: .7rem;
-        padding: .8rem 1rem;
+    .painel-atletas .item-atleta .item-col:not(.valor),
+    .painel-atletas .item-atleta .item-seta {
+        display: none;
     }
 
-.esc-cab-titulo {
-        flex: 1 1 60%;
-    }
-
-.esc-numeros {
-        flex: 1 1 100%;
-        justify-content: space-around;
-        gap: 1rem;
-        padding: .5rem 1rem;
-    }
-
-.esc-tatica {
-        min-width: 0;
-    }
-
-.painel-atletas .item-atleta .item-col:not(.valor),
-        .painel-atletas .item-atleta .item-seta {
-            display: none;
-        }
-
-.item-acao {
+    .item-acao {
         padding: .4rem .8rem;
         font-size: .8rem;
     }
 }
 
 @media (min-width: 900px) {
-.pagina.escalar .esc-cab {
-            flex: none;
-            padding: .55rem 1.2rem;
-            margin-bottom: .4rem;
-        }
-
-.pagina.escalar .esc-cab-titulo h1 {
-            font-size: 1.2rem;
-        }
-
-.pagina.escalar > .barra-orc {
-            flex: none;
-            margin: 0 .4rem .6rem;
-        }
-
-.pagina.escalar .escalar-grade {
-            flex: 1 1 auto;
-            min-height: 0;
-            grid-template-rows: minmax(0, 1fr);
-            align-items: stretch;
-        }
-
-/* coluna do campo */
-
-.pagina.escalar .esc-dica {
-            padding: .3rem 1rem;
-            font-size: .82rem;
-        }
-
-.pagina.escalar .esc-ajuda {
-        min-height: 1.1em;
+    .pagina.escalar .escalar-grade {
+        flex: 1 1 auto;
+        min-height: 0;
+        grid-template-rows: minmax(0, 1fr);
+        align-items: stretch;
+    }
+    /* coluna do campo */
+    .pagina.escalar .esc-dica {
+        padding: .3rem 1rem;
+        font-size: .82rem;
     }
 
-/* painel de atletas ocupa a altura da grade; só a lista rola */
-.pagina.escalar .painel-atletas,
+    .pagina.escalar .esc-ajuda {
+        min-height: 1.1em;
+    }
+    /* painel de atletas ocupa a altura da grade; só a lista rola */
+    .pagina.escalar .painel-atletas,
     .pagina.escalar .painel-atletas.aberto {
         position: static;
         height: 100%;
@@ -155,74 +114,54 @@
         overflow: hidden;
     }
 
-.pagina.escalar .painel-atletas.aberto > .folha-lista {
+        .pagina.escalar .painel-atletas.aberto > .folha-lista {
             flex: 1 1 auto;
             max-height: none;
             min-height: 0;
             overflow-y: auto;
         }
-
 }
 
 @media (min-width: 900px) and (max-height: 760px) {
-/* telas baixas: cartões e cabeçalho um pouco menores */
-.pagina.escalar .esc-cab-titulo p,
+    /* telas baixas: cartões e cabeçalho um pouco menores */
     .pagina.escalar .esc-dica {
         display: none;
     }
-
 }
 
 @media (min-width: 900px) {
-/* Escalar: campo mais largo (antes seguia a proporção 2:3 e ficava fino) */
-
-/* Escalar: proporção intermediária do campo (2:3 ficava fino, 1:1 ficava achatado) */
-
-/* Escalar: campo centralizado na altura (a inclinação gira pelo centro, sem sobrar vão em cima) */
-
-/* Escalar: campo + mensagens + botão formam um bloco só, centralizado e sem vão entre eles */
-
-/* mensagem do painel vazio junto do topo, perto do campo */
-.pagina.escalar .painel-vazio {
+    /* Escalar: campo mais largo (antes seguia a proporção 2:3 e ficava fino) */
+    /* Escalar: proporção intermediária do campo (2:3 ficava fino, 1:1 ficava achatado) */
+    /* Escalar: campo centralizado na altura (a inclinação gira pelo centro, sem sobrar vão em cima) */
+    /* Escalar: campo + mensagens + botão formam um bloco só, centralizado e sem vão entre eles */
+    /* mensagem do painel vazio junto do topo, perto do campo */
+    .pagina.escalar .painel-vazio {
         margin: 0 auto auto;
         padding: 1.5rem 1rem 0;
     }
-
-/* Escalar: mais respiro entre as mensagens e o botão Salvar escalação */
-.pagina.escalar .esc-dica {
+    /* Escalar: mais respiro entre as mensagens e o botão Salvar escalação */
+    .pagina.escalar .esc-dica {
         margin: .7rem auto .6rem;
     }
 
-.pagina.escalar .esc-ajuda {
+    .pagina.escalar .esc-ajuda {
         margin: .6rem 0 0;
     }
 }
 
 @media (max-width: 899px) {
-.esc-dica {
+    .esc-dica {
         margin: .9rem auto .7rem;
     }
 }
 
 @media (min-width: 900px) {
-/* Escalar: o campo ocupa só o espaço que sobra, e a dica, as regras e o botão ficam sempre visíveis */
-
-}
-
-@media (max-width: 899px) {
-/* ===== Escalar (celular): aproxima o campo do cabeçalho =====
-   A inclinação 3D deixa um vão vazio acima do gramado; um recuo negativo o compensa. */
-
-}
-
-@media (min-width: 900px) {
-/* Escalar (computador): aproxima o campo da dica do capitão.
+    /* Escalar (computador): aproxima o campo da dica do capitão.
    A inclinação 3D deixava ~85 px de vazio acima do gramado; o campo sobe sobre essa área vazia
    (a dica fica na frente) e a base não se mexe. Para ajustar: mude o -7.5vh (mais negativo = mais perto). */
-
-/* Escalar (computador): cabeçalho em uma linha só.
+    /* Escalar (computador): cabeçalho em uma linha só.
    "Preço do time" e "Você ainda tem" à esquerda; esquema tático + botões de vista à direita. */
-.esc-topo {
+    .esc-topo {
         display: flex;
         align-items: center;
         gap: 1rem;
@@ -232,7 +171,7 @@
         background: rgba(8,20,15,.78);
     }
 
-.esc-topo .esc-stats {
+        .esc-topo .esc-stats {
             order: 1;
             display: flex;
             border: 0;
@@ -240,19 +179,19 @@
             background: transparent;
         }
 
-.esc-topo .esc-stat {
+        .esc-topo .esc-stat {
             padding: .1rem 1.8rem;
         }
 
-.esc-topo .esc-stat:first-child {
+            .esc-topo .esc-stat:first-child {
                 padding-left: 0;
             }
 
-.esc-topo .esc-stat strong {
+            .esc-topo .esc-stat strong {
                 font-size: 1.4rem;
             }
 
-.esc-topo .esc-barra {
+        .esc-topo .esc-barra {
             order: 2;
             margin-left: auto;
             flex: 0 0 auto;
@@ -263,32 +202,28 @@
             background: transparent;
         }
 
-.esc-topo .esc-espaco {
+        .esc-topo .esc-espaco {
             display: none;
         }
 
-.esc-topo .esc-select select {
+        .esc-topo .esc-select select {
             font-size: 1.35rem;
         }
 
-.esc-topo .esc-vista {
+        .esc-topo .esc-vista {
             width: 54px;
             height: 54px;
         }
 
-.esc-topo .esc-ajuda-btn {
+        .esc-topo .esc-ajuda-btn {
             font-size: 1.7rem;
         }
-
-/* Escalar (computador): o botão Salvar não cobre mais o campo, e a lista de atletas só aparece com uma posição selecionada */
-/* antes o campo descia 2,4 rem por baixo do botão; agora deixa um respiro (cresce um pouco com a altura da tela) */
-
-/* sem posição selecionada: painel escondido e campo centralizado */
-.pagina.escalar .painel-atletas:not(.aberto) {
+    /* sem posição selecionada: painel escondido e campo centralizado */
+    .pagina.escalar .painel-atletas:not(.aberto) {
         display: none;
     }
 
-.pagina.escalar .escalar-grade:not(:has(.painel-atletas.aberto)) {
+    .pagina.escalar .escalar-grade:not(:has(.painel-atletas.aberto)) {
         grid-template-columns: minmax(0, 760px);
         justify-content: center;
     }
@@ -299,14 +234,14 @@
 }
 
 @media (min-width: 900px) {
-/* ===== Escalar (computador): campo menor, para o estádio e a inclinação não passarem por cima do botão Salvar ===== */
-
-/* Escalar (computador): campo mais perto do botão Salvar escalação.
+    /* ===== Escalar (computador): campo menor, para o estádio e a inclinação não passarem por cima do botão Salvar ===== */
+    /* Escalar (computador): campo mais perto do botão Salvar escalação.
    Para ajustar, mude --vao-salvar (mais negativo = mais perto; se o estádio encostar no botão, suba o valor). */
+    .pagina.escalar .esc-lista-mob {
+        display: none;
+    }
 
-.pagina.escalar .esc-lista-mob { display: none; }
-
-.pagina.escalar .esc-painel-lista .esc-lista-painel {
+    .pagina.escalar .esc-painel-lista .esc-lista-painel {
         display: flex;
         flex-direction: column;
         gap: .35rem;
@@ -316,10 +251,13 @@
         scrollbar-width: none;
     }
 
-.pagina.escalar .esc-painel-lista .esc-lista-painel::-webkit-scrollbar { display: none; }
+        .pagina.escalar .esc-painel-lista .esc-lista-painel::-webkit-scrollbar {
+            display: none;
+        }
 }
 
 @media (max-width: 899px) {
-.pagina.escalar .esc-painel-lista { display: none; }
-
+    .pagina.escalar .esc-painel-lista {
+        display: none;
+    }
 }

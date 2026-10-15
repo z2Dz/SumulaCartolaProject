@@ -15,8 +15,14 @@
         </div>
     </header>
 
-    @if (!string.IsNullOrEmpty(erro)) { <p class="erro">@erro</p> }
-    @if (!string.IsNullOrEmpty(aviso)) { <p class="adm-ok">@aviso</p> }
+    @if (!string.IsNullOrEmpty(erro))
+    {
+        <p class="erro">@erro</p>
+    }
+    @if (!string.IsNullOrEmpty(aviso))
+    {
+        <p class="adm-ok">@aviso</p>
+    }
 
     @if (!criando)
     {
@@ -67,7 +73,15 @@
                             <span>Vermelho</span>
                         </div>
                         <span class="adm2-x">
-                            @if (p.MostraPlacar) { @($"{p.PlacarVermelho ?? 0} x {p.PlacarAmarelo ?? 0}") } else { @("X") }
+                            @if (p.MostraPlacar)
+                            {
+                                @($"{p.PlacarVermelho ?? 0} x {p.PlacarAmarelo ?? 0}")
+                            }
+                            else
+                            {
+
+                                @("X")
+                            }
                         </span>
                         <div class="adm2-time">
                             <img class="adm2-logo" src="img/time-amarelo.png" alt="Escudo do Amarelo" />
@@ -135,9 +149,21 @@
         erro = aviso = null; ocupado = true;
         try
         {
-            await Servico.CriarPartidaAsync(novaData, novaRodada);
+            var id = await Servico.CriarPartidaAsync(novaData, novaRodada);
             criando = false; novaRodada = null;
             aviso = "Partida criada.";
+
+            // Nova rodada: reseta as escalações do Cartola (pontos de atletas e de rodadas ficam)
+            try
+            {
+                var r = await Servico.IniciarNovaRodadaAsync(id);
+                aviso = "Partida criada. " + r.Mensagem;
+            }
+            catch (ErroAdminException ex)
+            {
+                erro = "Partida criada, mas não consegui resetar as escalações: " + ex.Message
+                     + (ex.Message.Contains("iniciar_nova_rodada") ? " Rode o arquivo nova_rodada_reset.sql no SQL Editor do Supabase." : "");
+            }
             await Recarregar();
         }
         catch (ErroAdminException ex) { erro = ex.Message; }

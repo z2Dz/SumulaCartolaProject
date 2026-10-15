@@ -1,6 +1,5 @@
 /* Personalização dos cartões
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 /* janela Personalizar campo: cartões individuais */
 .pc-abas {
     display: flex;
@@ -17,6 +16,6 @@
 }
 
 .pc-lista .opcao.atual::after {
-        content: " ●";
-        color: var(--amarelo);
-    }
+    content: " ●";
+    color: var(--amarelo);
+}

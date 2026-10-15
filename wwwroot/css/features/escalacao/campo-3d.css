@@ -1,6 +1,5 @@
 /* Escalação: campo em 3D
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 /* =====================================================================
    Campo em 3D: o gramado inclina, os jogadores ficam em pé sobre ele
    em profundidade estática, sem reagir ao mouse
@@ -14,90 +13,80 @@
     padding: 1rem 0 .8rem;
 }
 
-    /* fundo distante: refletores que andam no sentido contrário (paralaxe) */
-    .campo-cena::before {
-        content: "";
-        position: absolute;
-        inset: -4% -6% 0;
-        z-index: 0;
-        background: radial-gradient(ellipse 40% 34% at calc(22% + var(--px, 0) * -6%) 4%, rgba(255,255,210,.22), transparent 70%), radial-gradient(ellipse 40% 34% at calc(78% + var(--px, 0) * -6%) 4%, rgba(255,255,210,.22), transparent 70%);
-        pointer-events: none;
-    }
+/* fundo distante: refletores que andam no sentido contrário (paralaxe) */
+.campo-cena::before {
+    content: "";
+    position: absolute;
+    inset: -4% -6% 0;
+    z-index: 0;
+    background: radial-gradient(ellipse 40% 34% at calc(22% + var(--px, 0) * -6%) 4%, rgba(255,255,210,.22), transparent 70%), radial-gradient(ellipse 40% 34% at calc(78% + var(--px, 0) * -6%) 4%, rgba(255,255,210,.22), transparent 70%);
+    pointer-events: none;
+}
 
-    /* sombra no chão: anda mais que o campo */
-    .campo-cena::after {
-        content: "";
-        position: absolute;
-        left: 10%;
-        right: 10%;
-        bottom: .2rem;
-        height: 6%;
-        z-index: 0;
-        background: radial-gradient(ellipse, rgba(0,0,0,.6), transparent 70%);
-        filter: blur(7px);
-        transform: translateX(calc(var(--px, 0) * 22px));
-        pointer-events: none;
-    }
+/* sombra no chão: anda mais que o campo */
+.campo-cena::after {
+    content: "";
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    bottom: .2rem;
+    height: 6%;
+    z-index: 0;
+    background: radial-gradient(ellipse, rgba(0,0,0,.6), transparent 70%);
+    filter: blur(7px);
+    transform: translateX(calc(var(--px, 0) * 22px));
+    pointer-events: none;
+}
 
-    .campo-cena .campo {
-        z-index: 1;
-        overflow: visible;
-        clip-path: none;
-        border-radius: 10px;
-        transform-style: preserve-3d;
-        transform-origin: 50% 100%;
-        transform: rotateX(var(--tilt));
-        box-shadow: 0 30px 40px -18px rgba(0,0,0,.65);
-    }
+.campo-cena .campo {
+    z-index: 1;
+    overflow: visible;
+    clip-path: none;
+    border-radius: 10px;
+    transform-style: preserve-3d;
+    transform-origin: 50% 100%;
+    transform: rotateX(var(--tilt));
+    box-shadow: 0 30px 40px -18px rgba(0,0,0,.65);
+}
 
-    /* os elementos intermediários precisam manter o 3D para os cartões "saírem" do gramado
+/* os elementos intermediários precisam manter o 3D para os cartões "saírem" do gramado
    e para a base da posição (.slot-marca) ficar deitada no gramado */
-    .campo-cena .campo-slots,
-    .campo-cena .linha,
-    .campo-cena .linha-base,
-    .campo-cena .base-tec,
-    .campo-cena .base-gol,
-    .campo-cena .slot {
-        transform-style: preserve-3d;
-    }
+.campo-cena .campo-slots,
+.campo-cena .linha,
+.campo-cena .linha-base,
+.campo-cena .base-tec,
+.campo-cena .base-gol,
+.campo-cena .slot {
+    transform-style: preserve-3d;
+}
 
-    .campo-cena .campo-svg {
-        border-radius: 10px;
-    }
+.campo-cena .campo-svg { border-radius: 10px; }
 
-    /* cada jogador fica em pé (desfaz a inclinação do gramado) e levantado do chão */
-    .campo-cena .slot {
-        transform-origin: 50% 100%;
-        transform: translateZ(26px) rotateX(calc(var(--tilt) * -1));
-    }
+/* cada jogador fica em pé (desfaz a inclinação do gramado) e levantado do chão */
+.campo-cena .slot {
+    transform-origin: 50% 100%;
+    transform: translateZ(26px) rotateX(calc(var(--tilt) * -1));
+}
 
-        /* sem sombrinha desfocada sob os cartões (o desfoque deixava o cartão mole) */
-        .campo-cena .slot::before {
-            display: none;
-        }
+/* sem sombrinha desfocada sob os cartões (o desfoque deixava o cartão mole) */
+.campo-cena .slot::before { display: none; }
 
-    /* na tela de escalar o campo inclina menos, para os toques ficarem fáceis */
-
-    /* Escalar: sem brilho de holofote atrás do campo */
-
-    /* Escalar: campo e cartões nítidos (sem blur) e campo mais inclinado */
-
-    /* sombra borrada do chão removida */
-
-    /* sombrinha sob o cartão, sem desfoque */
-
-    /* Escalar: fundo do campo (parte de trás) mais largo: perspectiva mais suave, mesma inclinação */
-
-    /* =====================================================================
+/* na tela de escalar o campo inclina menos, para os toques ficarem fáceis */
+/* Escalar: sem brilho de holofote atrás do campo */
+/* Escalar: campo e cartões nítidos (sem blur) e campo mais inclinado */
+/* sombra borrada do chão removida */
+/* sombrinha sob o cartão, sem desfoque */
+/* Escalar: fundo do campo (parte de trás) mais largo: perspectiva mais suave, mesma inclinação */
+/* =====================================================================
    Cartões realmente nítidos: o translateZ dos cartões ampliava a camada 3D
    (perspectiva) e o navegador reamostrava o desenho e o texto, embaçando.
    Sem o recuo em Z o cartão é desenhado no tamanho real.
    ===================================================================== */
-    .campo-cena .campo .slot,
-    .dash-campo .campo-cena .campo .slot {
-        transform: rotateX(calc(var(--tilt) * -1)) !important;
-        will-change: auto !important;
-    }
+.campo-cena .campo .slot,
+.dash-campo .campo-cena .campo .slot {
+    transform: rotateX(calc(var(--tilt) * -1)) !important;
+    will-change: auto !important;
+}
 
 /* =====================================================================
    Modelo: o campo tem UMA largura (--campo-w) e todo o resto nasce dela:
@@ -112,64 +101,72 @@
    mude só as variáveis do primeiro bloco (ou sobrescreva-as na página).
    ===================================================================== */
 :is(.pagina.escalar, .dash-campo) {
-    --razao-campo: 1.5; /* altura ÷ largura do gramado (o SVG do campo é 300 x 450); menor = campo mais largo */
+    --razao-campo: 1.5;
+    /* altura ÷ largura do gramado (o SVG do campo é 300 x 450); menor = campo mais largo */
     --inclinacao: 32deg;
-    --fator-cartao: .125; /* largura máxima do cartão ÷ largura do campo (com 4 fileiras); --linhas maior reduz */
-    --perspectiva: 2.4; /* distância da câmera, em larguras do campo */
-    --ponto-fuga: .4; /* altura do ponto de fuga no campo (0 = topo, 1 = base) */
-    --sobe: .30; /* quanto a inclinação deixa vazio acima do estádio, em larguras do campo */
-    --desce: .06; /* quanto o estádio passa da base do gramado, em larguras do campo */
-    --vao-campo: 1rem; /* espaço entre o estádio e o que vem depois (botão) */
+    --fator-cartao: .125;
+    /* largura máxima do cartão ÷ largura do campo (com 4 fileiras); --linhas maior reduz */
+    --perspectiva: 2.4;
+    /* distância da câmera, em larguras do campo */
+    --ponto-fuga: .4;
+    /* altura do ponto de fuga no campo (0 = topo, 1 = base) */
+    --sobe: .30;
+    /* quanto a inclinação deixa vazio acima do estádio, em larguras do campo */
+    --desce: .06;
+    /* quanto o estádio passa da base do gramado, em larguras do campo */
+    --vao-campo: 1rem;
+    /* espaço entre o estádio e o que vem depois (botão) */
 }
 
-    /* a cena é só a área reservada; quem mede o campo é ela (container) */
-    :is(.pagina.escalar, .dash-campo) .campo-cena {
-        --tilt: var(--inclinacao);
-        container-type: inline-size;
-        perspective: none; /* a perspectiva vai na transformação do campo, proporcional à largura dele */
-        padding: 0;
-        margin: 0 0 var(--vao-campo);
-    }
+/* a cena é só a área reservada; quem mede o campo é ela (container) */
+:is(.pagina.escalar, .dash-campo) .campo-cena {
+    --tilt: var(--inclinacao);
+    container-type: inline-size;
+    perspective: none;
+    /* a perspectiva vai na transformação do campo, proporcional à largura dele */
+    padding: 0;
+    margin: 0 0 var(--vao-campo);
+}
 
-        /* campo e cartões nítidos: sem holofote, sem sombra no chão, sem sombrinha sob o cartão */
-        :is(.pagina.escalar, .dash-campo) .campo-cena::before,
-        :is(.pagina.escalar, .dash-campo) .campo-cena::after,
-        :is(.pagina.escalar, .dash-campo) .campo-cena .slot::before {
-            display: none;
-        }
+/* campo e cartões nítidos: sem holofote, sem sombra no chão, sem sombrinha sob o cartão */
+:is(.pagina.escalar, .dash-campo) .campo-cena::before,
+:is(.pagina.escalar, .dash-campo) .campo-cena::after,
+:is(.pagina.escalar, .dash-campo) .campo-cena .slot::before {
+    display: none;
+}
 
-        :is(.pagina.escalar, .dash-campo) .campo-cena .campo {
-            /* cabe na coluna junto com a folga lateral do estádio */
-            --campo-w: calc(100cqw / (1 + 2 * var(--estadio-sobra-x)));
-            /* NITIDEZ: o campo é desenhado com --ss vezes mais pixels (cartões, fotos e textos inclusive) e depois
+:is(.pagina.escalar, .dash-campo) .campo-cena .campo {
+    /* cabe na coluna junto com a folga lateral do estádio */
+    --campo-w: calc(100cqw / (1 + 2 * var(--estadio-sobra-x)));
+    /* NITIDEZ: o campo é desenhado com --ss vezes mais pixels (cartões, fotos e textos inclusive) e depois
        reduzido por scale(1/--ss). Com perspectiva o navegador desenha a camada no tamanho de layout e só então a
        deforma; desenhada no tamanho real e reamostrada, ela embaça. Desenhada maior e reduzida, fica nítida.
        --ss: 1 desliga o efeito e volta exatamente ao desenho anterior. */
-            --ss: 2;
-            --slot: calc(var(--campo-w) * var(--ss) * min(var(--fator-cartao), calc(.5 / var(--linhas, 4))));
-            --alt-w: calc(var(--campo-w) * var(--ss) * var(--razao-campo));
-            width: calc(var(--campo-w) * var(--ss));
-            max-width: none;
-            aspect-ratio: 1 / var(--razao-campo);
-            /* a inclinação desce o topo e o estádio passa da base: a caixa reserva só o que se vê.
+    --ss: 2;
+    --slot: calc(var(--campo-w) * var(--ss) * min(var(--fator-cartao), calc(.5 / var(--linhas, 4))));
+    --alt-w: calc(var(--campo-w) * var(--ss) * var(--razao-campo));
+    width: calc(var(--campo-w) * var(--ss));
+    max-width: none;
+    aspect-ratio: 1 / var(--razao-campo);
+    /* a inclinação desce o topo e o estádio passa da base: a caixa reserva só o que se vê.
        Com a caixa --ss vezes maior, o topo sobe o que sobra de altura e as laterais centralizam na cena */
-            margin: calc(var(--campo-w) * -1 * (var(--razao-campo) * (var(--ss) - 1) + var(--sobe))) calc((100cqw - var(--campo-w) * var(--ss)) / 2) calc(var(--campo-w) * var(--desce));
-            box-shadow: none;
-            transform-origin: 50% 100%;
-            /* reduz de volta ao tamanho real, depois gira pela base, com o ponto de fuga em --ponto-fuga da altura */
-            transform: scale(calc(1 / var(--ss))) translateY(calc(var(--alt-w) * (var(--ponto-fuga) - 1))) perspective(calc(var(--campo-w) * var(--ss) * var(--perspectiva))) translateY(calc(var(--alt-w) * (1 - var(--ponto-fuga)))) rotateX(var(--tilt));
-        }
+    margin: calc(var(--campo-w) * -1 * (var(--razao-campo) * (var(--ss) - 1) + var(--sobe))) calc((100cqw - var(--campo-w) * var(--ss)) / 2) calc(var(--campo-w) * var(--desce));
+    box-shadow: none;
+    transform-origin: 50% 100%;
+    /* reduz de volta ao tamanho real, depois gira pela base, com o ponto de fuga em --ponto-fuga da altura */
+    transform: scale(calc(1 / var(--ss))) translateY(calc(var(--alt-w) * (var(--ponto-fuga) - 1))) perspective(calc(var(--campo-w) * var(--ss) * var(--perspectiva))) translateY(calc(var(--alt-w) * (1 - var(--ponto-fuga)))) rotateX(var(--tilt));
+}
 
 /* computador: a página dá uma altura à cena e o campo cabe nela (largura OU altura, o que for menor) */
 @media (min-width: 900px) {
     :is(.pagina.escalar, .dash-campo) .campo-cena {
-        container-type: size; /* aqui a altura também é medida (ela não depende do conteúdo) */
+        container-type: size;
+        /* aqui a altura também é medida (ela não depende do conteúdo) */
         display: flex;
         justify-content: center;
         align-items: center;
     }
-
-        :is(.pagina.escalar, .dash-campo) .campo-cena .campo {
-            --campo-w: min(calc(100cqw / (1 + 2 * var(--estadio-sobra-x))), calc(100cqh / (var(--razao-campo) - var(--sobe) + var(--desce))));
-        }
+    :is(.pagina.escalar, .dash-campo) .campo-cena .campo {
+        --campo-w: min(calc(100cqw / (1 + 2 * var(--estadio-sobra-x))), calc(100cqh / (var(--razao-campo) - var(--sobe) + var(--desce))));
+    }
 }

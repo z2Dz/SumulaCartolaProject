@@ -14,6 +14,11 @@
         <button type="button" role="tab" class="@(porTorcida ? "sel" : "")" @onclick="() => porTorcida = true">Torcida</button>
     </div>
 
+    @if (!string.IsNullOrEmpty(avisoSync))
+    {
+        <p class="erro" role="status">@avisoSync</p>
+    }
+
     @if (carregando)
     {
         <p class="suave centro">Carregando…</p>
@@ -109,14 +114,14 @@
                 </li>
             }
         </ol>
-        <p class="suave centro rk-nota">Toque num time para ver a escalação dele. Pontos e torcida são atualizados quando o dono abre o app depois da rodada.</p>
+        <p class="suave centro rk-nota">Toque num time para ver a escalação dele. Pontos e torcida de todos os times são atualizados ao abrir o ranking. Só conta a rodada de quem salvou a escalação antes da partida.</p>
     }
 </div>
 
 @code {
     private List<LinhaRankingClube> linhas = new();
     private bool carregando = true, porTorcida;
-    private string? erro;
+    private string? erro, avisoSync;
 
     // escalação aberta embaixo de um time
     private string? abertoId, carregandoId;
@@ -180,10 +185,20 @@
     private async Task Carregar()
     {
         carregando = true;
-        erro = null;
+        erro = avisoSync = null;
         try
         {
-            try { await Torcidas.CarregarAsync(); } catch (ErroTorcidaException) { }   // atualiza o seu time antes de listar
+            // atualiza todos os times antes de listar; se falhar, atualiza só o seu e avisa
+            try
+            {
+                await Torcidas.SincronizarTodosAsync();
+                await Torcidas.CarregarAsync(false);   // só lê o resumo do seu time (menu lateral)
+            }
+            catch (ErroTorcidaException ex)
+            {
+                avisoSync = "Não consegui atualizar os pontos de todos os times: " + ex.Message;
+                try { await Torcidas.CarregarAsync(); } catch (ErroTorcidaException) { }
+            }
             linhas = await Torcidas.RankingAsync();
         }
         catch (ErroTorcidaException ex) { erro = ex.Message; }

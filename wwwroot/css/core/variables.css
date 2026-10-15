@@ -1,13 +1,12 @@
 /* Variáveis (:root)
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 :root {
     --amarelo: #f5c518;
     --erro: #b3261e;
 }
 
 @media (prefers-color-scheme: dark) {
-:root {
+    :root {
         --fundo: #0e1512;
         --cartao: #17211c;
         --texto: #e8efeb;

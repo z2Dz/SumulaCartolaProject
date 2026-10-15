@@ -1,6 +1,5 @@
 /* Meu clube
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 /* Resumo em números, logo abaixo do cartão da torcida */
 .clube-resumo {
     display: grid;
@@ -19,16 +18,11 @@
     min-width: 0;
 }
 
-    .clube-stat strong {
-        font-size: 1.35rem;
-        line-height: 1.1;
-        color: var(--amarelo);
-    }
-
-    .clube-stat small {
-        opacity: .75;
-    }
-
-.clube-stat-larga {
-    grid-column: 1 / -1;
+.clube-stat strong {
+    font-size: 1.35rem;
+    line-height: 1.1;
+    color: var(--amarelo);
 }
+
+.clube-stat small { opacity: .75; }
+.clube-stat-larga { grid-column: 1 / -1; }

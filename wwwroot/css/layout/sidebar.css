@@ -1,6 +1,5 @@
 /* Menu lateral (computador)
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
-
 /* menu lateral */
 .lateral {
     position: sticky;
@@ -34,9 +33,9 @@
 }
 
 .lateral-nav a:hover {
-            background: rgba(255,255,255,.05);
-            color: var(--texto);
-        }
+    background: rgba(255,255,255,.05);
+    color: var(--texto);
+}
 
 .lateral-rodape {
     margin-top: auto;
@@ -77,9 +76,7 @@
 }
 
 /* Celular: o botão do cabeçalho vira a pílula "Sair" (ícone + texto), igual ao botão do menu lateral */
-.perfil-btn .pb-mob {
-    display: none;
-}
+.perfil-btn .pb-mob { display: none; }
 
 /* Submenu do Admin no menu lateral (computador) */
 .lateral-sub {

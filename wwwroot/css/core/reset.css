@@ -1,11 +1,9 @@
 /* Reset: html, body e links
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
+* { box-sizing: border-box; }
 
-* {
-    box-sizing: border-box;
-}
-
-html, body {
+html,
+body {
     height: 100%;
     margin: 0;
 }
@@ -29,18 +27,11 @@ body {
     z-index: 1000;
 }
 
-body {
-    background: radial-gradient(circle at 0% 100%, rgba(25,201,138,.16), transparent 38%), var(--fundo);
-}
-
-a {
-    color: var(--acento);
-}
+body { background: radial-gradient(circle at 0% 100%, rgba(25,201,138,.16), transparent 38%), var(--fundo); }
+a { color: var(--acento); }
 
 /* ===== Fundo da página: estádio à noite ===== */
-html {
-    background: #020805;
-}
+html { background: #020805; }
 
 body {
     background-color: #020805;
@@ -52,32 +43,24 @@ body {
 }
 
 @media (max-width: 899px) {
-/* celulares (principalmente iOS) não respeitam "fixed": usa camada fixa */
-body {
-        background-attachment: scroll;
+    /* celulares (principalmente iOS) não respeitam "fixed": usa camada fixa */
+    body { background-attachment: scroll; }
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background: linear-gradient(rgba(2,8,5,.35), rgba(2,8,5,.55)), url("../../img/fundo-estadio.jpg") center bottom / cover no-repeat;
     }
-
-body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            z-index: -1;
-            background: linear-gradient(rgba(2,8,5,.35), rgba(2,8,5,.55)), url("../../img/fundo-estadio.jpg") center bottom / cover no-repeat;
-        }
-
-body {
-        background-image: none;
-    }
+    body { background-image: none; }
 }
 
 @media print {
-html, body {
+    html,
+body {
         height: auto !important;
         overflow: visible !important;
         background: var(--branco) !important;
     }
-
-body * {
-            visibility: hidden;
-        }
+    body * { visibility: hidden; }
 }

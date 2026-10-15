@@ -35,6 +35,13 @@ public class ServicoTorcida(Supabase.Client supabase)
         catch (Exception ex) { throw new ErroTorcidaException(Traduzir(ex.Message, funcao)); }
     }
 
+    /// <summary>Fecha as rodadas finalizadas de todos os times (ranking_sincronizar_todos.sql). Cada time só conta se a escalação foi salva antes da partida.</summary>
+    public async Task SincronizarTodosAsync()
+    {
+        try { await supabase.Rpc("torcida_sincronizar_todos", new Dictionary<string, object>()); }
+        catch (Exception ex) { throw new ErroTorcidaException(Traduzir(ex.Message, "torcida_sincronizar_todos")); }
+    }
+
     /// <summary>Usado antes de salvar uma nova escalação: trava as rodadas já finalizadas com a escalação antiga.</summary>
     public async Task SincronizarSilenciosoAsync()
     {
@@ -117,7 +124,7 @@ public class ServicoTorcida(Supabase.Client supabase)
 
         if (texto.Contains(funcao, StringComparison.OrdinalIgnoreCase)
             && (texto.Contains("not find", StringComparison.OrdinalIgnoreCase) || texto.Contains("does not exist", StringComparison.OrdinalIgnoreCase)))
-            return "A função " + funcao + " não existe no banco. Rode o arquivo " + (funcao is "meus_cards" or "salvar_cards" ? "32_cards.sql" : funcao == "personalizacao_do_usuario" ? "33_personalizacao_ranking.sql" : "15_torcida.sql") + " no SQL Editor do Supabase.";
+            return "A função " + funcao + " não existe no banco. Rode o arquivo " + (funcao is "meus_cards" or "salvar_cards" ? "32_cards.sql" : funcao == "torcida_sincronizar_todos" ? "ranking_sincronizar_todos.sql" : funcao == "personalizacao_do_usuario" ? "33_personalizacao_ranking.sql" : "15_torcida.sql") + " no SQL Editor do Supabase.";
         return texto;
     }
 }
