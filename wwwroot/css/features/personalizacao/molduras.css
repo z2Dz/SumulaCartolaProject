@@ -7,41 +7,86 @@
     color: var(--branco);
 }
 
-/* miniatura em formato de cartão (lista de atletas) */
-.foto-carta {
+/* miniatura redonda do atleta (listas): foto com aro branco, como no campo */
+.foto-redonda {
     flex: none;
     display: block;
-    overflow: visible;
+    box-sizing: border-box;
+    width: var(--d);
+    height: var(--d);
+    border: calc(var(--d) * .06) solid var(--branco);
+    border-radius: 50%;
+    background: var(--branco);
+    object-fit: cover;
+    object-position: center top;
+    overflow: hidden;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,.45));
 }
 
-.fc-forma {
-    fill: #f4f4f0;
-    stroke: var(--amarelo);
-    stroke-width: 3px;
-    stroke-linejoin: round;
-    vector-effect: non-scaling-stroke;
+/* sem foto: silhueta da posição dentro do círculo */
+.foto-redonda-sil {
+    display: grid;
+    place-items: end center;
+    color: #8d9692;
 }
 
-.fc-contorno {
-    fill: none;
-    stroke: var(--amarelo);
-    stroke-width: 3px;
-    stroke-linejoin: round;
-    vector-effect: non-scaling-stroke;
+    .foto-redonda-sil svg {
+        width: 100%;
+        height: 100%;
+        fill: currentColor;
+    }
+
+/* segurar a foto: sem menu de imagem nem seleção, e cursor de lupa */
+img.foto-redonda {
+    cursor: zoom-in;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
-.fc-linha {
-    fill: none;
-    stroke: var(--preto-suave);
-    stroke-width: 1px;
-    stroke-linejoin: round;
-    vector-effect: non-scaling-stroke;
-    opacity: .85;
+/* foto ampliada enquanto a foto da lista está sendo segurada */
+.foto-zoom {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .8rem;
+    padding: 1.2rem;
+    background: rgba(0,0,0,.78);
+    pointer-events: none;
+    animation: foto-zoom-entra .15s ease-out;
 }
 
-.fc-sil {
-    fill: rgba(20,20,20,.78);
+    .foto-zoom img {
+        max-width: min(88vw, 520px);
+        max-height: 72dvh;
+        object-fit: contain;
+        border-radius: 18px;
+        box-shadow: 0 12px 40px rgba(0,0,0,.6);
+        background: #fff;
+    }
+
+.foto-zoom-nome {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--texto, #fff);
+    text-shadow: 0 2px 6px rgba(0,0,0,.8);
+}
+
+@keyframes foto-zoom-entra {
+    from {
+        opacity: 0;
+        transform: scale(.94);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 @keyframes brilho-ouro {

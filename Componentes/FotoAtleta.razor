@@ -1,32 +1,79 @@
-@* Miniatura do atleta no formato do cartão do campo: foto recortada pela forma, ou a silhueta da posição. *@
-<svg class="foto-carta" viewBox="-2 -2 104 160.6" width="@Tamanho" height="@Altura" aria-hidden="true" focusable="false">
-    @if (!string.IsNullOrWhiteSpace(Atleta.FotoUrl))
-    {
-        <defs><clipPath id="@IdClip"><path d="@Forma" /></clipPath></defs>
-        <path class="fc-forma" d="@Forma" />
-        <image href="@Atleta.FotoUrl" x="0" y="0" width="100" height="156.6" preserveAspectRatio="xMidYMin slice" clip-path="url(#@IdClip)" />
-        <path class="fc-contorno" d="@Forma" />
-    }
-    else
-    {
-        <path class="fc-forma" d="@Forma" />
-        <path class="fc-linha" d="@Forma" transform="translate(3.5 5.5) scale(.93)" />
-        <svg x="8" y="22" width="84" height="84" viewBox="0 0 100 100">
-            <path class="fc-sil" fill-rule="evenodd" d="@SilhuetasAtleta.Caminho(Sigla, Atleta.Nome)" />
+@implements IDisposable
+@* Miniatura redonda do atleta (listas): foto com aro branco, igual à do campo, ou a silhueta da posição.
+   Segurar a foto (mouse ou toque) amplia ela na tela; soltar fecha. Vale em todas as listas que usam este componente. *@
+@if (!string.IsNullOrWhiteSpace(Atleta.FotoUrl))
+{
+    <img class="foto-redonda" style="--d:@(Diametro)px" src="@Atleta.FotoUrl" alt="" aria-hidden="true" draggable="false"
+         @onpointerdown="Segurar" @onpointerup="Soltar" @onpointerleave="Soltar" @onpointercancel="Soltar"
+         @oncontextmenu="Ignorar" @oncontextmenu:preventDefault="true" @onclick:stopPropagation="@suprimirClique" />
+}
+else
+{
+    <span class="foto-redonda foto-redonda-sil" style="--d:@(Diametro)px" aria-hidden="true">
+        <svg viewBox="0 0 100 100" focusable="false">
+            <path fill-rule="evenodd" d="@SilhuetasAtleta.Caminho(Sigla, Atleta.Nome)" />
         </svg>
-    }
-</svg>
+    </span>
+}
+@if (ampliada)
+{
+    <span class="foto-zoom" aria-hidden="true">
+        <img src="@Atleta.FotoUrl" alt="" />
+        <span class="foto-zoom-nome">@Atleta.Nome</span>
+    </span>
+}
 
 @code {
-    private const string Forma = "M50 0 L46.3 4 L43.2 5.7 L40.1 5.2 L37.7 2.4 L33.9 2.8 L29.8 4.3 L23.1 8.3 L8.3 19.1 L0.2 22.3 L0 86.9 L0.2 133.1 L1.4 136.1 L3.4 137.9 L6.6 139.4 L24.7 144.8 L35 148.5 L42.6 151.9 L50 156.5 L57.4 151.9 L65 148.5 L75.3 144.8 L93.4 139.4 L96.6 137.9 L98.6 136.1 L99.8 133.1 L100 86.9 L99.8 22.3 L91.7 19.1 L76.9 8.3 L70.2 4.3 L66.1 2.8 L62.3 2.4 L59.9 5.2 L56.8 5.7 L53.7 4 Z";
-
     [Parameter, EditorRequired] public AtletaEscalavel Atleta { get; set; } = default!;
-    /// <summary>Largura em px; a altura segue a proporção do cartão (100 : 156,6).</summary>
+    /// <summary>Tamanho de referência em px (antes era a largura do cartão); o círculo sai 20% maior para a foto ficar bem visível.</summary>
     [Parameter] public int Tamanho { get; set; } = 46;
     /// <summary>Posição da vaga onde o atleta aparece. Sem ela, vale a primeira posição dele.</summary>
     [Parameter] public PosicaoCampo? Posicao { get; set; }
 
-    private int Altura => (int)Math.Round(Tamanho * 1.566);
-    private string IdClip => "clip-" + Atleta.Id;
+    private const int TempoSegurarMs = 350;
+    private bool ampliada;
+    private bool suprimirClique;   // o clique logo após soltar a foto não deve acionar a linha onde ela está
+    private CancellationTokenSource? segurando;
+
+    private int Diametro => (int)Math.Round(Tamanho * 1.2);
     private string? Sigla => Posicao?.Sigla() ?? (Atleta.Posicoes.Count > 0 ? Atleta.Posicoes[0].Sigla() : null);
+
+    private async Task Segurar(PointerEventArgs e)
+    {
+        if (e.Button != 0) return;
+        CancelarSegurar();
+        suprimirClique = false;
+        var cts = segurando = new CancellationTokenSource();
+        try { await Task.Delay(TempoSegurarMs, cts.Token); }
+        catch (TaskCanceledException) { return; }
+        ampliada = true;
+        suprimirClique = true;
+    }
+
+    private void Soltar()
+    {
+        CancelarSegurar();
+        if (!ampliada) return;
+        ampliada = false;
+        _ = LiberarCliqueDepois();
+    }
+
+    private async Task LiberarCliqueDepois()
+    {
+        await Task.Delay(350);
+        suprimirClique = false;
+        StateHasChanged();
+    }
+
+    // o menu de contexto (segurar no celular / botão direito) cancelaria o toque e fecharia a foto; um handler real garante o preventDefault
+    private void Ignorar() { }
+
+    private void CancelarSegurar()
+    {
+        segurando?.Cancel();
+        segurando?.Dispose();
+        segurando = null;
+    }
+
+    public void Dispose() => CancelarSegurar();
 }

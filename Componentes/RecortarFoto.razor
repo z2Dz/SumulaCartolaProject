@@ -1,0 +1,139 @@
+﻿@using System.Globalization
+@implements IAsyncDisposable
+@inject IJSRuntime Js
+
+@* Janela para enquadrar a foto antes de salvar: arraste para mover e use o zoom.
+   Devolve um JPEG 480x600 (proporção 4:5) já recortado. *@
+<div class="rf-fundo" @onclick="Cancelar"
+     @onpointermove="Mover" @onpointerup="Soltar" @onpointercancel="Soltar">
+    <div class="rf-caixa" role="dialog" aria-modal="true" aria-label="Enquadrar foto" @onclick:stopPropagation="true">
+        <div class="rf-topo">
+            <h3>Enquadrar foto</h3>
+            <button type="button" class="adm-icone" @onclick="Cancelar" aria-label="Fechar">✕</button>
+        </div>
+        <p class="rf-dica">Arraste a foto e use o zoom para deixar o rosto no centro.</p>
+
+        <div class="rf-quadro" style="width:@(W)px;height:@(H)px" @onpointerdown="Pegar" @onpointerdown:preventDefault>
+            @if (pronto)
+            {
+                <img src="@Origem" alt="" draggable="false"
+                     style="width:@F(LarguraImg)px;height:@F(AlturaImg)px;transform:translate(-50%,-50%) translate(@(F(ox))px,@(F(oy))px)" />
+                <span class="rf-grade" aria-hidden="true"></span>
+                <span class="rf-circulo" aria-hidden="true"></span>
+            }
+            else if (falhou)
+            {
+                <span class="rf-msg">Não consegui abrir essa imagem.</span>
+            }
+            else
+            {
+                <span class="rf-msg">Carregando…</span>
+            }
+        </div>
+        <small class="rf-legenda">O círculo mostra como a foto aparece na lista; o quadro inteiro aparece no cartão.</small>
+
+        <label class="rf-zoom">
+            <span>−</span>
+            <input type="range" min="1" max="4" step="0.01" value="@F(zoom)" @oninput="AoZoom" disabled="@(!pronto)" aria-label="Zoom" />
+            <span>+</span>
+        </label>
+
+        @if (!string.IsNullOrEmpty(erro))
+        {
+            <p class="erro">@erro</p>
+        }
+
+        <div class="rf-botoes">
+            <button type="button" class="botao-sec" @onclick="Cancelar">Cancelar</button>
+            <button type="button" class="botao" disabled="@(!pronto || salvando)" @onclick="Confirmar">@(salvando ? "Recortando…" : "Usar esta foto")</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>Imagem de origem como data URL (já reduzida).</summary>
+    [Parameter, EditorRequired] public string Origem { get; set; } = "";
+    [Parameter] public EventCallback<byte[]> OnConfirmar { get; set; }
+    [Parameter] public EventCallback OnCancelar { get; set; }
+
+    // Quadro de enquadramento (4:5) e tamanho do arquivo final
+    private const int W = 280, H = 350, SaidaW = 480, SaidaH = 600;
+
+    private IJSObjectReference? modulo;
+    private double nw, nh, zoom = 1, ox, oy;
+    private bool pronto, falhou, salvando, arrastando;
+    private double ultimoX, ultimoY;
+    private string? erro;
+
+    private double Base => Math.Max(W / nw, H / nh);
+    private double Escala => Base * zoom;
+    private double LarguraImg => nw * Escala;
+    private double AlturaImg => nh * Escala;
+
+    private static string F(double v) => v.ToString("0.####", CultureInfo.InvariantCulture);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modulo = await Js.InvokeAsync<IJSObjectReference>("import", "./js/foto.js");
+            var d = await modulo.InvokeAsync<double[]>("medir", Origem);
+            if (d.Length == 2 && d[0] > 0 && d[1] > 0) { nw = d[0]; nh = d[1]; pronto = true; }
+            else falhou = true;
+        }
+        catch { falhou = true; }
+    }
+
+    private void Limitar()
+    {
+        var mx = Math.Max(0, (LarguraImg - W) / 2);
+        var my = Math.Max(0, (AlturaImg - H) / 2);
+        ox = Math.Clamp(ox, -mx, mx);
+        oy = Math.Clamp(oy, -my, my);
+    }
+
+    private void Pegar(PointerEventArgs e)
+    {
+        if (!pronto) return;
+        arrastando = true; ultimoX = e.ClientX; ultimoY = e.ClientY;
+    }
+
+    private void Mover(PointerEventArgs e)
+    {
+        if (!arrastando) return;
+        ox += e.ClientX - ultimoX; oy += e.ClientY - ultimoY;
+        ultimoX = e.ClientX; ultimoY = e.ClientY;
+        Limitar();
+    }
+
+    private void Soltar() => arrastando = false;
+
+    private void AoZoom(ChangeEventArgs e)
+    {
+        if (!double.TryParse(e.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var z)) return;
+        zoom = Math.Clamp(z, 1, 4);
+        Limitar();
+    }
+
+    private async Task Confirmar()
+    {
+        erro = null; salvando = true;
+        try
+        {
+            var sw = W / Escala; var sh = H / Escala;
+            var sx = nw / 2 - ox / Escala - sw / 2;
+            var sy = nh / 2 - oy / Escala - sh / 2;
+            var b64 = await modulo!.InvokeAsync<string>("recortar", Origem, sx, sy, sw, sh, SaidaW, SaidaH);
+            await OnConfirmar.InvokeAsync(Convert.FromBase64String(b64));
+        }
+        catch { erro = "Não consegui recortar a foto. Tente outra imagem."; }
+        salvando = false;
+    }
+
+    private Task Cancelar() => OnCancelar.InvokeAsync();
+
+    public async ValueTask DisposeAsync()
+    {
+        if (modulo is not null) await modulo.DisposeAsync();
+    }
+}

@@ -102,6 +102,8 @@ public class AtletaResumo
     public string Nome { get; set; } = "";
     public string? FotoUrl { get; set; }
     public List<string> Posicoes { get; set; } = new();
+    /// <summary>Aparece no mercado do Cartola. Só vem preenchido por admin_atletas_todos; nas outras listas fica true.</summary>
+    public bool Ativo { get; set; } = true;
 
     public string PosicoesTexto => string.Join(" · ", Posicoes);
 }

@@ -722,3 +722,279 @@
         /* a dica solta embaixo da súmula tomaria altura da lista */
     }
 }
+
+/* ===== Recorte de foto (RecortarFoto.razor) ===== */
+.rf-fundo {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    background: rgba(0,0,0,.72);
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+}
+
+.rf-caixa {
+    width: min(100%, 360px);
+    max-height: 96dvh;
+    overflow: auto;
+    scrollbar-width: none;
+    background: #10201a;
+    border: 1px solid rgba(25,201,138,.45);
+    border-radius: 16px;
+    padding: 1rem;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .6rem;
+}
+
+    .rf-caixa::-webkit-scrollbar {
+        display: none;
+    }
+
+.rf-topo {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+    .rf-topo h3 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+.rf-dica {
+    margin: 0;
+    font-size: .85rem;
+    opacity: .8;
+    align-self: flex-start;
+}
+
+.rf-quadro {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #000;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+    flex: none;
+}
+
+    .rf-quadro:active {
+        cursor: grabbing;
+    }
+
+    .rf-quadro img {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        max-width: none;
+        pointer-events: none;
+    }
+
+.rf-grade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to right, transparent 33.1%, rgba(255,255,255,.35) 33.3%, transparent 33.6%, transparent 66.4%, rgba(255,255,255,.35) 66.6%, transparent 66.9%), linear-gradient(to bottom, transparent 33.1%, rgba(255,255,255,.35) 33.3%, transparent 33.6%, transparent 66.4%, rgba(255,255,255,.35) 66.6%, transparent 66.9%);
+}
+
+.rf-circulo {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 80%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border: 2px dashed rgba(255,255,255,.85);
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 0 999px rgba(0,0,0,.35);
+}
+
+.rf-msg {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: .9rem;
+    opacity: .8;
+}
+
+.rf-legenda {
+    opacity: .65;
+    text-align: center;
+}
+
+.rf-zoom {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-size: 1.3rem;
+}
+
+    .rf-zoom input {
+        flex: 1;
+        accent-color: #19c98a;
+    }
+
+.rf-botoes {
+    width: 100%;
+    display: flex;
+    gap: .5rem;
+    justify-content: flex-end;
+}
+
+/* ===== Seletor de foto (SeletorFoto.razor) ===== */
+.sf {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    flex-wrap: wrap;
+}
+
+.sf-acoes {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+}
+
+/* ===== Lista de atletas (AdminAtletas.razor) ===== */
+.atl-painel {
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+}
+
+/* Tela encaixada na janela: só a lista de atletas rola (.fixa + layout em responsive.css) */
+.pagina.atl.fixa {
+    max-width: 1000px;
+    padding-bottom: .6rem;
+}
+
+    .pagina.atl.fixa > .atl-painel {
+        flex: 1 1 0;
+        min-height: 0;
+        margin-bottom: 0;
+    }
+
+@media (max-width: 899px) {
+    .shell:has(.atl) {
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+        .shell:has(.atl) .principal {
+            height: 100dvh;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .shell:has(.atl) .conteudo {
+            flex: 1;
+            min-height: 0;
+        }
+}
+
+.atl-filtros {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+}
+
+.atl-seg {
+    display: flex;
+    gap: .3rem;
+    flex-wrap: wrap;
+}
+
+    .atl-seg button {
+        flex: 1 1 auto;
+        border: 1px solid rgba(255,255,255,.18);
+        background: rgba(255,255,255,.05);
+        color: inherit;
+        border-radius: 999px;
+        padding: .45rem .8rem;
+        font: inherit;
+        font-size: .85rem;
+        cursor: pointer;
+    }
+
+        .atl-seg button.on {
+            background: #19c98a;
+            border-color: #19c98a;
+            color: #06231a;
+            font-weight: 700;
+        }
+
+.atl-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0 .3rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(25,201,138,.55) transparent;
+}
+
+.atl-item {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .5rem .6rem;
+    border-radius: 12px;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(25,201,138,.25);
+}
+
+    .atl-item.inativo {
+        opacity: .65;
+        border-color: rgba(255,255,255,.12);
+    }
+
+.atl-nome {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+    .atl-nome strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .atl-nome small {
+        opacity: .7;
+    }
+
+.atl-ativo {
+    border: 1px solid rgba(255,255,255,.25);
+    background: transparent;
+    color: inherit;
+    border-radius: 999px;
+    padding: .3rem .75rem;
+    font: inherit;
+    font-size: .78rem;
+    cursor: pointer;
+}
+
+    .atl-ativo.on {
+        background: rgba(25,201,138,.2);
+        border-color: #19c98a;
+        color: #19c98a;
+        font-weight: 700;
+    }

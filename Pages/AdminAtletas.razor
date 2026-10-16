@@ -1,0 +1,140 @@
+﻿@page "/admin/atletas"
+@attribute [Authorize(Roles = "admin")]
+@inject ServicoSumula Servico
+
+<PageTitle>Atletas · Cartola dos Amigos</PageTitle>
+
+<div class="pagina adm adm2 atl fixa">
+    <header class="adm2-topo">
+        <span class="adm2-hex"><IconeUi Nome="pessoas" Tamanho="30" /></span>
+        <div>
+            <h1>Atletas</h1>
+            <a class="adm2-sub" href="admin">‹ Painel do admin</a>
+            <span class="adm2-traco"></span>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(erro)) { <p class="erro">@erro</p> }
+    @if (!string.IsNullOrEmpty(aviso)) { <p class="adm-ok">@aviso</p> }
+
+    <button type="button" class="adm2-nova" @onclick="() => criando = true">
+        <span class="adm2-nova-meio"><IconeUi Nome="mais" Tamanho="22" /> Novo atleta</span>
+        <IconeUi Nome="seta" Tamanho="22" />
+    </button>
+
+    <section class="adm2-vidro atl-painel">
+        <div class="atl-filtros">
+            <div class="chg2-busca">
+                <IconeUi Nome="lupa" Tamanho="20" />
+                <input type="search" placeholder="Buscar pelo nome ou posição…" @bind="busca" @bind:event="oninput" />
+            </div>
+            <div class="atl-seg" role="tablist" aria-label="Filtro">
+                <button type="button" class="@(filtro == "todos" ? "on" : "")" @onclick='() => filtro = "todos"'>Todos (@atletas.Count)</button>
+                <button type="button" class="@(filtro == "ativos" ? "on" : "")" @onclick='() => filtro = "ativos"'>Ativos (@atletas.Count(a => a.Ativo))</button>
+                <button type="button" class="@(filtro == "inativos" ? "on" : "")" @onclick='() => filtro = "inativos"'>Inativos (@atletas.Count(a => !a.Ativo))</button>
+            </div>
+        </div>
+
+        @if (carregando)
+        {
+            <p class="suave">Carregando…</p>
+        }
+        else if (Filtrados.Count == 0)
+        {
+            <p class="suave">Nenhum atleta encontrado.</p>
+        }
+        else
+        {
+            <ul class="atl-lista">
+                @foreach (var a in Filtrados)
+                {
+                    var atl = a;
+                    <li @key="atl.Id" class="atl-item @(atl.Ativo ? "" : "inativo")">
+                        <FotoJogador Nome="@atl.Nome" FotoUrl="@atl.FotoUrl" Posicoes="@atl.Posicoes" Tamanho="46" />
+                        <div class="atl-nome">
+                            <strong>@atl.Nome</strong>
+                            <small>@(atl.Posicoes.Count == 0 ? "sem posição" : atl.PosicoesTexto)</small>
+                        </div>
+                        <button type="button" class="atl-ativo @(atl.Ativo ? "on" : "")" disabled="@(ocupado == atl.Id)"
+                                title="Ativo no mercado do Cartola" @onclick="() => AlternarAtivo(atl)">
+                            @(atl.Ativo ? "Ativo" : "Inativo")
+                        </button>
+                        <button type="button" class="adm-icone" aria-label="Editar @atl.Nome" title="Editar" @onclick="() => editando = atl">
+                            <IconeUi Nome="lapis" Tamanho="18" />
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+</div>
+
+@if (criando)
+{
+    <EditarAtleta Atleta="null" MostrarAtivo="true" OnSalvo="AoCriado" OnFechar="() => criando = false" />
+}
+@if (editando is not null)
+{
+    <EditarAtleta Atleta="editando" MostrarAtivo="true" OnSalvo="AoEditado" OnFechar="() => editando = null" />
+}
+
+@code {
+    private List<AtletaResumo> atletas = new();
+    private string busca = "", filtro = "todos";
+    private bool carregando = true, criando;
+    private string? erro, aviso;
+    private AtletaResumo? editando;
+    private Guid? ocupado;
+
+    private List<AtletaResumo> Filtrados => atletas
+        .Where(a => filtro == "todos" || (filtro == "ativos") == a.Ativo)
+        .Where(a => string.IsNullOrWhiteSpace(busca)
+                    || a.Nome.Contains(busca.Trim(), StringComparison.OrdinalIgnoreCase)
+                    || a.PosicoesTexto.Contains(busca.Trim(), StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { atletas = await Servico.ListarAtletasTodosAsync(); }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+        carregando = false;
+    }
+
+    private void Ordenar() =>
+        atletas = atletas.OrderBy(a => a.Nome, StringComparer.CurrentCultureIgnoreCase).ToList();
+
+    private void AoCriado(AtletaResumo novo)
+    {
+        atletas.Add(novo);
+        Ordenar();
+        criando = false;
+        erro = null;
+        aviso = $"{novo.Nome} cadastrado ({(novo.Ativo ? "ativo" : "inativo")} no Cartola). Ele não entrou em nenhuma chegada.";
+    }
+
+    private void AoEditado(AtletaResumo novo)
+    {
+        var alvo = atletas.FirstOrDefault(a => a.Id == novo.Id);
+        if (alvo is not null)
+        {
+            alvo.Nome = novo.Nome; alvo.FotoUrl = novo.FotoUrl; alvo.Posicoes = novo.Posicoes; alvo.Ativo = novo.Ativo;
+        }
+        Ordenar();
+        editando = null;
+        erro = null;
+        aviso = $"{novo.Nome} atualizado.";
+    }
+
+    private async Task AlternarAtivo(AtletaResumo a)
+    {
+        erro = aviso = null;
+        ocupado = a.Id;
+        try
+        {
+            await Servico.DefinirAtletaAtivoAsync(a.Id, !a.Ativo);
+            a.Ativo = !a.Ativo;
+        }
+        catch (ErroAdminException ex) { erro = ex.Message; }
+        ocupado = null;
+    }
+}

@@ -92,7 +92,7 @@
                     </ul>
                     @if (Faltando.Count == 0)
                     {
-                        <p class="suave">@(string.IsNullOrWhiteSpace(busca) ? "Todos os atletas já chegaram." : "Nenhum atleta encontrado. Use a aba Registrar novo.")</p>
+                        <p class="suave">@(string.IsNullOrWhiteSpace(busca) ? "Todos os atletas já chegaram." : "Nenhum atleta encontrado. Use a aba Adicionar atleta.")</p>
                     }
                 }
                 else
@@ -114,20 +114,7 @@
                         </div>
 
                         <span class="adm-rotulo">Foto</span>
-                        <div class="adm-foto-form">
-                            @if (fotoPrevia is not null)
-                            {
-                                <img class="foto" src="@fotoPrevia" alt="Prévia" style="width:64px;height:64px" />
-                            }
-                            else
-                            {
-                                <FotoJogador Nome="@(string.IsNullOrWhiteSpace(novoNome) ? "?" : novoNome)" Tamanho="64" />
-                            }
-                            <label class="botao-sec adm-arquivo">
-                                @(fotoPrevia is null ? "Escolher foto" : "Trocar foto")
-                                <InputFile OnChange="AoEscolherFoto" accept="image/*" hidden />
-                            </label>
-                        </div>
+                        <SeletorFoto Nome="@novoNome" Posicoes="@novasPosicoes" Tamanho="64" @bind-Foto="fotoBytes" />
 
                         <div class="cartola-status adm-topo-gap">
                             <div class="cartola-status-info">
@@ -353,7 +340,6 @@
     private HashSet<string> novasPosicoes = new();
     private bool novoAtivo;   // padrão: fora do mercado do Cartola
     private byte[]? fotoBytes;
-    private string? fotoPrevia;
 
     private bool Finalizada => partidas.FirstOrDefault(p => p.Id == partidaId)?.Finalizada == true;
     private bool previa;
@@ -522,27 +508,6 @@
         if (!novasPosicoes.Remove(sigla)) novasPosicoes.Add(sigla);
     }
 
-    private async Task AoEscolherFoto(InputFileChangeEventArgs e)
-    {
-        erro = null;
-        try
-        {
-            // O navegador reduz a foto antes de ler: celular costuma gerar arquivos de vários MB
-            var reduzida = await e.File.RequestImageFileAsync("image/jpeg", 400, 400);
-            using var origem = reduzida.OpenReadStream(2 * 1024 * 1024);
-            using var ms = new MemoryStream();
-            await origem.CopyToAsync(ms);
-            fotoBytes = ms.ToArray();
-            fotoPrevia = "data:image/jpeg;base64," + Convert.ToBase64String(fotoBytes);
-        }
-        catch (Exception)
-        {
-            fotoBytes = null; fotoPrevia = null;
-            erro = "Não consegui ler essa foto. Tente outra imagem.";
-            return;
-        }
-    }
-
     private async Task RegistrarEAdicionar()
     {
         erro = aviso = null;
@@ -562,7 +527,7 @@
             sujo = true;
 
             aviso = $"{novo.Nome} registrado ({(novoAtivo ? "ativo" : "inativo")} no Cartola) e adicionado à chegada. Marque o time e salve.";
-            novoNome = ""; novoAtivo = false; novasPosicoes = new(); fotoBytes = null; fotoPrevia = null;
+            novoNome = ""; novoAtivo = false; novasPosicoes = new(); fotoBytes = null;
             aba = "lista";
         }
         catch (ErroAdminException ex) { erro = ex.Message; }

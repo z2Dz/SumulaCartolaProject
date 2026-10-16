@@ -1,0 +1,92 @@
+﻿@* Escolher foto (câmera ou galeria) -> enquadrar -> entregar o JPEG recortado ao pai.
+   O pai guarda a foto (@bind-Foto); se ele zerar, a prévia some junto. *@
+<div class="sf">
+    @if (Foto is not null)
+    {
+        <img class="foto" src="@Previa" alt="Prévia" style="width:@(Tamanho)px;height:@(Tamanho)px;object-fit:cover" />
+    }
+    else if (!Removida && !string.IsNullOrWhiteSpace(FotoUrlAtual))
+    {
+        <FotoJogador Nome="@NomeOuInterrogacao" FotoUrl="@FotoUrlAtual" Posicoes="@Posicoes" Tamanho="@Tamanho" />
+    }
+    else
+    {
+        <FotoJogador Nome="@NomeOuInterrogacao" Posicoes="@Posicoes" Tamanho="@Tamanho" />
+    }
+
+    <div class="sf-acoes">
+        <label class="botao-sec adm-arquivo">
+            📷 Tirar foto
+            <InputFile OnChange="AoEscolher" accept="image/*" capture="environment" hidden />
+        </label>
+        <label class="botao-sec adm-arquivo">
+            Galeria
+            <InputFile OnChange="AoEscolher" accept="image/*" hidden />
+        </label>
+        @if (Foto is not null || (!Removida && !string.IsNullOrWhiteSpace(FotoUrlAtual)))
+        {
+            <button type="button" class="botao-sec adm-perigo" @onclick="Remover">Remover foto</button>
+        }
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(erro))
+{
+    <p class="erro">@erro</p>
+}
+
+@if (origem is not null)
+{
+    <RecortarFoto Origem="@origem" OnConfirmar="Recortada" OnCancelar="() => origem = null" />
+}
+
+@code {
+    [Parameter] public string Nome { get; set; } = "";
+    [Parameter] public string? FotoUrlAtual { get; set; }
+    [Parameter] public IEnumerable<string>? Posicoes { get; set; }
+    [Parameter] public int Tamanho { get; set; } = 72;
+
+    /// <summary>Foto nova já enquadrada (JPEG). Nulo = sem foto nova.</summary>
+    [Parameter] public byte[]? Foto { get; set; }
+    [Parameter] public EventCallback<byte[]?> FotoChanged { get; set; }
+
+    /// <summary>Verdadeiro quando o usuário removeu a foto que já estava salva.</summary>
+    [Parameter] public bool Removida { get; set; }
+    [Parameter] public EventCallback<bool> RemovidaChanged { get; set; }
+
+    private string? origem, erro;
+
+    private string Previa => "data:image/jpeg;base64," + Convert.ToBase64String(Foto!);
+    private string NomeOuInterrogacao => string.IsNullOrWhiteSpace(Nome) ? "?" : Nome;
+
+    private async Task AoEscolher(InputFileChangeEventArgs e)
+    {
+        erro = null;
+        try
+        {
+            // O navegador reduz antes de ler: câmera de celular gera arquivos de vários MB
+            var reduzida = await e.File.RequestImageFileAsync("image/jpeg", 1400, 1400);
+            using var fluxo = reduzida.OpenReadStream(8 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await fluxo.CopyToAsync(ms);
+            origem = "data:image/jpeg;base64," + Convert.ToBase64String(ms.ToArray());
+        }
+        catch
+        {
+            erro = "Não consegui ler essa foto. Tente outra imagem.";
+        }
+    }
+
+    private async Task Recortada(byte[] bytes)
+    {
+        origem = null;
+        await FotoChanged.InvokeAsync(bytes);
+        await RemovidaChanged.InvokeAsync(false);
+    }
+
+    private async Task Remover()
+    {
+        await FotoChanged.InvokeAsync(null);
+        await RemovidaChanged.InvokeAsync(true);
+    }
+}

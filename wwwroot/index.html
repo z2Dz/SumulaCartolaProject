@@ -28,27 +28,58 @@
         <a class="dismiss">🗙</a>
     </div>
     <script>
-                                // Guarda o aviso de instalação do navegador para o pop-up usar depois do login
-                                var __instalarEvento = null;
-                                window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); __instalarEvento = e; });
-                                window.addEventListener('appinstalled', function () { __instalarEvento = null; localStorage.setItem('app-instalado', '1'); });
+                                        // Guarda o aviso de instalação do navegador para o pop-up usar depois do login
+                                        var __instalarEvento = null;
+                                        window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); __instalarEvento = e; });
+                                        window.addEventListener('appinstalled', function () { __instalarEvento = null; localStorage.setItem('app-instalado', '1'); });
     </script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script>
-                // Atualização do app instalado: a versão nova assume sozinha (skipWaiting no service worker)
-                // e, se isso acontecer logo ao abrir, a página recarrega uma vez para já mostrar a versão nova.
-                // Depois de alguns segundos não recarrega, para não derrubar uma súmula em edição: vale na próxima abertura.
+                // Atualização do app instalado (PWA). A versão nova assume sozinha (skipWaiting no service worker).
+                // - Procura versão nova ao abrir, de hora em hora e sempre que o app volta para a frente
+                //   (app instalado costuma ficar dias aberto em segundo plano e, sem isso, nunca procuraria).
+                // - Quando a versão nova assume: se foi logo ao abrir, recarrega sozinho; se a pessoa já está usando,
+                //   mostra a barra "Nova versão disponível" para ela atualizar quando quiser (não derruba uma súmula em edição).
                 if ('serviceWorker' in navigator) {
                     var __jaTinhaControle = !!navigator.serviceWorker.controller;
                     var __inicio = Date.now();
-                    var __recarregou = false;
-                    navigator.serviceWorker.addEventListener('controllerchange', function () {
-                        if (!__jaTinhaControle || __recarregou || Date.now() - __inicio > 15000) return;
-                        __recarregou = true;
+                    var __recarregando = false;
+                    var __reg = null;
+
+                    var __verificar = function () { if (__reg) __reg.update().catch(function () { }); };
+
+                    var __recarregar = function () {
+                        if (__recarregando) return;
+                        __recarregando = true;
                         location.reload();
+                    };
+
+                    var __avisarNovaVersao = function () {
+                        if (document.getElementById('aviso-atualizacao')) return;
+                        var barra = document.createElement('div');
+                        barra.id = 'aviso-atualizacao';
+                        barra.setAttribute('role', 'status');
+                        barra.setAttribute('style', 'position:fixed;left:.6rem;right:.6rem;top:calc(env(safe-area-inset-top,0px) + .6rem);z-index:9999;display:flex;align-items:center;gap:.6rem;padding:.6rem .8rem;border-radius:12px;background:#0b3d2e;border:1px solid #19c98a;color:#fff;font:600 .9rem sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.5)');
+                        barra.innerHTML = '<span style="flex:1">Nova versão disponível</span>'
+                            + '<button type="button" data-acao="depois" style="background:none;border:0;color:#cfe;font:inherit;padding:.3rem .5rem">Depois</button>'
+                            + '<button type="button" data-acao="atualizar" style="background:#19c98a;border:0;border-radius:8px;color:#04281c;font:inherit;font-weight:800;padding:.4rem .8rem">Atualizar</button>';
+                        barra.querySelector('[data-acao=atualizar]').addEventListener('click', __recarregar);
+                        barra.querySelector('[data-acao=depois]').addEventListener('click', function () { barra.remove(); });
+                        document.body.appendChild(barra);
+                    };
+
+                    navigator.serviceWorker.addEventListener('controllerchange', function () {
+                        if (!__jaTinhaControle) { __jaTinhaControle = true; return; }   // primeira instalação: não há o que recarregar
+                        if (__recarregando) return;
+                        if (Date.now() - __inicio < 15000) __recarregar();
+                        else __avisarNovaVersao();
                     });
+
+                    document.addEventListener('visibilitychange', function () { if (!document.hidden) __verificar(); });
+                    setInterval(__verificar, 60 * 60 * 1000);
+
                     navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' })
-                        .then(function (reg) { reg.update(); });
+                        .then(function (reg) { __reg = reg; __verificar(); });
                 }
     </script>
 </body>

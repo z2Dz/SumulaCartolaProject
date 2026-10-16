@@ -75,6 +75,13 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
     public async Task<List<AtletaResumo>> ListarAtletasAsync() =>
         (await ChamarArrayAsync("admin_atletas")).Select(LerAtleta<AtletaResumo>).ToList();
 
+    /// <summary>Todos os atletas, ativos e inativos (função admin_atletas_todos, migração 36).</summary>
+    public async Task<List<AtletaResumo>> ListarAtletasTodosAsync() =>
+        (await ChamarArrayAsync("admin_atletas_todos")).Select(LerAtleta<AtletaResumo>).ToList();
+
+    public Task DefinirAtletaAtivoAsync(Guid id, bool ativo) =>
+        ChamarAsync("definir_atleta_ativo", new() { ["p_atleta"] = id, ["p_ativo"] = ativo });
+
     public async Task<List<ChegadaItem>> ObterChegadaAsync(Guid partidaId) =>
         (await ChamarArrayAsync("obter_chegada", new() { ["p_partida"] = partidaId }))
             .Select(t =>
@@ -178,12 +185,13 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
                 ?? throw new ErroAdminException("Resposta inesperada ao registrar o atleta.");
         var novo = LerAtleta<AtletaResumo>(t);
         if (!ativo)
-            await ChamarAsync("definir_atleta_ativo", new() { ["p_atleta"] = novo.Id, ["p_ativo"] = false });
+            await DefinirAtletaAtivoAsync(novo.Id, false);
+        novo.Ativo = ativo;
         return novo;
     }
 
-    /// <summary>Edita nome, posições e foto. fotoUrl nula mantém a foto atual, a menos que removerFoto seja true.</summary>
-    public async Task<AtletaResumo> EditarAtletaAsync(Guid id, string nome, IEnumerable<string> posicoes, string? fotoUrl, bool removerFoto)
+    /// <summary>Edita nome, posições e foto. fotoUrl nula mantém a foto atual, a menos que removerFoto seja true. ativo nulo não mexe no mercado.</summary>
+    public async Task<AtletaResumo> EditarAtletaAsync(Guid id, string nome, IEnumerable<string> posicoes, string? fotoUrl, bool removerFoto, bool? ativo = null)
     {
         var p = new Dictionary<string, object>
         {
@@ -196,7 +204,13 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
 
         var t = await ChamarAsync("editar_atleta", p) as JObject
                 ?? throw new ErroAdminException("Resposta inesperada ao editar o atleta.");
-        return LerAtleta<AtletaResumo>(t);
+        var atleta = LerAtleta<AtletaResumo>(t);
+        if (ativo is { } a)
+        {
+            await DefinirAtletaAtivoAsync(id, a);
+            atleta.Ativo = a;
+        }
+        return atleta;
     }
 
     // ----- Ordem de chegada e súmula -----
@@ -284,6 +298,7 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
         Id = Guid.Parse((string)t["id"]!),
         Nome = (string?)t["nome"] ?? "",
         FotoUrl = t["foto_url"]?.Type == JTokenType.Null ? null : (string?)t["foto_url"],
+        Ativo = t["ativo"] is null || t["ativo"]!.Type == JTokenType.Null || (bool)t["ativo"]!,
         Posicoes = (t["posicoes"] as JArray ?? new JArray())
             .Select(x => PosicoesAtleta.Sigla((string?)x)).Where(s => s != "").Distinct().ToList()
     };
