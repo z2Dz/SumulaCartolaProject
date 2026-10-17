@@ -1,6 +1,20 @@
+@implements IDisposable
+@using SumulaCartolaProject.Servicos
+@inject ServicoZoomFoto Zoom
 @if (!string.IsNullOrWhiteSpace(FotoUrl))
 {
-    <img class="foto" src="@FotoUrl" alt="@Nome" style="width:@(Tamanho)px;height:@(Tamanho)px" loading="lazy" />
+    @if (Ampliavel)
+    {
+        @* Segurar a foto (mouse ou toque) abre o zoom, que fica na tela até o usuário fechar (ver ZoomFotoHost). *@
+        <img class="foto" src="@FotoUrl" alt="@Nome" loading="lazy" draggable="false"
+             style="width:@(Tamanho)px;height:@(Tamanho)px;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none"
+             @onpointerdown="Segurar" @onpointerup="Soltar" @onpointerleave="Soltar" @onpointercancel="Soltar"
+             @oncontextmenu="Ignorar" @oncontextmenu:preventDefault="true" @onclick:stopPropagation="@suprimirClique" />
+    }
+    else
+    {
+        <img class="foto" src="@FotoUrl" alt="@Nome" style="width:@(Tamanho)px;height:@(Tamanho)px" loading="lazy" />
+    }
 }
 else
 {
@@ -18,9 +32,57 @@ else
     [Parameter] public IEnumerable<string>? Posicoes { get; set; }
     /// <summary>Posição fixa, quando o contexto já sabe qual é. Tem prioridade sobre Posicoes.</summary>
     [Parameter] public string? Posicao { get; set; }
+    /// <summary>Segurar a foto abre o zoom, que só fecha quando o usuário pedir. Desligado por padrão para não mudar os outros usos.</summary>
+    [Parameter] public bool Ampliavel { get; set; }
+
+    private const int TempoSegurarMs = 350;
+    private bool suprimirClique;   // o clique logo após soltar a foto não deve acionar o card onde ela está
+    private bool descartado;
+    private CancellationTokenSource? segurando;
 
     private string? SiglaEfetiva => Posicao ?? Posicoes?.FirstOrDefault();
 
     // Cor de fundo estável por nome, para os avatares não ficarem todos iguais
     private int Matiz => Math.Abs(Nome.Aggregate(7, (h, c) => h * 31 + c)) % 360;
+
+    private async Task Segurar(PointerEventArgs e)
+    {
+        if (e.Button != 0 || string.IsNullOrWhiteSpace(FotoUrl)) return;
+        CancelarSegurar();
+        suprimirClique = false;
+        var cts = segurando = new CancellationTokenSource();
+        try { await Task.Delay(TempoSegurarMs, cts.Token); }
+        catch (TaskCanceledException) { return; }
+        suprimirClique = true;
+        Zoom.Abrir(Nome, FotoUrl!);
+    }
+
+    private void Soltar()
+    {
+        CancelarSegurar();
+        if (suprimirClique) _ = LiberarCliqueDepois();
+    }
+
+    private async Task LiberarCliqueDepois()
+    {
+        await Task.Delay(350);
+        suprimirClique = false;
+        if (!descartado) await InvokeAsync(StateHasChanged);
+    }
+
+    // o menu de contexto (segurar no celular / botão direito) cancelaria o toque; um handler real garante o preventDefault
+    private void Ignorar() { }
+
+    private void CancelarSegurar()
+    {
+        segurando?.Cancel();
+        segurando?.Dispose();
+        segurando = null;
+    }
+
+    public void Dispose()
+    {
+        descartado = true;
+        CancelarSegurar();
+    }
 }

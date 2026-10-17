@@ -1,9 +1,12 @@
 @implements IDisposable
+@using SumulaCartolaProject.Servicos
+@inject ServicoZoomFoto Zoom
 @* Miniatura redonda do atleta (listas): foto com aro branco, igual à do campo, ou a silhueta da posição.
-   Segurar a foto (mouse ou toque) amplia ela na tela; soltar fecha. Vale em todas as listas que usam este componente. *@
+   Segurar a foto (mouse ou toque) abre o zoom, que fica na tela até o usuário fechar (ver ZoomFotoHost).
+   Vale em todas as listas que usam este componente. *@
 @if (!string.IsNullOrWhiteSpace(Atleta.FotoUrl))
 {
-    <img class="foto-redonda" style="--d:@(Diametro)px" src="@Atleta.FotoUrl" alt="" aria-hidden="true" draggable="false"
+    <img class="foto-redonda" style="--d:@(Diametro)px;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none" src="@Atleta.FotoUrl" alt="" aria-hidden="true" draggable="false"
          @onpointerdown="Segurar" @onpointerup="Soltar" @onpointerleave="Soltar" @onpointercancel="Soltar"
          @oncontextmenu="Ignorar" @oncontextmenu:preventDefault="true" @onclick:stopPropagation="@suprimirClique" />
 }
@@ -15,13 +18,6 @@ else
         </svg>
     </span>
 }
-@if (ampliada)
-{
-    <span class="foto-zoom" aria-hidden="true">
-        <img src="@Atleta.FotoUrl" alt="" />
-        <span class="foto-zoom-nome">@Atleta.Nome</span>
-    </span>
-}
 
 @code {
     [Parameter, EditorRequired] public AtletaEscalavel Atleta { get; set; } = default!;
@@ -31,8 +27,8 @@ else
     [Parameter] public PosicaoCampo? Posicao { get; set; }
 
     private const int TempoSegurarMs = 350;
-    private bool ampliada;
     private bool suprimirClique;   // o clique logo após soltar a foto não deve acionar a linha onde ela está
+    private bool descartado;
     private CancellationTokenSource? segurando;
 
     private int Diametro => (int)Math.Round(Tamanho * 1.2);
@@ -40,32 +36,30 @@ else
 
     private async Task Segurar(PointerEventArgs e)
     {
-        if (e.Button != 0) return;
+        if (e.Button != 0 || string.IsNullOrWhiteSpace(Atleta.FotoUrl)) return;
         CancelarSegurar();
         suprimirClique = false;
         var cts = segurando = new CancellationTokenSource();
         try { await Task.Delay(TempoSegurarMs, cts.Token); }
         catch (TaskCanceledException) { return; }
-        ampliada = true;
         suprimirClique = true;
+        Zoom.Abrir(Atleta.Nome, Atleta.FotoUrl!);
     }
 
     private void Soltar()
     {
         CancelarSegurar();
-        if (!ampliada) return;
-        ampliada = false;
-        _ = LiberarCliqueDepois();
+        if (suprimirClique) _ = LiberarCliqueDepois();
     }
 
     private async Task LiberarCliqueDepois()
     {
         await Task.Delay(350);
         suprimirClique = false;
-        StateHasChanged();
+        if (!descartado) await InvokeAsync(StateHasChanged);
     }
 
-    // o menu de contexto (segurar no celular / botão direito) cancelaria o toque e fecharia a foto; um handler real garante o preventDefault
+    // o menu de contexto (segurar no celular / botão direito) cancelaria o toque; um handler real garante o preventDefault
     private void Ignorar() { }
 
     private void CancelarSegurar()
@@ -75,5 +69,9 @@ else
         segurando = null;
     }
 
-    public void Dispose() => CancelarSegurar();
+    public void Dispose()
+    {
+        descartado = true;
+        CancelarSegurar();
+    }
 }

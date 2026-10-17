@@ -1,8 +1,14 @@
 @using System.Globalization
+@using SumulaCartolaProject.Servicos
+@implements IDisposable
+@inject ServicoZoomFoto Zoom
 
 <div class="slot" style="@(Arco is null ? null : "--arco:" + Arco)">
     <button type="button" class="slot-btn @(Atleta is null ? "vazia" : "cheio " + Nivel) @(Ativo ? "ativo" : "") @(Ornado ? "orn" : "") @(Rubro ? "rubro" : "") @(string.IsNullOrEmpty(Tema) ? "" : "tema tema-" + Tema)"
-            @onclick="() => OnClick.InvokeAsync()" aria-label="@Rotulo">
+            @onclick="Clicou" aria-label="@Rotulo"
+            @onpointerdown="Segurar" @onpointerup="Soltar" @onpointerleave="Soltar" @onpointercancel="Soltar"
+            @oncontextmenu="Ignorar" @oncontextmenu:preventDefault="@TemFoto"
+            style="@(TemFoto ? "-webkit-touch-callout:none;-webkit-user-select:none;user-select:none" : null)">
         @if (Atleta is null)
         {
             <svg class="camisa-vazia" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
@@ -18,7 +24,7 @@
             <span class="molde-pontos @ClassePontos" aria-hidden="true">@Pontos</span>
             @if (!string.IsNullOrWhiteSpace(Atleta.FotoUrl))
             {
-                <img class="molde-foto" src="@Atleta.FotoUrl" alt="" />
+                <img class="molde-foto" src="@Atleta.FotoUrl" alt="" draggable="false" />
             }
             else
             {
@@ -36,136 +42,141 @@
         }
         else
         {
-        <svg class="carta-svg" viewBox="0 0 100 156.6" preserveAspectRatio="none" aria-hidden="true">
-            @if (Atleta is not null)
-            {
-                <defs>
-                    <linearGradient id="cg-ouro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a6" /><stop offset=".45" stop-color="#e8b730" /><stop offset="1" stop-color="#b8860b" /></linearGradient>
-                    <linearGradient id="cg-bronze" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3c9a0" /><stop offset=".45" stop-color="#cd7f32" /><stop offset="1" stop-color="#7a4416" /></linearGradient>
-                    <linearGradient id="cg-bronze-orn" x1="0" y1=".05" x2=".35" y2="1"><stop offset="0" stop-color="#ffd9a8" /><stop offset=".22" stop-color="#e59a4a" /><stop offset=".5" stop-color="#bd6a20" /><stop offset=".72" stop-color="#d98a3d" /><stop offset="1" stop-color="#7a4416" /></linearGradient>
-                    <linearGradient id="tm-rubi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fdfcfa" /><stop offset=".55" stop-color="#e4e1db" /><stop offset="1" stop-color="#f6f4ef" /></linearGradient>
-                    <linearGradient id="tm-marfim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset=".5" stop-color="#e9e6df" /><stop offset="1" stop-color="#f8f6f0" /></linearGradient>
-                    <linearGradient id="tm-obsidiana" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2a2a" /><stop offset=".5" stop-color="#050505" /><stop offset="1" stop-color="#202020" /></linearGradient>
-                    <linearGradient id="tm-real_azul" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c3fe0" /><stop offset=".55" stop-color="#0a1a82" /><stop offset="1" stop-color="#1d4af5" /></linearGradient>
-                    <linearGradient id="tm-real_verde" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1fd47a" /><stop offset=".55" stop-color="#075a2e" /><stop offset="1" stop-color="#19d878" /></linearGradient>
-                    <linearGradient id="tm-grafite" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34364a" /><stop offset=".55" stop-color="#12121c" /><stop offset="1" stop-color="#262838" /></linearGradient>
-                    <linearGradient id="cg-prata" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset=".45" stop-color="#c9ced3" /><stop offset="1" stop-color="#8e969d" /></linearGradient>
-                    <radialGradient id="cg-gala" cx=".5" cy=".42" r=".75"><stop offset="0" stop-color="#14684f" /><stop offset=".55" stop-color="#0a3b2d" /><stop offset="1" stop-color="#031610" /></radialGradient>
-                </defs>
-            }
-            <path class="carta-forma" d="@FormaAtual" />
-            <path class="carta-linha" d="@FormaAtual" transform="translate(3.5 5.5) scale(.93)" />
-        </svg>
-        @if (!string.IsNullOrEmpty(Tema))
-        {
-        <svg class="carta-orn carta-tema" viewBox="0 0 100 156.6" preserveAspectRatio="none" aria-hidden="true">
-            <defs><clipPath id="cg-painel-tema"><path d="@PainelRubro" /></clipPath></defs>
-            <path class="tm-painel" d="@PainelRubro" />
-            <g clip-path="url(#cg-painel-tema)">
-                @if (Tema == "rubi")
+            <svg class="carta-svg" viewBox="0 0 100 156.6" preserveAspectRatio="none" aria-hidden="true">
+                @if (Atleta is not null)
                 {
-                    @* cristal rubi: faceta roxa, cacos vermelhos, cacos dourados e riscos de ouro sobre mármore *@
-                    <path d="M7 33 L40 19 L50 17 L33 66 L7 74 Z" fill="#3f1a57" />
-                    <path d="M7 33 L40 19 L36 36 L7 52 Z" fill="#5a2a78" />
-                    <path class="tm-fio" d="M7 118 L52 66 L93 26" />
-                    <path class="tm-fio" d="M30 124 L93 62" />
-                    <path d="M34 30 L52 24 L58 31 L46 54 L35 55 Z" fill="#d8121b" />
-                    <path d="M34 30 L52 24 L58 31 L40 38 Z" fill="#ff4b4b" />
-                    <path d="M62 27 L80 23 L86 31 L74 50 L64 48 Z" fill="#c70f18" />
-                    <path d="M62 27 L80 23 L86 31 L68 36 Z" fill="#ff5a55" />
-                    <path d="M70 52 L92 42 L93 62 L82 76 L68 72 Z" fill="#d8121b" />
-                    <path d="M70 52 L92 42 L93 54 L76 58 Z" fill="#ff4b4b" />
-                    <path d="M50 74 L76 66 L86 80 L66 96 L48 92 Z" fill="#c70f18" />
-                    <path d="M50 74 L76 66 L82 74 L58 80 Z" fill="#ff5a55" />
-                    <path d="M14 86 L40 78 L50 90 L36 106 L14 104 Z" fill="#e0141d" />
-                    <path d="M14 86 L40 78 L46 86 L22 92 Z" fill="#ff5a55" />
-                    <path d="M76 96 L93 84 L93 108 L82 112 Z" fill="#d9b04a" />
-                    <path d="M76 96 L93 84 L90 98 Z" fill="#f4dd8c" />
-                    <path d="M30 64 L38 60 L36 70 Z M58 58 L64 54 L63 62 Z M44 100 L50 96 L50 104 Z M84 82 L90 78 L89 86 Z" fill="#2c1550" />
-                    <path d="M40 46 L44 42 L46 48 Z M20 66 L25 63 L25 70 Z M78 40 L82 36 L83 42 Z" fill="#e9e6f7" />
+                    <defs>
+                        <linearGradient id="cg-ouro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a6" /><stop offset=".45" stop-color="#e8b730" /><stop offset="1" stop-color="#b8860b" /></linearGradient>
+                        <linearGradient id="cg-bronze" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3c9a0" /><stop offset=".45" stop-color="#cd7f32" /><stop offset="1" stop-color="#7a4416" /></linearGradient>
+                        <linearGradient id="cg-bronze-orn" x1="0" y1=".05" x2=".35" y2="1"><stop offset="0" stop-color="#ffd9a8" /><stop offset=".22" stop-color="#e59a4a" /><stop offset=".5" stop-color="#bd6a20" /><stop offset=".72" stop-color="#d98a3d" /><stop offset="1" stop-color="#7a4416" /></linearGradient>
+                        <linearGradient id="tm-rubi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fdfcfa" /><stop offset=".55" stop-color="#e4e1db" /><stop offset="1" stop-color="#f6f4ef" /></linearGradient>
+                        <linearGradient id="tm-marfim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset=".5" stop-color="#e9e6df" /><stop offset="1" stop-color="#f8f6f0" /></linearGradient>
+                        <linearGradient id="tm-obsidiana" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2a2a" /><stop offset=".5" stop-color="#050505" /><stop offset="1" stop-color="#202020" /></linearGradient>
+                        <linearGradient id="tm-real_azul" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c3fe0" /><stop offset=".55" stop-color="#0a1a82" /><stop offset="1" stop-color="#1d4af5" /></linearGradient>
+                        <linearGradient id="tm-real_verde" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1fd47a" /><stop offset=".55" stop-color="#075a2e" /><stop offset="1" stop-color="#19d878" /></linearGradient>
+                        <linearGradient id="tm-grafite" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34364a" /><stop offset=".55" stop-color="#12121c" /><stop offset="1" stop-color="#262838" /></linearGradient>
+                        <linearGradient id="cg-prata" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset=".45" stop-color="#c9ced3" /><stop offset="1" stop-color="#8e969d" /></linearGradient>
+                        <radialGradient id="cg-gala" cx=".5" cy=".42" r=".75"><stop offset="0" stop-color="#14684f" /><stop offset=".55" stop-color="#0a3b2d" /><stop offset="1" stop-color="#031610" /></radialGradient>
+                    </defs>
                 }
-                else
-                {
-                    <path class="tm-faixa" d="M-5 124 L58 18 L74 18 L12 124 Z" />
-                    <path class="tm-faixa f2" d="M44 124 L94 38 L104 38 L60 124 Z" />
-                    <path class="tm-fio" d="M7 104 L72 18" />
-                    <path class="tm-fio" d="M18 124 L93 34" />
-                    <path class="tm-fio" d="M40 124 L93 62" />
-                }
-            </g>
-            <path class="tm-borda" d="@PainelRubro" />
-            @if (Tema is "real_azul" or "real_verde")
+                <path class="carta-forma" d="@FormaAtual" />
+                <path class="carta-linha" d="@FormaAtual" transform="translate(3.5 5.5) scale(.93)" />
+            </svg>
+            @if (!string.IsNullOrEmpty(Tema))
             {
-                <path class="tm-ouro" d="M0 128 Q7 126 9 134 Q4 134 3 142 Q-2 136 0 128 Z M100 128 Q93 126 91 134 Q96 134 97 142 Q102 136 100 128 Z" />
+                <svg class="carta-orn carta-tema" viewBox="0 0 100 156.6" preserveAspectRatio="none" aria-hidden="true">
+                    <defs><clipPath id="cg-painel-tema"><path d="@PainelRubro" /></clipPath></defs>
+                    <path class="tm-painel" d="@PainelRubro" />
+                    <g clip-path="url(#cg-painel-tema)">
+                        @if (Tema == "rubi")
+                        {
+                            @* cristal rubi: faceta roxa, cacos vermelhos, cacos dourados e riscos de ouro sobre mármore *@
+                            <path d="M7 33 L40 19 L50 17 L33 66 L7 74 Z" fill="#3f1a57" />
+                            <path d="M7 33 L40 19 L36 36 L7 52 Z" fill="#5a2a78" />
+                            <path class="tm-fio" d="M7 118 L52 66 L93 26" />
+                            <path class="tm-fio" d="M30 124 L93 62" />
+                            <path d="M34 30 L52 24 L58 31 L46 54 L35 55 Z" fill="#d8121b" />
+                            <path d="M34 30 L52 24 L58 31 L40 38 Z" fill="#ff4b4b" />
+                            <path d="M62 27 L80 23 L86 31 L74 50 L64 48 Z" fill="#c70f18" />
+                            <path d="M62 27 L80 23 L86 31 L68 36 Z" fill="#ff5a55" />
+                            <path d="M70 52 L92 42 L93 62 L82 76 L68 72 Z" fill="#d8121b" />
+                            <path d="M70 52 L92 42 L93 54 L76 58 Z" fill="#ff4b4b" />
+                            <path d="M50 74 L76 66 L86 80 L66 96 L48 92 Z" fill="#c70f18" />
+                            <path d="M50 74 L76 66 L82 74 L58 80 Z" fill="#ff5a55" />
+                            <path d="M14 86 L40 78 L50 90 L36 106 L14 104 Z" fill="#e0141d" />
+                            <path d="M14 86 L40 78 L46 86 L22 92 Z" fill="#ff5a55" />
+                            <path d="M76 96 L93 84 L93 108 L82 112 Z" fill="#d9b04a" />
+                            <path d="M76 96 L93 84 L90 98 Z" fill="#f4dd8c" />
+                            <path d="M30 64 L38 60 L36 70 Z M58 58 L64 54 L63 62 Z M44 100 L50 96 L50 104 Z M84 82 L90 78 L89 86 Z" fill="#2c1550" />
+                            <path d="M40 46 L44 42 L46 48 Z M20 66 L25 63 L25 70 Z M78 40 L82 36 L83 42 Z" fill="#e9e6f7" />
+                        }
+                        else
+                        {
+                            <path class="tm-faixa" d="M-5 124 L58 18 L74 18 L12 124 Z" />
+                            <path class="tm-faixa f2" d="M44 124 L94 38 L104 38 L60 124 Z" />
+                            <path class="tm-fio" d="M7 104 L72 18" />
+                            <path class="tm-fio" d="M18 124 L93 34" />
+                            <path class="tm-fio" d="M40 124 L93 62" />
+                        }
+                    </g>
+                    <path class="tm-borda" d="@PainelRubro" />
+                    @if (Tema is "real_azul" or "real_verde")
+                    {
+                        <path class="tm-ouro" d="M0 128 Q7 126 9 134 Q4 134 3 142 Q-2 136 0 128 Z M100 128 Q93 126 91 134 Q96 134 97 142 Q102 136 100 128 Z" />
+                    }
+                    else
+                    {
+                        <path class="tm-ouro" d="M0 76 L0 88 L7 82 Z M100 76 L100 88 L93 82 Z" />
+                    }
+                    @if (Tema == "rubi")
+                    {
+                        <path class="tm-estrela" d="M44 9.5 l.6 1.4 1.5 .1 -1.2 1 .4 1.5 -1.3 -.8 -1.3 .8 .4 -1.5 -1.2 -1 1.5 -.1Z M50 7.5 l.6 1.4 1.5 .1 -1.2 1 .4 1.5 -1.3 -.8 -1.3 .8 .4 -1.5 -1.2 -1 1.5 -.1Z M56 9.5 l.6 1.4 1.5 .1 -1.2 1 .4 1.5 -1.3 -.8 -1.3 .8 .4 -1.5 -1.2 -1 1.5 -.1Z" />
+                        <circle class="tm-bola" cx="50" cy="15" r="2.6" />
+                    }
+                    else
+                    {
+                        <path class="tm-coroa" d="M3 18L2 7L8 12L12 4L16 12L22 7L21 18Z" transform="translate(45 9.5) scale(.42)" />
+                    }
+                    <path class="tm-taca" d="M46 140 L54 140 L54 143 Q54 146 52 147 L52 149 L55 150 L55 152 L45 152 L45 150 L48 149 L48 147 Q46 146 46 143 Z" />
+                    <path class="tm-fio-baixo" d="M20 147 L42 147 M58 147 L80 147" />
+                </svg>
             }
-            else
+            @if (Rubro)
             {
-                <path class="tm-ouro" d="M0 76 L0 88 L7 82 Z M100 76 L100 88 L93 82 Z" />
+                <svg class="carta-orn carta-rubro" viewBox="0 0 100 156.6" preserveAspectRatio="none" aria-hidden="true">
+                    <defs><clipPath id="cg-painel-rubro"><path d="@PainelRubro" /></clipPath></defs>
+                    <path class="rub-painel" d="@PainelRubro" />
+                    <g clip-path="url(#cg-painel-rubro)">
+                        <path d="M7 33 L38 19 L46 19 L7 56 Z" fill="#d61f1f" />
+                        <path d="M7 56 L34 28 L40 27 L7 68 Z" fill="#ffc21a" />
+                        <path d="M7 64 L22 46 L28 46 L7 80 Z" fill="#161616" />
+                        <path d="M93 80 L93 118 L58 118 Z" fill="#161616" />
+                        <path d="M93 62 L93 84 L68 118 L58 118 Z" fill="#d61f1f" />
+                        <path d="M93 96 L93 108 L80 118 L71 118 Z" fill="#ffc21a" />
+                        <path d="M30 118 L7 118 L7 98 Z" fill="#ffc21a" opacity=".85" />
+                    </g>
+                    <path class="rub-painel-borda" d="@PainelRubro" />
+                    <path class="rub-lado" d="M0 76 L0 88 L7 82 Z M100 76 L100 88 L93 82 Z" />
+                    <path class="rub-coroa" d="M3 18L2 7L8 12L12 4L16 12L22 7L21 18Z" transform="translate(45 9.5) scale(.42)" />
+                    <path class="rub-taca" d="M46 140 L54 140 L54 143 Q54 146 52 147 L52 149 L55 150 L55 152 L45 152 L45 150 L48 149 L48 147 Q46 146 46 143 Z" />
+                    <path class="rub-fio" d="M20 147 L42 147 M58 147 L80 147" />
+                </svg>
             }
-            @if (Tema == "rubi")
+            @if (Ornado)
             {
-                <path class="tm-estrela" d="M44 9.5 l.6 1.4 1.5 .1 -1.2 1 .4 1.5 -1.3 -.8 -1.3 .8 .4 -1.5 -1.2 -1 1.5 -.1Z M50 7.5 l.6 1.4 1.5 .1 -1.2 1 .4 1.5 -1.3 -.8 -1.3 .8 .4 -1.5 -1.2 -1 1.5 -.1Z M56 9.5 l.6 1.4 1.5 .1 -1.2 1 .4 1.5 -1.3 -.8 -1.3 .8 .4 -1.5 -1.2 -1 1.5 -.1Z" />
-                <circle class="tm-bola" cx="50" cy="15" r="2.6" />
+                <svg class="carta-orn" viewBox="0 0 100 156.6" preserveAspectRatio="none" aria-hidden="true">
+                    <defs><clipPath id="cg-painel"><path d="@Painel" /></clipPath></defs>
+                    <path class="orn-painel" d="@Painel" />
+                    <g clip-path="url(#cg-painel)">
+                        <path d="M72 10 L92 10 L92 36 L52 132 L32 132 Z" fill="rgba(255,236,205,.17)" />
+                        <path d="M92 52 L92 70 L70 124 L58 124 Z" fill="rgba(255,236,205,.11)" />
+                        <path d="M8 96 L34 62 L44 62 L8 132 Z" fill="rgba(255,236,205,.12)" />
+                        <path d="M12 33 L88 33 L88 60 L12 60 Z" fill="rgba(255,255,255,.07)" />
+                        <path d="M12 90 L88 90 L88 124 L12 124 Z" fill="rgba(40,16,2,.18)" />
+                    </g>
+                    <path class="orn-painel-borda" d="@Painel" />
+                    <path class="orn-coroa" d="M3 18L2 7L8 12L12 4L16 12L22 7L21 18Z" transform="translate(45.2 9.5) scale(.4)" />
+                </svg>
             }
-            else
-            {
-                <path class="tm-coroa" d="M3 18L2 7L8 12L12 4L16 12L22 7L21 18Z" transform="translate(45 9.5) scale(.42)" />
-            }
-            <path class="tm-taca" d="M46 140 L54 140 L54 143 Q54 146 52 147 L52 149 L55 150 L55 152 L45 152 L45 150 L48 149 L48 147 Q46 146 46 143 Z" />
-            <path class="tm-fio-baixo" d="M20 147 L42 147 M58 147 L80 147" />
-        </svg>
-        }
-        @if (Rubro)
-        {
-        <svg class="carta-orn carta-rubro" viewBox="0 0 100 156.6" preserveAspectRatio="none" aria-hidden="true">
-            <defs><clipPath id="cg-painel-rubro"><path d="@PainelRubro" /></clipPath></defs>
-            <path class="rub-painel" d="@PainelRubro" />
-            <g clip-path="url(#cg-painel-rubro)">
-                <path d="M7 33 L38 19 L46 19 L7 56 Z" fill="#d61f1f" />
-                <path d="M7 56 L34 28 L40 27 L7 68 Z" fill="#ffc21a" />
-                <path d="M7 64 L22 46 L28 46 L7 80 Z" fill="#161616" />
-                <path d="M93 80 L93 118 L58 118 Z" fill="#161616" />
-                <path d="M93 62 L93 84 L68 118 L58 118 Z" fill="#d61f1f" />
-                <path d="M93 96 L93 108 L80 118 L71 118 Z" fill="#ffc21a" />
-                <path d="M30 118 L7 118 L7 98 Z" fill="#ffc21a" opacity=".85" />
-            </g>
-            <path class="rub-painel-borda" d="@PainelRubro" />
-            <path class="rub-lado" d="M0 76 L0 88 L7 82 Z M100 76 L100 88 L93 82 Z" />
-            <path class="rub-coroa" d="M3 18L2 7L8 12L12 4L16 12L22 7L21 18Z" transform="translate(45 9.5) scale(.42)" />
-            <path class="rub-taca" d="M46 140 L54 140 L54 143 Q54 146 52 147 L52 149 L55 150 L55 152 L45 152 L45 150 L48 149 L48 147 Q46 146 46 143 Z" />
-            <path class="rub-fio" d="M20 147 L42 147 M58 147 L80 147" />
-        </svg>
-        }
-        @if (Ornado)
-        {
-        <svg class="carta-orn" viewBox="0 0 100 156.6" preserveAspectRatio="none" aria-hidden="true">
-            <defs><clipPath id="cg-painel"><path d="@Painel" /></clipPath></defs>
-            <path class="orn-painel" d="@Painel" />
-            <g clip-path="url(#cg-painel)">
-                <path d="M72 10 L92 10 L92 36 L52 132 L32 132 Z" fill="rgba(255,236,205,.17)" />
-                <path d="M92 52 L92 70 L70 124 L58 124 Z" fill="rgba(255,236,205,.11)" />
-                <path d="M8 96 L34 62 L44 62 L8 132 Z" fill="rgba(255,236,205,.12)" />
-                <path d="M12 33 L88 33 L88 60 L12 60 Z" fill="rgba(255,255,255,.07)" />
-                <path d="M12 90 L88 90 L88 124 L12 124 Z" fill="rgba(40,16,2,.18)" />
-            </g>
-            <path class="orn-painel-borda" d="@Painel" />
-            <path class="orn-coroa" d="M3 18L2 7L8 12L12 4L16 12L22 7L21 18Z" transform="translate(45.2 9.5) scale(.4)" />
-        </svg>
-        }
             <span class="carta-pos">@Posicao.Sigla()</span>
             <span class="carta-nota">@Nota</span>
             <span class="slot-rotulo nome @ClasseNome" title="@Atleta.Nome">@NomeCurto</span>
             @* Detalhes que só aparecem nas molduras de gala (Esmeralda, Esmeralda Ouro e Cristal) *@
             <svg class="carta-cristais" viewBox="0 0 120 180" preserveAspectRatio="none" aria-hidden="true">
-                <polygon points="12,30 0,10 16,22" /><polygon points="10,62 -2,52 14,50" /><polygon points="12,120 0,134 16,132" />
-                <polygon points="108,24 120,6 104,18" /><polygon points="110,70 122,60 106,58" /><polygon points="108,128 120,146 104,138" />
-                <polygon points="30,170 24,184 40,176" /><polygon points="92,170 98,184 82,176" />
+                <polygon points="12,30 0,10 16,22" />
+                <polygon points="10,62 -2,52 14,50" />
+                <polygon points="12,120 0,134 16,132" />
+                <polygon points="108,24 120,6 104,18" />
+                <polygon points="110,70 122,60 106,58" />
+                <polygon points="108,128 120,146 104,138" />
+                <polygon points="30,170 24,184 40,176" />
+                <polygon points="92,170 98,184 82,176" />
             </svg>
             <svg class="carta-coroinha" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18L2 7L8 12L12 4L16 12L22 7L21 18Z" /></svg>
             <svg class="carta-ico-campo" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M12 4V20M3 9H7V15H3M21 9H17V15H21" /><circle cx="12" cy="12" r="2.6" /></svg>
             @if (!string.IsNullOrWhiteSpace(Atleta.FotoUrl))
             {
-                <img class="carta-foto" src="@Atleta.FotoUrl" alt="" />
+                <img class="carta-foto" src="@Atleta.FotoUrl" alt="" draggable="false" />
             }
             else
             {
@@ -225,6 +236,51 @@
     /// <summary>Temas desenhados em código (grafite, marfim, obsidiana, real_azul, real_verde, rubi).</summary>
     [Parameter] public string? Tema { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
+
+    // ---- Zoom da foto: segurar o cartão abre a foto ampliada, que fica na tela até o usuário fechar (ZoomFotoHost) ----
+    private const int TempoSegurarMs = 350;
+    private bool suprimirClique;   // o clique logo após segurar não deve abrir o seletor de atleta
+    private CancellationTokenSource? segurando;
+
+    private bool TemFoto => Atleta is not null && !string.IsNullOrWhiteSpace(Atleta.FotoUrl);
+
+    private Task Clicou() => suprimirClique ? Task.CompletedTask : OnClick.InvokeAsync();
+
+    private async Task Segurar(PointerEventArgs e)
+    {
+        if (e.Button != 0 || !TemFoto) return;
+        CancelarSegurar();
+        suprimirClique = false;
+        var cts = segurando = new CancellationTokenSource();
+        try { await Task.Delay(TempoSegurarMs, cts.Token); }
+        catch (TaskCanceledException) { return; }
+        suprimirClique = true;
+        Zoom.Abrir(Atleta!.Nome, Atleta.FotoUrl!);
+    }
+
+    private void Soltar()
+    {
+        CancelarSegurar();
+        if (suprimirClique) _ = LiberarCliqueDepois();
+    }
+
+    private async Task LiberarCliqueDepois()
+    {
+        await Task.Delay(350);
+        suprimirClique = false;
+    }
+
+    // o menu de contexto (segurar no celular / botão direito) cancelaria o toque; um handler real garante o preventDefault
+    private void Ignorar() { }
+
+    private void CancelarSegurar()
+    {
+        segurando?.Cancel();
+        segurando?.Dispose();
+        segurando = null;
+    }
+
+    public void Dispose() => CancelarSegurar();
     /// <summary>Falso nos campos que têm cartão próprio (Esmeralda): aí vale o desenho antigo.</summary>
     [Parameter] public bool UsaMolde { get; set; } = true;
 

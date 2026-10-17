@@ -1,0 +1,77 @@
+@implements IDisposable
+@using SumulaCartolaProject.Servicos
+@inject ServicoZoomFoto Zoom
+@inject NavigationManager Nav
+@* Coloque UMA vez no layout (MainLayout). Mostra a foto ampliada por cima de tudo e só fecha pelo X,
+   tocando fora da foto ou com Esc. Também fecha ao trocar de página. *@
+
+@if (Zoom.Aberto)
+{
+    <div class="zf-fundo" role="dialog" aria-modal="true" aria-label="Foto de @Zoom.Nome" tabindex="-1" @ref="fundo"
+         @onclick="Zoom.FecharPorToque" @onkeydown="Tecla"
+         @oncontextmenu="Ignorar" @oncontextmenu:preventDefault="true">
+        <button type="button" class="zf-fechar" aria-label="Fechar" @onclick="Zoom.Fechar" @onclick:stopPropagation="true">&times;</button>
+        <div class="zf-conteudo">
+            <img class="zf-img" src="@Zoom.FotoUrl" alt="@Zoom.Nome" draggable="false" @onclick:stopPropagation="true" />
+            <span class="zf-nome">@Zoom.Nome</span>
+            <span class="zf-dica">Toque fora da foto ou no X para fechar</span>
+        </div>
+    </div>
+}
+
+@code {
+    private ElementReference fundo;
+    private bool focar;
+
+    protected override void OnInitialized()
+    {
+        Zoom.Mudou += Atualizar;
+        Nav.LocationChanged += AoNavegar;
+    }
+
+    private void Atualizar()
+    {
+        focar = Zoom.Aberto;   // foco no diálogo para o Esc funcionar
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void AoNavegar(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) => Zoom.Fechar();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!focar) return;
+        focar = false;
+        try { await fundo.FocusAsync(); } catch { /* sem foco, só não fecha com Esc */ }
+    }
+
+    private void Tecla(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") Zoom.Fechar();
+    }
+
+    private void Ignorar() { }
+
+    public void Dispose()
+    {
+        Zoom.Mudou -= Atualizar;
+        Nav.LocationChanged -= AoNavegar;
+    }
+}
+
+<style>
+    .zf-fundo { position: fixed; inset: 0; z-index: 11000; display: flex; align-items: center; justify-content: center;
+        background: rgba(4, 12, 12, .9); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+        padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+        outline: none; touch-action: none; overscroll-behavior: contain; animation: zf-entra .15s ease-out; }
+    .zf-conteudo { display: flex; flex-direction: column; align-items: center; gap: .6rem; max-width: 92vw; }
+    .zf-img { width: min(82vw, 62dvh, 520px); aspect-ratio: 1; object-fit: cover; border-radius: 50%; border: 4px solid #fff;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, .6); background: rgba(255, 255, 255, .06);
+        -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+    .zf-nome { margin-top: .4rem; font-size: 1.5rem; font-weight: 700; color: #fff; text-align: center; }
+    .zf-dica { font-size: .75rem; color: rgba(255, 255, 255, .55); }
+    .zf-fechar { position: absolute; top: calc(env(safe-area-inset-top, 0px) + .8rem); right: .8rem; width: 2.8rem; height: 2.8rem;
+        border-radius: 50%; border: 1px solid rgba(255, 255, 255, .4); background: rgba(255, 255, 255, .12); color: #fff;
+        font-size: 1.9rem; line-height: 1; display: grid; place-items: center; padding: 0 0 .15rem; cursor: pointer; }
+    .zf-fechar:hover, .zf-fechar:focus-visible { background: rgba(255, 255, 255, .25); }
+    @@keyframes zf-entra { from { opacity: 0; } to { opacity: 1; } }
+</style>

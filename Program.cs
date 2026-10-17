@@ -44,6 +44,7 @@ builder.Services.AddScoped<ServicoTorcida>();
 builder.Services.AddScoped<ServicoEscalacao>();
 builder.Services.AddScoped<ServicoHistorico>();
 builder.Services.AddScoped<ServicoTemporada>();
+builder.Services.AddScoped<ServicoZoomFoto>();
 
 var host = builder.Build();
 

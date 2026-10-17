@@ -23,6 +23,7 @@
     else
     {
         var porAtleta = ResumoPorAtleta;
+        var tabela = LinhasTabela(porAtleta);
         <div class="hist-m">
             <a class="m-voltar" href="/">‹ Início</a>
             <h1 class="m-h1">Histórico de gols</h1>
@@ -65,20 +66,22 @@
                 <div class="m-row m-head">
                     <span class="c-pos">#</span>
                     <span class="c-nome">JOGADOR</span>
-                    <span class="c-n t-v" title="Jogos no Vermelho">V</span>
-                    <span class="c-n t-a" title="Jogos no Amarelo">A</span>
-                    <span class="c-n"><u class="cart am"></u></span>
-                    <span class="c-n"><u class="cart az"></u></span>
-                    <span class="c-n"><u class="cart vm"></u></span>
-                    <span class="c-m" title="Gols por jogo">MÉD</span>
-                    <span class="c-g">GOLS</span>
+                    <span class="c-n ord @Ord("v") t-v" title="Jogos no Vermelho (clique para ordenar)" @onclick='() => Ordenar("v")'>V</span>
+                    <span class="c-n ord @Ord("a") t-a" title="Jogos no Amarelo (clique para ordenar)" @onclick='() => Ordenar("a")'>A</span>
+                    <span class="c-n ord @Ord("am")" title="Cartões amarelos (clique para ordenar)" @onclick='() => Ordenar("am")'><u class="cart am"></u></span>
+                    <span class="c-n ord @Ord("az")" title="Cartões azuis (clique para ordenar)" @onclick='() => Ordenar("az")'><u class="cart az"></u></span>
+                    <span class="c-n ord @Ord("vm")" title="Cartões vermelhos (clique para ordenar)" @onclick='() => Ordenar("vm")'><u class="cart vm"></u></span>
+                    <span class="c-m ord @Ord("med")" title="Gols por jogo (clique para ordenar)" @onclick='() => Ordenar("med")'>MÉD</span>
+                    <span class="c-n ord @Ord("ast")" title="Assistências (clique para ordenar)" @onclick='() => Ordenar("ast")'>AST</span>
+                    <span class="c-n ord @Ord("gc")" title="Gols contra (clique para ordenar)" @onclick='() => Ordenar("gc")'>GC</span>
+                    <span class="c-g ord @Ord("gols")" title="Gols (clique para ordenar)" @onclick='() => Ordenar("gols")'>GOLS</span>
                 </div>
                 <div class="m-corpo">
                     @if (Linhas.Count == 0)
                     {
                         <p class="hist-msg">Nenhum jogador encontrado.</p>
                     }
-                    @foreach (var l in Linhas)
+                    @foreach (var l in tabela)
                     {
                         var r = ResumoDe(l, porAtleta);
                         <div class="m-row @(l.Posicao == 1 ? "p1" : "")">
@@ -90,6 +93,8 @@
                             <span class="c-n">@(r is null ? "–" : r.Azuis.ToString())</span>
                             <span class="c-n">@(r is null ? "–" : r.Vermelhos.ToString())</span>
                             <span class="c-m">@MediaTexto(l, r)</span>
+                            <span class="c-n">@(r is null ? "–" : r.Assistencias.ToString())</span>
+                            <span class="c-n gc">@(r is null ? "–" : r.GolsContra.ToString())</span>
                             <span class="c-g"><b>@l.Gols</b></span>
                         </div>
                     }
@@ -131,8 +136,10 @@
                             <div class="stat"><small>Melhor média</small><b>@EstMedia.Nome</b><strong>@EstMedia.Valor</strong></div>
                             <div class="stat"><small>Mais jogos</small><b>@EstJogos.Nome</b><strong>@EstJogos.Valor</strong></div>
                             <div class="stat"><small>Mais cartões</small><b>@EstCartoes.Nome</b><strong>@EstCartoes.Valor</strong></div>
+                            <div class="stat"><small>Mais assistências</small><b>@EstAssistencias.Nome</b><strong>@EstAssistencias.Valor</strong></div>
+                            <div class="stat"><small>Mais gols contra</small><b>@EstGolsContra.Nome</b><strong>@EstGolsContra.Valor</strong></div>
                         </div>
-                        <p class="hist-nota">Média = gols por jogo (mínimo de @MinJogosMedia jogos). Jogos, média e cartões vêm da temporada lançada no app.</p>
+                        <p class="hist-nota">Média = gols por jogo (mínimo de @MinJogosMedia jogos). Jogos, média, cartões, assistências e gols contra vêm da temporada lançada no app. Quem só tem assistências ou gols contra aparece na lista com 0 gols.</p>
                     </section>
                 </aside>
             }
@@ -175,21 +182,24 @@
                             <span class="g1">JOGOS NO TIME</span>
                             <span class="g2">CARTÕES</span>
                             <span class="g3">GOLS/JOGO</span>
+                            <span class="g4">OUTROS</span>
                         </div>
                         <div class="hist-cab">
                             <span class="pos">#</span>
                             <span class="nome">JOGADOR</span>
-                            <span class="n t-v" title="Jogos no time Vermelho">VERM.</span>
-                            <span class="n t-a" title="Jogos no time Amarelo">AMAR.</span>
-                            <span class="n" title="Cartões amarelos"><u class="cart am"></u> AM</span>
-                            <span class="n" title="Cartões azuis"><u class="cart az"></u> AZ</span>
-                            <span class="n" title="Cartões vermelhos"><u class="cart vm"></u> VM</span>
-                            <span class="n" title="Média de gols por jogo">MÉD.</span>
-                            <span class="gols">GOLS</span>
+                            <span class="n ord @Ord("v") t-v" title="Jogos no time Vermelho (clique para ordenar)" @onclick='() => Ordenar("v")'>VERM.</span>
+                            <span class="n ord @Ord("a") t-a" title="Jogos no time Amarelo (clique para ordenar)" @onclick='() => Ordenar("a")'>AMAR.</span>
+                            <span class="n ord @Ord("am")" title="Cartões amarelos (clique para ordenar)" @onclick='() => Ordenar("am")'><u class="cart am"></u> AM</span>
+                            <span class="n ord @Ord("az")" title="Cartões azuis (clique para ordenar)" @onclick='() => Ordenar("az")'><u class="cart az"></u> AZ</span>
+                            <span class="n ord @Ord("vm")" title="Cartões vermelhos (clique para ordenar)" @onclick='() => Ordenar("vm")'><u class="cart vm"></u> VM</span>
+                            <span class="n ord @Ord("med")" title="Média de gols por jogo (clique para ordenar)" @onclick='() => Ordenar("med")'>MÉD.</span>
+                            <span class="n ord @Ord("ast")" title="Assistências (clique para ordenar)" @onclick='() => Ordenar("ast")'>AST.</span>
+                            <span class="n ord @Ord("gc")" title="Gols contra (clique para ordenar)" @onclick='() => Ordenar("gc")'>G.C.</span>
+                            <span class="gols ord @Ord("gols")" title="Gols (clique para ordenar)" @onclick='() => Ordenar("gols")'>GOLS</span>
                         </div>
                     }
                     <ol class="hist-lista @(EhTemporadaAtual ? "com-stats" : "")">
-                        @foreach (var l in Linhas)
+                        @foreach (var l in tabela)
                         {
                             var r = ResumoDe(l, porAtleta);
                             <li class="@(l.Posicao <= 3 ? "top" + l.Posicao : "")">
@@ -203,6 +213,8 @@
                                     <span class="n">@(r is null ? "–" : r.Azuis.ToString())</span>
                                     <span class="n">@(r is null ? "–" : r.Vermelhos.ToString())</span>
                                     <span class="n med">@MediaTexto(l, r)</span>
+                                    <span class="n">@(r is null ? "–" : r.Assistencias.ToString())</span>
+                                    <span class="n gc">@(r is null ? "–" : r.GolsContra.ToString())</span>
                                 }
                                 <span class="gols">@l.Gols</span>
                             </li>
@@ -301,6 +313,8 @@
         x => (double)x.Gols / x.Jogos, v => v.ToString("0.0", PtBr));
     Destaque EstJogos => Melhor(ResumoAtual, x => x.Jogos, v => ((int)v).ToString());
     Destaque EstCartoes => Melhor(ResumoAtual, x => x.Amarelos + x.Azuis + x.Vermelhos, v => ((int)v).ToString());
+    Destaque EstAssistencias => Melhor(ResumoAtual, x => x.Assistencias, v => ((int)v).ToString());
+    Destaque EstGolsContra => Melhor(ResumoAtual, x => x.GolsContra, v => ((int)v).ToString());
 
     static Destaque Melhor(IEnumerable<ResumoTemporada> fonte, Func<ResumoTemporada, double> valor, Func<double, string> fmt)
     {
@@ -332,15 +346,76 @@
 
     List<LinhaRanking> Linhas => Ranking(true);
 
+    // ---- Ordenação da tabela (só na temporada atual, onde existem as estatísticas) ----
+    // Primeiro clique em uma coluna ordena do maior para o menor; clicar de novo inverte.
+    string ordem = "gols";
+    bool ordemDesc = true;
+
+    void Ordenar(string chave)
+    {
+        if (!EhTemporadaAtual) return;
+        if (ordem == chave) ordemDesc = !ordemDesc;
+        else { ordem = chave; ordemDesc = true; }
+    }
+
+    string Ord(string chave) => EhTemporadaAtual && ordem == chave ? (ordemDesc ? "on" : "on asc") : "";
+
+    // Jogadores sem resumo na temporada (null) ficam sempre no fim, em qualquer direção.
+    double? ValorOrdem(LinhaRanking l, ResumoTemporada? r)
+    {
+        if (ordem == "gols") return l.Gols;
+        if (r is null) return null;
+        return ordem switch
+        {
+            "v" => r.JogosVermelho,
+            "a" => r.JogosAmarelo,
+            "am" => r.Amarelos,
+            "az" => r.Azuis,
+            "vm" => r.Vermelhos,
+            "ast" => r.Assistencias,
+            "gc" => r.GolsContra,
+            "med" => r.Jogos > 0 ? (double)l.Gols / r.Jogos : (double?)null,
+            _ => l.Gols
+        };
+    }
+
+    // Linhas na ordem escolhida. A posição (#) acompanha o critério: empates dividem a mesma posição.
+    // Cards (artilheiro, totais) continuam usando Linhas, sempre por gols.
+    List<LinhaRanking> LinhasTabela(Dictionary<Guid, ResumoTemporada> porAtleta)
+    {
+        var baseL = Linhas;
+        if (!EhTemporadaAtual || (ordem == "gols" && ordemDesc)) return baseL;
+
+        var q = baseL.Select(l => (L: l, V: ValorOrdem(l, ResumoDe(l, porAtleta)))).ToList();
+        var ord = (ordemDesc
+                ? q.OrderBy(x => x.V is null).ThenByDescending(x => x.V ?? 0)
+                : q.OrderBy(x => x.V is null).ThenBy(x => x.V ?? 0))
+            .ThenByDescending(x => x.L.Gols).ThenBy(x => x.L.Nome)
+            .ToList();
+
+        return ord.Select(x => x.L with
+        {
+            Posicao = 1 + ord.Count(y => y.V is not null && (x.V is null || y.V > x.V))
+        }).ToList();
+    }
+
     List<LinhaRanking> Ranking(bool aplicarFiltros)
     {
         {
+            // Todos os jogadores entram; quem não fez gol no ano fica com 0 (só aparece se tiver participação, abaixo).
+            var golsAno = Aba == 0 ? null : gols.Where(g => g.Ano == Aba)
+                .GroupBy(g => g.JogadorId).ToDictionary(g => g.Key, g => g.Sum(x => x.Gols));
             IEnumerable<(HistoricoArtilheiro J, int G)> basico = Aba == 0
                 ? jogadores.Select(j => (j, j.Total ?? 0))
-                : jogadores.Join(gols.Where(g => g.Ano == Aba).GroupBy(g => g.JogadorId),
-                    j => j.JogadorId, g => g.Key, (j, g) => (j, g.Sum(x => x.Gols)));
+                : jogadores.Select(j => (j, golsAno!.GetValueOrDefault(j.JogadorId)));
 
-            var q = basico.Where(x => x.G > 0);
+            // Na tabela da temporada atual, quem só tem assistência ou gol contra também aparece (com 0 gols).
+            var porAtleta = aplicarFiltros && EhTemporadaAtual ? ResumoPorAtleta : null;
+            bool Participou(HistoricoArtilheiro j) =>
+                porAtleta is not null && j.AtletaId is Guid id && porAtleta.TryGetValue(id, out var r)
+                && (r.Assistencias > 0 || r.GolsContra > 0);
+
+            var q = basico.Where(x => x.G > 0 || Participou(x.J));
             if (aplicarFiltros && filtro == "ativos") q = q.Where(x => JogaNaPelada(x.J));
             if (aplicarFiltros && filtro == "inativos") q = q.Where(x => !JogaNaPelada(x.J));
             if (aplicarFiltros && !string.IsNullOrWhiteSpace(busca))
@@ -426,10 +501,10 @@
         .top3 .gl { font-size: 1.1rem; min-width: 2.8rem; }
         .hist-card:last-child { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
         .stats { flex: 1 1 auto; grid-auto-rows: 1fr; gap: .7rem; }
-        .stat { padding: .9rem; justify-content: center; }
-        .stat small { font-size: .82rem; }
-        .stat b { font-size: 1.05rem; }
-        .stat strong { font-size: 2.3rem; }
+        .stat { padding: .55rem .8rem; justify-content: center; }
+        .stat small { font-size: .78rem; }
+        .stat b { font-size: 1rem; }
+        .stat strong { font-size: 1.8rem; margin-top: .1rem; }
         .hist-filtros { gap: .7rem; margin: 0 0 .9rem; }
         .hist-filtros input, .hist-filtros select { padding: .75rem 1rem; font-size: 1rem; }
         .hist-resumo { gap: .8rem; margin-bottom: .9rem; }
@@ -441,7 +516,7 @@
         .hist-lista .gols { font-size: 1.3rem; }
         .hist-lista .pos { font-size: 1.05rem; }
         .hist-corpo .hist-cab { display: grid; flex: none; }
-        .hist-cab, .hist-lista.com-stats li { grid-template-columns: 2.5rem 1fr repeat(5, 3.7rem) 3.8rem 3.4rem; gap: .5rem; align-items: center; }
+        .hist-cab, .hist-lista.com-stats li { grid-template-columns: 2.5rem 1fr repeat(5, 3.7rem) 3.8rem repeat(2, 3.4rem) 3.4rem; gap: .5rem; align-items: center; }
         .hist-cab { padding: 0 1.2rem .45rem; font-size: .78rem; font-weight: 700; letter-spacing: .04em; opacity: .85; }
         .hist-cab .pos { width: auto; text-align: center; }
         .hist-cab .n, .hist-lista.com-stats li .n { text-align: center; }
@@ -452,15 +527,22 @@
         .hist-cab-g .g1 { grid-column: 3 / span 2; }
         .hist-cab-g .g2 { grid-column: 5 / span 3; }
         .hist-cab-g .g3 { grid-column: 8; }
+        .hist-cab-g .g4 { grid-column: 9 / span 2; }
         .hist-cab .cart { margin-right: .1rem; }
         .hist-lista.com-stats li { display: grid; }
         .hist-lista.com-stats li .pos { width: auto; }
         .hist-lista.com-stats li .gols { text-align: right; }
         .hist-lista li .n.med { color: #9ff0d3; font-weight: 600; }
+        .hist-lista li .n.gc { color: #ff9b9b; }
     }
     .cart { display: inline-block; width: .6rem; height: .85rem; border-radius: 2px; vertical-align: middle; }
     .cart.am { background: #ffd24a; } .cart.az { background: #3b82f6; } .cart.vm { background: #ef4444; }
     .hist-cab { display: none; }
+    .ord { cursor: pointer; user-select: none; }
+    .ord:hover { text-decoration: underline; }
+    .hist-cab .ord.on, .m-head .ord.on { color: #3ee0a8; }
+    .hist-cab .ord.on::after { content: " ▼"; font-size: .7em; }
+    .hist-cab .ord.on.asc::after { content: " ▲"; }
     .hist-m { display: none; }
     @@media (max-width: 899px) {
         .hist { height: var(--hist-h); display: flex; flex-direction: column; overflow: hidden; padding: .6rem .8rem; max-width: 100%; }
@@ -489,7 +571,7 @@
         .m-tabela > * { flex: none; }
         .m-corpo { flex: 1 1 auto !important; min-height: 0; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; padding: 0 .35rem .35rem; }
         .m-corpo::-webkit-scrollbar { display: none; }
-        .m-row { display: grid; grid-template-columns: 1.3rem 1fr 1.5rem 1.5rem 1.4rem 1.4rem 1.4rem 1.9rem 2.3rem; gap: .25rem; align-items: center; padding: .5rem .5rem; font-size: .8rem; }
+        .m-row { display: grid; grid-template-columns: 1.2rem 1fr 1.4rem 1.4rem 1.3rem 1.3rem 1.3rem 1.7rem 1.4rem 1.4rem 2.2rem; gap: .2rem; align-items: center; padding: .5rem .4rem; font-size: .8rem; }
         .m-corpo .m-row { border-radius: 10px; margin-top: .25rem; border: 1px solid rgba(80,200,180,.15); }
         .m-corpo .m-row.p1 { background: rgba(31,163,122,.25); border-color: #1fa37a; }
         .m-head { font-size: .62rem; letter-spacing: .04em; opacity: .85; font-weight: 700; padding-top: .6rem; padding-bottom: .4rem; border-bottom: 1px solid rgba(80,200,180,.2); }
@@ -498,6 +580,7 @@
         .m-row .c-nome.off { opacity: .6; font-weight: 500; }
         .m-row .c-n, .m-row .c-m { text-align: center; font-size: .75rem; }
         .m-row .c-m { color: #9ff0d3; }
+        .m-corpo .c-n.gc { color: #ff9b9b; }
         .m-row .c-g { text-align: right; }
         .m-row .c-g b { display: inline-block; min-width: 1.9rem; text-align: center; padding: .15rem .3rem; border-radius: 8px; background: rgba(255,255,255,.08); color: #ffd24a; font-size: .95rem; }
         .m-row.p1 .c-g b { background: #1fa37a; color: #fff; }
@@ -505,6 +588,9 @@
         .m-head .t-a, .m-corpo .t-a { color: #ffd24a; }
         .cart { display: inline-block; width: .55rem; height: .8rem; border-radius: 2px; }
         .cart.am { background: #ffd24a; } .cart.az { background: #3b82f6; } .cart.vm { background: #ef4444; }
+        .m-head .ord { position: relative; }
+        .m-head .ord.on::after { content: "▼"; position: absolute; left: 50%; bottom: -.45rem; transform: translateX(-50%); font-size: .45rem; }
+        .m-head .ord.on.asc::after { content: "▲"; }
         .so-gols .m-row { grid-template-columns: 1.3rem 1fr 2.3rem; }
         .so-gols .c-n, .so-gols .c-m { display: none; }
         .m-nota { margin: 0; padding: .35rem .6rem; font-size: .68rem; opacity: .6; }

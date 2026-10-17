@@ -12,10 +12,17 @@ public class ResumoTemporada
     [JsonProperty("jogos_vermelho")] public int JogosVermelho { get; set; }
     [JsonProperty("jogos_amarelo")] public int JogosAmarelo { get; set; }
     [JsonProperty("gols")] public int Gols { get; set; }
+    [JsonProperty("assistencias")] public int Assistencias { get; set; }
     [JsonProperty("gols_contra")] public int GolsContra { get; set; }
     [JsonProperty("amarelos")] public int Amarelos { get; set; }
     [JsonProperty("azuis")] public int Azuis { get; set; }
     [JsonProperty("vermelhos")] public int Vermelhos { get; set; }
+}
+
+public class AssistenciaTemporada
+{
+    [JsonProperty("atleta_id")] public Guid AtletaId { get; set; }
+    [JsonProperty("assistencias")] public int Assistencias { get; set; }
 }
 
 public class JogoTemporada
@@ -58,6 +65,7 @@ public class TemporadaJogoAtletaDb : BaseModel
     [Column("atleta_id")] public Guid AtletaId { get; set; }
     [Column("lado")] public string Lado { get; set; } = "vermelho";
     [Column("gols")] public int Gols { get; set; }
+    [Column("assistencias")] public int Assistencias { get; set; }
     [Column("gols_contra")] public int GolsContra { get; set; }
     [Column("amarelos")] public int Amarelos { get; set; }
     [Column("azuis")] public int Azuis { get; set; }
@@ -70,6 +78,7 @@ public class LinhaJogoEd
     public Guid AtletaId { get; set; }
     public string Lado { get; set; } = "vermelho";
     public int Gols { get; set; }
+    public int Assistencias { get; set; }
     public int GolsContra { get; set; }
     public int Amarelos { get; set; }
     public int Azuis { get; set; }
@@ -92,6 +101,7 @@ public class TemporadaTotalDb : BaseModel
     [Column("jogos_vermelho")] public int JogosVermelho { get; set; }
     [Column("jogos_amarelo")] public int JogosAmarelo { get; set; }
     [Column("gols")] public int Gols { get; set; }
+    [Column("assistencias")] public int Assistencias { get; set; }
     [Column("gols_contra")] public int GolsContra { get; set; }
     [Column("amarelos")] public int Amarelos { get; set; }
     [Column("azuis")] public int Azuis { get; set; }
@@ -109,9 +119,10 @@ public class LinhaTotalEd
     /// <summary>Jogos = jogos no Vermelho + jogos no Amarelo.</summary>
     public int Jogos => JogosVermelho + JogosAmarelo;
     public int Gols { get; set; }
+    public int Assistencias { get; set; }
     public int GolsContra { get; set; }
     public int Amarelos { get; set; }
     public int Azuis { get; set; }
     public int Vermelhos { get; set; }
-    public bool Preenchida => Jogos + Gols + GolsContra + Amarelos + Azuis + Vermelhos > 0;
+    public bool Preenchida => Jogos + Gols + Assistencias + GolsContra + Amarelos + Azuis + Vermelhos > 0;
 }
