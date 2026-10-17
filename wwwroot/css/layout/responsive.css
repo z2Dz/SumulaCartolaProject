@@ -1,39 +1,61 @@
 /* Layout: regras de @media
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
 @media (max-width: 899px) {
-    .shell { display: block; }
-    .lateral { display: none; }
-    .topo-m-time { display: flex; }
+    .shell {
+        display: block;
+    }
+
+    .lateral {
+        display: none;
+    }
+
+    .topo-m-time {
+        display: flex;
+    }
+
     .abas-m {
         display: flex;
         padding: .3rem;
         overflow-x: auto;
     }
-    .abas-m a {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--suave);
-        text-decoration: none;
-    }
-    .abas-m a.active { color: var(--branco); }
+
+        .abas-m a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--suave);
+            text-decoration: none;
+        }
+
+            .abas-m a.active {
+                color: var(--branco);
+            }
 }
 
 @media (min-width: 900px) {
     /* =====================================================================
    Escalar no computador: tudo cabe na tela, sem rolagem da página
    ===================================================================== */
-    .conteudo:has(.pagina.escalar) { padding-bottom: 0; } /* o cabeçalho com o avatar sai do fluxo para liberar altura */
-    .principal:has(.pagina.escalar) { position: relative; }
-    .principal:has(.pagina.escalar) .topo-m {
-        position: absolute;
-        top: 0;
-        right: 0;
-        padding: .5rem 1rem;
-        z-index: 5;
-        pointer-events: none;
+    .conteudo:has(.pagina.escalar) {
+        padding-bottom: 0;
     }
-    .principal:has(.pagina.escalar) .perfil-btn { display: none; }
+    /* o cabeçalho com o avatar sai do fluxo para liberar altura */
+    .principal:has(.pagina.escalar) {
+        position: relative;
+    }
+
+        .principal:has(.pagina.escalar) .topo-m {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: .5rem 1rem;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .principal:has(.pagina.escalar) .perfil-btn {
+            display: none;
+        }
 }
 
 @media (max-width: 899px) {
@@ -56,25 +78,34 @@
         overflow: visible;
         justify-content: space-around;
     }
-    .abas-m a {
-        flex: 1 1 0;
-        min-width: 0;
-        flex-direction: column;
-        gap: .15rem;
-        padding: .45rem .2rem .35rem;
-        border-radius: 12px;
-        font-size: .68rem;
-        font-weight: 600;
-        line-height: 1.1;
-        text-align: center;
+
+        .abas-m a {
+            flex: 1 1 0;
+            min-width: 0;
+            flex-direction: column;
+            gap: .15rem;
+            padding: .45rem .2rem .35rem;
+            border-radius: 12px;
+            font-size: .68rem;
+            font-weight: 600;
+            line-height: 1.1;
+            text-align: center;
+        }
+
+            .abas-m a.active {
+                background: transparent;
+                box-shadow: none;
+                color: var(--acento);
+            }
+
+                .abas-m a.active svg {
+                    filter: drop-shadow(0 0 6px rgba(25,201,138,.7));
+                }
+    /* espaço para o conteúdo não ficar escondido atrás da barra */
+    .conteudo {
+        padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
     }
-    .abas-m a.active {
-        background: transparent;
-        box-shadow: none;
-        color: var(--acento);
-    }
-    .abas-m a.active svg { filter: drop-shadow(0 0 6px rgba(25,201,138,.7)); } /* espaço para o conteúdo não ficar escondido atrás da barra */
-    .conteudo { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+
     .perfil-btn {
         width: auto;
         height: auto;
@@ -88,17 +119,23 @@
         color: var(--suave);
         font: inherit;
     }
-    .perfil-btn .pb-desk { display: none; }
-    .perfil-btn .pb-mob {
-        display: inline-flex;
-        align-items: center;
-        gap: .5rem;
-    }
+
+        .perfil-btn .pb-desk {
+            display: none;
+        }
+
+        .perfil-btn .pb-mob {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+        }
 }
 
 @media (min-width: 900px) {
     /* Computador: sem o botão de perfil no cabeçalho (o "Sair" fica no menu lateral); o cabeçalho vazio também some */
-    .topo-m { display: none; }
+    .topo-m {
+        display: none;
+    }
     /* =====================================================================
    Computador: Súmula e Chegada encaixadas na janela (a página não rola,
    só as listas). O layout novo usa .shell/.principal, então o antigo
@@ -109,16 +146,64 @@
         min-height: 0;
         overflow: hidden;
     }
-    .shell:has(.fixa) .principal {
-        height: 100dvh;
-        min-height: 0;
-        overflow: hidden;
+
+        .shell:has(.fixa) .principal {
+            height: 100dvh;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .shell:has(.fixa) .conteudo {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 0;
+        }
+}
+
+/* ===== Cabeçalho no celular: o nome do clube encolhe (com reticências) em vez de vazar pela esquerda ===== */
+@media (max-width: 899px) {
+    .topo-m {
+        gap: .5rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
-    .shell:has(.fixa) .conteudo {
-        flex: 1;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-        padding-bottom: 0;
+
+    .topo-m-time {
+        flex: 1 1 0;
+        min-width: 0;
     }
+
+        .topo-m-time > * {
+            min-width: 0;
+        }
+
+        .topo-m-time img,
+        .topo-m-time svg {
+            flex: none;
+        }
+
+        .topo-m-time strong,
+        .topo-m-time small {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+    .topo-m .perfil-btn {
+        flex: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .topo-m .perfil-btn {
+        padding: .4rem .8rem;
+        font-size: .9rem;
+    }
+
+        .topo-m .perfil-btn .pb-mob {
+            gap: .35rem;
+        }
 }

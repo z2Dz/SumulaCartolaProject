@@ -998,3 +998,85 @@
         color: #19c98a;
         font-weight: 700;
     }
+
+/* ===== Lista de atletas no celular: a página rola normalmente =====
+   Antes a tela ficava presa em 100dvh e só a lista rolava; no iPhone sobrava quase nada para ela.
+   No computador (>= 900px) continua encaixada na janela. */
+@media (max-width: 899px) {
+    .app:has(.atl),
+    .shell:has(.atl) {
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
+    }
+
+        .shell:has(.atl) .principal {
+            height: auto;
+            min-height: 0;
+            overflow: visible;
+        }
+
+        .shell:has(.atl) .conteudo {
+            flex: 1 0 auto;
+            min-height: auto;
+            padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+        }
+
+    .pagina.atl.fixa {
+        flex: none;
+        min-height: 0;
+    }
+
+        .pagina.atl.fixa > .atl-painel {
+            flex: none;
+            min-height: 0;
+        }
+
+    .atl-lista {
+        flex: none;
+        overflow: visible;
+        padding-right: 0;
+    }
+}
+
+/* Celulares estreitos: topo da tela mais compacto e filtros numa linha só */
+@media (max-width: 480px) {
+    .pagina.atl .adm2-topo {
+        gap: .8rem;
+        margin: .1rem 0 .6rem;
+    }
+
+    .pagina.atl .adm2-hex {
+        width: 48px;
+        height: 54px;
+    }
+
+    .pagina.atl .adm2-traco {
+        margin-top: .4rem;
+    }
+
+    .pagina.atl .adm2-nova {
+        padding: .8rem 1.1rem;
+        margin-bottom: .6rem;
+        font-size: 1.05rem;
+    }
+
+    .pagina.atl .atl-painel {
+        padding: .8rem;
+        gap: .6rem;
+    }
+
+    .atl-seg {
+        flex-wrap: nowrap;
+    }
+
+        .atl-seg button {
+            flex: 1 1 0;
+            min-width: 0;
+            padding: .45rem .3rem;
+            font-size: .8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+}

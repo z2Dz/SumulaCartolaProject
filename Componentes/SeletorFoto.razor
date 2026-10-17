@@ -1,4 +1,5 @@
-﻿@* Escolher foto (câmera ou galeria) -> enquadrar -> entregar o JPEG recortado ao pai.
+﻿@inject IJSRuntime JS
+@* Escolher foto (câmera ou galeria) -> enquadrar -> entregar o JPEG recortado ao pai.
    O pai guarda a foto (@bind-Foto); se ele zerar, a prévia some junto. *@
 <div class="sf">
     @if (Foto is not null)
@@ -21,7 +22,7 @@
         </label>
         <label class="botao-sec adm-arquivo">
             Galeria
-            <InputFile OnChange="AoEscolher" accept="image/*" hidden />
+            <InputFile OnChange="AoEscolher" accept="image/*,.heic,.heif" hidden />
         </label>
         @if (Foto is not null || (!Removida && !string.IsNullOrWhiteSpace(FotoUrlAtual)))
         {
@@ -59,17 +60,40 @@
     private string Previa => "data:image/jpeg;base64," + Convert.ToBase64String(Foto!);
     private string NomeOuInterrogacao => string.IsNullOrWhiteSpace(Nome) ? "?" : Nome;
 
+    private const int LadoMaximo = 1400;
+
+    private static bool EhHeic(IBrowserFile f)
+    {
+        var tipo = f.ContentType?.ToLowerInvariant() ?? "";
+        var ext = Path.GetExtension(f.Name).ToLowerInvariant();
+        return tipo is "image/heic" or "image/heif" or "image/heic-sequence" or "image/heif-sequence"
+            || ext is ".heic" or ".heif";
+    }
+
     private async Task AoEscolher(InputFileChangeEventArgs e)
     {
         erro = null;
         try
         {
-            // O navegador reduz antes de ler: câmera de celular gera arquivos de vários MB
-            var reduzida = await e.File.RequestImageFileAsync("image/jpeg", 1400, 1400);
-            using var fluxo = reduzida.OpenReadStream(8 * 1024 * 1024);
-            using var ms = new MemoryStream();
-            await fluxo.CopyToAsync(ms);
-            origem = "data:image/jpeg;base64," + Convert.ToBase64String(ms.ToArray());
+            byte[] bytes;
+            if (EhHeic(e.File))
+            {
+                // HEIC (iPhone): Chrome/Edge/Firefox não decodificam. Converte no navegador para JPEG já reduzido.
+                await using var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/foto-heic.js");
+                using var fluxo = e.File.OpenReadStream(30 * 1024 * 1024);
+                using var referencia = new DotNetStreamReference(fluxo);
+                bytes = await modulo.InvokeAsync<byte[]>("paraJpeg", referencia, LadoMaximo);
+            }
+            else
+            {
+                // O navegador reduz antes de ler: câmera de celular gera arquivos de vários MB
+                var reduzida = await e.File.RequestImageFileAsync("image/jpeg", LadoMaximo, LadoMaximo);
+                using var fluxo = reduzida.OpenReadStream(8 * 1024 * 1024);
+                using var ms = new MemoryStream();
+                await fluxo.CopyToAsync(ms);
+                bytes = ms.ToArray();
+            }
+            origem = "data:image/jpeg;base64," + Convert.ToBase64String(bytes);
         }
         catch
         {
