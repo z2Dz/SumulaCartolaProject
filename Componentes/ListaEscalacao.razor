@@ -65,7 +65,8 @@ else
         {
             var vaga = new SlotRef(pos, i);
             var at = Escalacao.Obter(pos, i);
-            var aberto = at is not null && ExtratoSlot == vaga;
+            var pontosVaga = at is null ? null : PontosDaVaga(pos, at);
+            var aberto = pontosVaga is not null && ExtratoSlot == vaga;   // sem pontuação na rodada, não abre extrato
             <button type="button" class="esc-lista-item esc-linha @(at is null ? "vazio" : "") @(Selecionado == vaga || aberto ? "sel" : "")" aria-expanded="@(at is null ? null : aberto.ToString().ToLowerInvariant())" @onclick="() => OnSlot.InvokeAsync(vaga)">
                 <span class="esc-linha-foto">@if (at is not null) {
                     <FotoAtleta Atleta="at" Posicao="pos" Tamanho="26" />
@@ -79,8 +80,7 @@ else
             }
             else
             {
-                var p = PontosDaVaga(pos, at);
-                <span class="esc-linha-pontos @(p is null ? "" : Classe(p.Value))">@(p is null ? "—" : Fmt(p.Value))</span>
+                <span class="esc-linha-pontos @(pontosVaga is null ? "" : Classe(pontosVaga.Value))">@(pontosVaga is null ? "—" : Fmt(pontosVaga.Value))</span>
             }
         </button>
         @if (aberto)

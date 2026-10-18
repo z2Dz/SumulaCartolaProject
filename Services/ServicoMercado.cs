@@ -56,7 +56,8 @@ public class ServicoMercado(Supabase.Client supabase)
             var valor = Dec(t["valor_inicial"], 8m);
             decimal media = 0;
             var jogos = 0;
-            decimal? ultima = null;
+            // pontos na rodada atual (null = não jogou ou rodada ainda sem súmula finalizada); vem pronto do banco
+            decimal? ultima = t["pontos_rodada"] is { Type: not JTokenType.Null } pr ? (decimal)pr : null;
             decimal? valorAntes = null;
 
             foreach (var item in t["historico"] as JArray ?? new JArray())
@@ -67,7 +68,6 @@ public class ServicoMercado(Supabase.Client supabase)
                 valor = r.NovoValor;
                 media = r.NovaMedia;
                 jogos = r.NovosJogos;
-                ultima = feitos;
             }
 
             elenco.Add(new AtletaEscalavel(
