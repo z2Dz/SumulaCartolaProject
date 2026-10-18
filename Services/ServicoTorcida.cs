@@ -61,14 +61,28 @@ public class ServicoTorcida(Supabase.Client supabase)
         catch (Exception ex) { throw new ErroTorcidaException(Traduzir(ex.Message, "salvar_clube")); }
     }
 
-    public async Task<List<LinhaRankingClube>> RankingAsync()
+    /// <summary>Ranking geral (rodada nula) ou só os pontos de uma rodada (partidas.numero_rodada).</summary>
+    public async Task<List<LinhaRankingClube>> RankingAsync(int? rodada = null)
     {
         try
         {
-            var resp = await supabase.Rpc("ranking_clubes", new Dictionary<string, object>());
+            var args = new Dictionary<string, object>();
+            if (rodada is { } r) args["p_rodada"] = r;
+            var resp = await supabase.Rpc("ranking_clubes", args);
             return JsonConvert.DeserializeObject<List<LinhaRankingClube>>(resp?.Content ?? "[]") ?? new();
         }
         catch (Exception ex) { throw new ErroTorcidaException(Traduzir(ex.Message, "ranking_clubes")); }
+    }
+
+    /// <summary>Números das rodadas que já têm pontos válidos, da mais recente para a mais antiga (seletor do ranking).</summary>
+    public async Task<List<int>> RodadasDoRankingAsync()
+    {
+        try
+        {
+            var resp = await supabase.Rpc("ranking_rodadas", new Dictionary<string, object>());
+            return JsonConvert.DeserializeObject<List<int>>(resp?.Content ?? "[]") ?? new();
+        }
+        catch (Exception ex) { throw new ErroTorcidaException(Traduzir(ex.Message, "ranking_rodadas")); }
     }
 
     /// <summary>Moldura de cada cartão (todos, por posição e individual). Guardada à parte do clube (migração 32).</summary>
@@ -124,7 +138,7 @@ public class ServicoTorcida(Supabase.Client supabase)
 
         if (texto.Contains(funcao, StringComparison.OrdinalIgnoreCase)
             && (texto.Contains("not find", StringComparison.OrdinalIgnoreCase) || texto.Contains("does not exist", StringComparison.OrdinalIgnoreCase)))
-            return "A função " + funcao + " não existe no banco. Rode o arquivo " + (funcao is "meus_cards" or "salvar_cards" ? "32_cards.sql" : funcao == "torcida_sincronizar_todos" ? "ranking_sincronizar_todos.sql" : funcao == "personalizacao_do_usuario" ? "33_personalizacao_ranking.sql" : "15_torcida.sql") + " no SQL Editor do Supabase.";
+            return "A função " + funcao + " não existe no banco. Rode o arquivo " + (funcao is "meus_cards" or "salvar_cards" ? "32_cards.sql" : funcao == "torcida_sincronizar_todos" ? "ranking_sincronizar_todos.sql" : funcao is "ranking_clubes" or "ranking_rodadas" ? "ranking_por_rodada.sql" : funcao == "personalizacao_do_usuario" ? "33_personalizacao_ranking.sql" : "15_torcida.sql") + " no SQL Editor do Supabase.";
         return texto;
     }
 }

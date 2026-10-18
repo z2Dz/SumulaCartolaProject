@@ -10,8 +10,8 @@ public record LinhaExtrato(string Texto, decimal Pontos, bool Pontua = true);
 /// <summary>Extrato do atleta na última partida finalizada.</summary>
 public record ExtratoJogo(DateTimeOffset? Data, decimal Total, List<LinhaExtrato> Linhas);
 
-/// <summary>Um atleta que jogou a última rodada, com os pontos dela (posição já em sigla, ex.: "MEI/ZAG").</summary>
-public record AtletaRodada(string Id, string Nome, string Posicao, decimal Pontos);
+/// <summary>Um atleta que jogou a última rodada, com os pontos dela (posição já em sigla, ex.: "MEI/ZAG") e o time em que jogou (ex.: "Vermelho").</summary>
+public record AtletaRodada(string Id, string Nome, string Posicao, decimal Pontos, string? TimeNome = null);
 public record PontuacaoDaRodada(DateTimeOffset? Data, List<AtletaRodada> Atletas);
 
 /// <summary>Falha ao carregar o mercado, com texto pronto para mostrar ao usuário.</summary>
@@ -158,7 +158,7 @@ public class ServicoMercado(Supabase.Client supabase)
         foreach (var a in o["atletas"] as JArray ?? new JArray())
         {
             var siglas = (a["posicoes"] as JArray ?? new JArray()).Select(p => ((string?)p ?? "").ToUpperInvariant()).Where(s => s.Length > 0);
-            atletas.Add(new AtletaRodada((string?)a["id"] ?? "", (string?)a["nome"] ?? "", string.Join("/", siglas), Dec(a["pontos"], 0m)));
+            atletas.Add(new AtletaRodada((string?)a["id"] ?? "", (string?)a["nome"] ?? "", string.Join("/", siglas), Dec(a["pontos"], 0m), (string?)a["time_nome"]));
         }
 
         DateTimeOffset? data = DateTimeOffset.TryParse((string?)o["data_hora"], System.Globalization.CultureInfo.InvariantCulture,

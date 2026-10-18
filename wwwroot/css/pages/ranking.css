@@ -1,7 +1,50 @@
 /* Página Ranking
    Carregado por app.css; a ordem dos arquivos importa (ver comentário em app.css). */
 /* ranking */
-.pagina.ranking { max-width: 780px; }
+.pagina.ranking {
+    max-width: 780px;
+}
+
+@media (min-width: 900px) {
+    /* computador: a página não rola, só a lista (mesmo esquema da tela Clube) */
+    .conteudo:has(.pagina.ranking) {
+        padding-bottom: 0;
+    }
+
+    .pagina.ranking {
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+        padding-bottom: 0;
+    }
+
+        .pagina.ranking > .rk-rolagem {
+            flex: 1 1 0;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            /* folga para o contorno amarelo e o brilho dourado não serem cortados; a margem negativa devolve o alinhamento */
+            padding: .5rem .6rem 1rem;
+            margin: -.5rem -.6rem 0;
+        }
+
+            .pagina.ranking > .rk-rolagem::-webkit-scrollbar {
+                display: none;
+            }
+}
+
+/* Linha de cima: abas Pontos/Torcida + seletor de rodada (mesma altura, quebra no celular) */
+.rk-topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: .6rem;
+    margin-bottom: .8rem;
+}
 
 .rk-abas {
     display: inline-flex;
@@ -9,28 +52,57 @@
     padding: .25rem;
     border-radius: 999px;
     background: rgba(128,128,128,.18);
-    margin-bottom: .8rem;
 }
 
-.rk-abas button {
+    .rk-abas button {
+        border: 0;
+        background: transparent;
+        color: var(--texto);
+        padding: .4rem 1.1rem;
+        border-radius: 999px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .rk-abas button.sel {
+            background: var(--verde-2);
+            color: var(--branco);
+        }
+
+/* Seletor de rodada: pílula igual à das abas, com seta própria (o hex da seta é o --acento) */
+.rk-filtro {
+    appearance: none;
+    -webkit-appearance: none;
     border: 0;
-    background: transparent;
-    color: var(--texto);
-    padding: .4rem 1.1rem;
     border-radius: 999px;
+    padding: .4rem 2.3rem .4rem 1.2rem;
+    background-color: rgba(128,128,128,.18);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%2319c98a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    color: var(--texto);
+    color-scheme: dark;
+    font: inherit;
     font-weight: 600;
     cursor: pointer;
 }
 
-.rk-abas button.sel {
-    background: var(--verde-2);
-    color: var(--branco);
-}
+    .rk-filtro:focus-visible {
+        outline: 2px solid var(--acento);
+        outline-offset: 2px;
+    }
+
+    .rk-filtro option {
+        background: var(--cartao);
+        color: var(--texto);
+    }
 
 /* =====================================================================
    Tela Escalar (novo visual): cabeçalho, campo largo e painel em linhas
    ===================================================================== */
-.pagina.escalar { max-width: 1500px; }
+.pagina.escalar {
+    max-width: 1500px;
+}
 
 @media (min-width: 900px) {
     .pagina.escalar {
@@ -41,6 +113,7 @@
         padding: .8rem 1.2rem .8rem;
         overflow: hidden;
     }
+
     .pagina.clube {
         display: flex;
         flex-direction: column;
@@ -49,7 +122,10 @@
         overflow: hidden;
         padding-bottom: 0;
     }
-    .pagina.clube { max-width: 1280px; }
+
+    .pagina.clube {
+        max-width: 1280px;
+    }
 }
 
 .previa-modo button {

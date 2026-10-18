@@ -9,9 +9,22 @@
 <div class="pagina ranking">
     <h1>Ranking</h1>
 
-    <div class="rk-abas" role="tablist">
-        <button type="button" role="tab" class="@(porTorcida ? "" : "sel")" @onclick="() => porTorcida = false">Pontos</button>
-        <button type="button" role="tab" class="@(porTorcida ? "sel" : "")" @onclick="() => porTorcida = true">Torcida</button>
+    <div class="rk-topo">
+        <div class="rk-abas" role="tablist">
+            <button type="button" role="tab" class="@(porTorcida ? "" : "sel")" @onclick="() => porTorcida = false">Pontos</button>
+            <button type="button" role="tab" class="@(porTorcida ? "sel" : "")" @onclick="() => porTorcida = true">Torcida</button>
+        </div>
+
+        @if (rodadas.Count > 0)
+        {
+            <select class="rk-filtro" aria-label="Filtrar por rodada" value="@(rodadaSel?.ToString() ?? "")" @onchange="TrocarRodada">
+                <option value="">Geral</option>
+                @foreach (var r in rodadas)
+                {
+                    <option value="@r">Rodada @r</option>
+                }
+            </select>
+        }
     </div>
 
     @if (!string.IsNullOrEmpty(avisoSync))
@@ -33,94 +46,109 @@
     }
     else
     {
-        <ol class="rk-lista">
-            @{ var pos = 0; }
-            @foreach (var l in Ordenadas())
-            {
-                pos++;
-                var ouro = l.Torcida >= Torcida.MinDourado;
-                var aberto = abertoId == l.Id;
-                <li class="rk-item">
-                <div class="rk-linha @(ouro ? "ouro" : "") @(l.EhVoce ? "voce" : "") @(aberto ? "aberto" : "")"
-                     role="button" tabindex="0" aria-expanded="@(aberto ? "true" : "false")"
-                     @onclick="() => Alternar(l)" @onkeydown="e => AoTeclar(e, l)">
-                    <span class="rk-pos">@pos</span>
-                    <Escudo Config="l.Escudo" Tamanho="46" Coroa="@(l.Coroa && l.Torcida >= Torcida.MinCoroa)"
-                            Estrelas="@(l.Torcida >= Torcida.MinCoroa ? l.Estrelas : 0)" Dourado="@ouro" />
-                    <div class="rk-info">
-                        <strong>@l.NomeTime @if (l.EhVoce) { <small>(você)</small> }</strong>
-                        <small class="suave">@@@l.NomeUsuario@(string.IsNullOrWhiteSpace(l.Apelido) ? "" : " · Torcida " + l.Apelido)</small>
-                    </div>
-                    <div class="rk-num @(porTorcida ? "" : "principal")">
-                        <strong>@Formato.Pontos(l.Pontos)</strong><small>pts · @l.Rodadas rod.</small>
-                    </div>
-                    <div class="rk-num @(porTorcida ? "principal" : "")">
-                        <strong>@Torcida.Fmt(l.Torcida)</strong><small>torcida · nv @Torcida.Numero(l.Torcida)</small>
-                    </div>
-                </div>
-                @if (aberto)
-                {
-                    <div class="rk-escalacao">
-                        @if (carregandoId == l.Id)
-                        {
-                            <p class="suave centro">Carregando escalação…</p>
-                        }
-                        else if (erros.TryGetValue(l.Id, out var msg))
-                        {
-                            <div class="erro" role="alert">@msg</div>
-                        }
-                        else if (cache.TryGetValue(l.Id, out var m) && m is not null)
-                        {
-                            <p class="rk-esc-titulo">Escalação de <strong>@l.NomeTime</strong> · @m.Tatica.Nome</p>
-                            var pz = personalizacoes.TryGetValue(l.Id, out var x) ? x : new PersonalizacaoClube(new ClubeConfig(), new CardsConfig());
-                            var cl = pz.Clube;
-                            var faixa = cl.TemFaixa() && l.Torcida >= Torcida.MinTextos;
-                            var temEstadio = !string.IsNullOrWhiteSpace(cl.Estadio) && l.Torcida >= Torcida.MinDourado;   // nome do estádio é recompensa da "Lenda da pelada"
-                            if (temEstadio)
-                            {
-                                <div class="rk-personalizacao">
-                                    <p class="home-estadio">Estádio <strong>@cl.Estadio</strong></p>
-                                </div>
-                            }
-                            <div class="rk-campo-faixas">
-                                @if (faixa) { <FaixaLateral Modelo="@cl.Esquerda()" Cor1="@cl.FaixaCor1" Cor2="@cl.FaixaCor2" Escudo="l.Escudo" /> }
-                                <div class="rk-campo">
-                                    <CampoTatico Escalacao="m" Cards="pz.Cards" Estilo="@cl.Campo" Moldura="@cl.Moldura" LinhasCor="@cl.CampoLinhas" Estadio="@cl.EstadioModelo"
-                                                 CorGrama1="@cl.CampoCor1" CorGrama2="@cl.CampoCor2" CorMoldura="@cl.MolduraCor"
-                                                 CorEstadio1="@cl.EstadioCor1" CorEstadio2="@cl.EstadioCor2" EscudoCard="l.Escudo" />
-                                </div>
-                                @if (faixa) { <FaixaLateral Modelo="@cl.Direita()" Cor1="@cl.FaixaCor1" Cor2="@cl.FaixaCor2" Escudo="l.Escudo" /> }
-                            </div>
-                            @if ((cl.Camisa is not null && l.Torcida >= Torcida.MinCamisa) || (!string.IsNullOrEmpty(cl.Mascote) && l.Torcida >= Torcida.MinMascote))
-                            {
-                                <div class="rk-extras">
-                                    @if (cl.Camisa is { } c1 && l.Torcida >= Torcida.MinCamisa)
-                                    {
-                                        <Camisa Padrao="@c1.Padrao" Cor1="@c1.Cor1" Cor2="@c1.Cor2" Cor3="@c1.Cor3" Tamanho="70" />
-                                    }
-                                    @if (!string.IsNullOrEmpty(cl.Mascote) && l.Torcida >= Torcida.MinMascote)
-                                    {
-                                        <Mascote Chave="@cl.Mascote" Cor="@cl.MascoteCor" Tamanho="70" />
-                                    }
-                                </div>
-                            }
-                        }
-                        else
-                        {
-                            <p class="suave centro">Esse time ainda não salvou uma escalação.</p>
-                        }
-                    </div>
+        <div class="rk-rolagem">
+            <ol class="rk-lista">
+                @{
+                    var pos = 0;
                 }
+                @foreach (var l in Ordenadas())
+                {
+                    pos++;
+                    var ouro = l.Torcida >= Torcida.MinDourado;
+                    var aberto = abertoId == l.Id;
+                    <li class="rk-item">
+                        <div class="rk-linha @(ouro ? "ouro" : "") @(l.EhVoce ? "voce" : "") @(aberto ? "aberto" : "")"
+                             role="button" tabindex="0" aria-expanded="@(aberto ? "true" : "false")"
+                             @onclick="() => Alternar(l)" @onkeydown="e => AoTeclar(e, l)">
+                            <span class="rk-pos">@pos</span>
+                            <Escudo Config="l.Escudo" Tamanho="46" Coroa="@(l.Coroa && l.Torcida >= Torcida.MinCoroa)"
+                                    Estrelas="@(l.Torcida >= Torcida.MinCoroa ? l.Estrelas : 0)" Dourado="@ouro" />
+                            <div class="rk-info">
+                                <strong>@l.NomeTime @if (l.EhVoce) {
+                                    <small>(você)</small>
+                                }
+                            </strong>
+                            <small class="suave">@@@l.NomeUsuario@(string.IsNullOrWhiteSpace(l.Apelido) ? "" : " · Torcida " + l.Apelido)</small>
+                        </div>
+                        <div class="rk-num @(porTorcida ? "" : "principal")">
+                            <strong>@Formato.Pontos(l.Pontos)</strong><small>pts · @(rodadaSel is null ? l.Rodadas + " rod." : "rodada " + rodadaSel)</small>
+                        </div>
+                        <div class="rk-num @(porTorcida ? "principal" : "")">
+                            <strong>@Torcida.Fmt(l.Torcida)</strong><small>torcida · nv @Torcida.Numero(l.Torcida)</small>
+                        </div>
+                    </div>
+                    @if (aberto)
+                    {
+                        <div class="rk-escalacao">
+                            @if (carregandoId == l.Id)
+                            {
+                                <p class="suave centro">Carregando escalação…</p>
+                            }
+                            else if (erros.TryGetValue(l.Id, out var msg))
+                            {
+                                <div class="erro" role="alert">@msg</div>
+                            }
+                            else if (cache.TryGetValue(l.Id, out var m) && m is not null)
+                            {
+                                <p class="rk-esc-titulo">Escalação de <strong>@l.NomeTime</strong> · @m.Tatica.Nome</p>
+                                var pz = personalizacoes.TryGetValue(l.Id, out var x) ? x : new PersonalizacaoClube(new ClubeConfig(), new CardsConfig());
+                                var cl = pz.Clube;
+                                var faixa = cl.TemFaixa() && l.Torcida >= Torcida.MinTextos;
+                                var temEstadio = !string.IsNullOrWhiteSpace(cl.Estadio) && l.Torcida >= Torcida.MinDourado;   // nome do estádio é recompensa da "Lenda da pelada"
+                                if (temEstadio)
+                                {
+                                    <div class="rk-personalizacao">
+                                        <p class="home-estadio">Estádio <strong>@cl.Estadio</strong></p>
+                                    </div>
+                                }
+                                <div class="rk-campo-faixas">
+                                    @if (faixa)
+                                    {
+                                        <FaixaLateral Modelo="@cl.Esquerda()" Cor1="@cl.FaixaCor1" Cor2="@cl.FaixaCor2" Escudo="l.Escudo" />
+                                    }
+                                    <div class="rk-campo">
+                                        <CampoTatico Escalacao="m" Cards="pz.Cards" Estilo="@cl.Campo" Moldura="@cl.Moldura" LinhasCor="@cl.CampoLinhas" Estadio="@cl.EstadioModelo"
+                                                     CorGrama1="@cl.CampoCor1" CorGrama2="@cl.CampoCor2" CorMoldura="@cl.MolduraCor"
+                                                     CorEstadio1="@cl.EstadioCor1" CorEstadio2="@cl.EstadioCor2" EscudoCard="l.Escudo" />
+                                    </div>
+                                    @if (faixa)
+                                    {
+                                        <FaixaLateral Modelo="@cl.Direita()" Cor1="@cl.FaixaCor1" Cor2="@cl.FaixaCor2" Escudo="l.Escudo" />
+                                    }
+                                </div>
+                                @if ((cl.Camisa is not null && l.Torcida >= Torcida.MinCamisa) || (!string.IsNullOrEmpty(cl.Mascote) && l.Torcida >= Torcida.MinMascote))
+                                {
+                                    <div class="rk-extras">
+                                        @if (cl.Camisa is { } c1 && l.Torcida >= Torcida.MinCamisa)
+                                        {
+                                            <Camisa Padrao="@c1.Padrao" Cor1="@c1.Cor1" Cor2="@c1.Cor2" Cor3="@c1.Cor3" Tamanho="70" />
+                                        }
+                                        @if (!string.IsNullOrEmpty(cl.Mascote) && l.Torcida >= Torcida.MinMascote)
+                                        {
+                                            <Mascote Chave="@cl.Mascote" Cor="@cl.MascoteCor" Tamanho="70" />
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="suave centro">Esse time ainda não salvou uma escalação.</p>
+                            }
+                        </div>
+                    }
                 </li>
             }
         </ol>
         <p class="suave centro rk-nota">Toque num time para ver a escalação dele. Pontos e torcida de todos os times são atualizados ao abrir o ranking. Só conta a rodada de quem salvou a escalação antes da partida.</p>
-    }
+    </div>
+}
 </div>
 
 @code {
     private List<LinhaRankingClube> linhas = new();
-    private bool carregando = true, porTorcida;
+    private List<int> rodadas = new();
+    private int? rodadaSel;   // null = geral; ao abrir a tela começa na última rodada
+    private bool carregando = true, porTorcida, filtroInicial;
     private string? erro, avisoSync;
 
     // escalação aberta embaixo de um time
@@ -199,8 +227,25 @@
                 avisoSync = "Não consegui atualizar os pontos de todos os times: " + ex.Message;
                 try { await Torcidas.CarregarAsync(); } catch (ErroTorcidaException) { }
             }
-            linhas = await Torcidas.RankingAsync();
+            rodadas = await Torcidas.RodadasDoRankingAsync();
+            if (!filtroInicial)
+            {
+                rodadaSel = rodadas.Count > 0 ? rodadas[0] : null;
+                filtroInicial = true;
+            }
+            linhas = await Torcidas.RankingAsync(rodadaSel);
         }
+        catch (ErroTorcidaException ex) { erro = ex.Message; }
+        finally { carregando = false; }
+    }
+
+    // Trocar a rodada só relê o ranking; a sincronização já foi feita ao abrir a tela
+    private async Task TrocarRodada(ChangeEventArgs e)
+    {
+        rodadaSel = int.TryParse(e.Value?.ToString(), out var r) ? r : null;
+        carregando = true;
+        erro = null;
+        try { linhas = await Torcidas.RankingAsync(rodadaSel); }
         catch (ErroTorcidaException ex) { erro = ex.Message; }
         finally { carregando = false; }
     }
