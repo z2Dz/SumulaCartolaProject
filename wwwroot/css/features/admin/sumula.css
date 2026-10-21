@@ -1070,3 +1070,121 @@
             color: #fff;
             box-shadow: 0 0 0 1px rgba(var(--acao-rgb), .35);
         }
+
+
+/* Popup do lance: jogadores em cards (foto redonda em cima; nome e "posição - nº camisa" embaixo) */
+.sm2-cards {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: .6rem;
+}
+
+.sm2-card-jog {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .15rem;
+    padding: .85rem .8rem .75rem;
+    text-align: center;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    background: var(--cartao);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: var(--raio);
+}
+
+    .sm2-card-jog:hover,
+    .sm2-card-jog:focus-visible {
+        border-color: var(--acento);
+    }
+
+    .sm2-card-jog:active {
+        transform: scale(.98);
+    }
+
+    .sm2-card-jog[aria-pressed="true"] {
+        border-color: var(--menta);
+        box-shadow: 0 0 0 1px var(--menta);
+    }
+
+.sm2-card-foto {
+    align-self: center;
+    margin-bottom: .45rem;
+    display: grid;
+    place-items: center;
+}
+
+.sm2-card-jog strong {
+    font-size: .98rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.sm2-card-jog small {
+    color: var(--suave);
+    font-size: .8rem;
+}
+
+.sm2-card-ok {
+    position: absolute;
+    top: .5rem;
+    right: .6rem;
+    color: var(--menta);
+    font-weight: 800;
+}
+
+@media (max-width: 560px) {
+    .sm2-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+
+/* Ações do lance em grade 3 x 3: ícone colorido em cima, nome embaixo */
+.sm2-acoes.sm2-acoes-grade {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .6rem;
+}
+
+.sm2-acoes-grade .sm2-acao {
+    flex-direction: column;
+    gap: .5rem;
+    min-height: 6.2rem;
+    padding: .8rem .4rem;
+    border-radius: 16px;
+    border-color: rgba(255,255,255,.1);
+    background: rgba(255,255,255,.05);
+    color: var(--texto-claro);
+    font-size: .88rem;
+}
+
+    .sm2-acoes-grade .sm2-acao:hover,
+    .sm2-acoes-grade .sm2-acao:focus-visible {
+        background: rgba(var(--acao-rgb), .16);
+        border-color: rgba(var(--acao-rgb), .7);
+    }
+
+    .sm2-acoes-grade .sm2-acao svg {
+        width: 34px;
+        height: 34px;
+        color: rgb(var(--acao-rgb));
+    }
+
+@media (max-width: 480px) {
+    .sm2-acoes-grade .sm2-acao {
+        min-height: 5.6rem;
+        font-size: .8rem;
+    }
+
+        .sm2-acoes-grade .sm2-acao svg {
+            width: 30px;
+            height: 30px;
+        }
+}

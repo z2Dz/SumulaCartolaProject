@@ -261,21 +261,49 @@
                             </button>
                         </div>
                     }
+                    else if (acaoLance is null)
+                    {
+                        @* Passo 1: o que aconteceu (e em que tempo) *@
+                        <span class="adm-rotulo">Tempo</span>
+                        <div class="adm-seg adm-seg-largo sm2-seg" role="group" aria-label="Tempo do lance">
+                            <button type="button" class="@TimePelada.Css(lado) @(tempoLance == 1 ? "on" : "")" aria-pressed="@(tempoLance == 1)" @onclick="() => tempoLance = 1">1º tempo</button>
+                            <button type="button" class="@TimePelada.Css(lado) @(tempoLance == 2 ? "on" : "")" aria-pressed="@(tempoLance == 2)" @onclick="() => tempoLance = 2">2º tempo</button>
+                        </div>
+
+                        <span class="adm-rotulo">O que foi o lance?</span>
+                        <div class="sm2-acoes sm2-acoes-grade">
+                            @foreach (var ta in AcoesDoLance)
+                            {
+                                var tipoAcao = ta;
+                                <button type="button" class="sm2-acao @ClasseAcao(tipoAcao)" @onclick="() => EscolherAcao(tipoAcao)">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">@IconeAcao(tipoAcao)</svg>
+                                    <span>@RotuloDe(tipoAcao)</span>
+                                </button>
+                            }
+                        </div>
+                    }
                     else if (jogadorLance is null)
                     {
+                        @* Passo 2: quem fez o lance (as demais ações registram assim que o jogador é escolhido) *@
+                        <div class="chg-nome">
+                            <span class="chg-nome-txt">
+                                <strong>@RotuloDe(acaoLance.Value)</strong>
+                                <small>@(tempoLance)º tempo</small>
+                            </span>
+                            <button type="button" class="botao-sec" @onclick="TrocarAcao">Trocar</button>
+                        </div>
+
                         <span class="adm-rotulo">Quem fez o lance?</span>
-                        <ul class="chg-nomes">
+                        <ul class="sm2-cards">
                             @foreach (var j in jogadores)
                             {
                                 var jog = j;
                                 var atl = atletas.FirstOrDefault(a => a.Id == jog.AtletaId);
                                 <li>
-                                    <button type="button" class="chg-nome" @onclick="() => jogadorLance = jog.AtletaId">
-                                        <FotoJogador Nome="@jog.Nome" FotoUrl="@atl?.FotoUrl" Posicoes="@atl?.Posicoes" Tamanho="32" />
-                                        <span class="chg-nome-txt">
-                                            <strong>@jog.Nome</strong>
-                                            <small>@Camisa(jog)</small>
-                                        </span>
+                                    <button type="button" class="sm2-card-jog" @onclick="() => EscolherJogador(jog.AtletaId)">
+                                        <span class="sm2-card-foto"><FotoJogador Nome="@jog.Nome" FotoUrl="@atl?.FotoUrl" Posicoes="@atl?.Posicoes" Tamanho="64" /></span>
+                                        <strong>@jog.Nome</strong>
+                                        <small>@InfoJogador(jog, atl?.Posicoes)</small>
                                     </button>
                                 </li>
                             }
@@ -288,6 +316,7 @@
                     }
                     else
                     {
+                        @* Passo 3 (só para gol): assistência opcional *@
                         var atual = linhas.FirstOrDefault(x => x.AtletaId == jogadorLance);
                         var atlAtual = atletas.FirstOrDefault(a => a.Id == jogadorLance);
                         @if (atual is null)
@@ -300,81 +329,37 @@
                                 <FotoJogador Nome="@atual.Nome" FotoUrl="@atlAtual?.FotoUrl" Posicoes="@atlAtual?.Posicoes" Tamanho="32" />
                                 <span class="chg-nome-txt">
                                     <strong>@atual.Nome</strong>
-                                    <small>@Camisa(atual)</small>
+                                    <small>Gol · @(tempoLance)º tempo</small>
                                 </span>
                                 <button type="button" class="botao-sec" @onclick="TrocarJogador">Trocar</button>
                             </div>
 
-                            <span class="adm-rotulo">Tempo</span>
-                            <div class="adm-seg adm-seg-largo sm2-seg" role="group" aria-label="Tempo do lance">
-                                <button type="button" class="@TimePelada.Css(lado) @(tempoLance == 1 ? "on" : "")" aria-pressed="@(tempoLance == 1)" @onclick="() => tempoLance = 1">1º tempo</button>
-                                <button type="button" class="@TimePelada.Css(lado) @(tempoLance == 2 ? "on" : "")" aria-pressed="@(tempoLance == 2)" @onclick="() => tempoLance = 2">2º tempo</button>
+                            <span class="adm-rotulo">Quem deu a assistência? (opcional)</span>
+                            <ul class="sm2-cards">
+                                @foreach (var j in jogadores.Where(x => x.AtletaId != jogadorLance))
+                                {
+                                    var jog = j;
+                                    var atl = atletas.FirstOrDefault(a => a.Id == jog.AtletaId);
+                                    <li>
+                                        <button type="button" class="sm2-card-jog" aria-pressed="@(assistLance == jog.AtletaId)" @onclick="() => AlternarAssist(jog.AtletaId)">
+                                            @if (assistLance == jog.AtletaId)
+                                            {
+                                                <span class="sm2-card-ok" aria-hidden="true">✓</span>
+                                            }
+                                            <span class="sm2-card-foto"><FotoJogador Nome="@jog.Nome" FotoUrl="@atl?.FotoUrl" Posicoes="@atl?.Posicoes" Tamanho="64" /></span>
+                                            <strong>@jog.Nome</strong>
+                                            <small>@InfoJogador(jog, atl?.Posicoes)</small>
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+                            <div class="sm2-barra">
+                                <button type="button" class="sm2-sec" @onclick="TrocarJogador">Voltar</button>
+                                <span class="sm2-barra-gap"></span>
+                                <button type="button" class="sm2-salvar" @onclick="() => RegistrarLance(TipoLance.Gol, assistLance)">
+                                    @(assistLance is null ? "Registrar gol" : "Registrar gol com assistência")
+                                </button>
                             </div>
-
-                            @if (!escolhendoAssist)
-                            {
-                                <span class="adm-rotulo">O que ele fez?</span>
-                                <div class="sm2-acoes sm2-acoes-1">
-                                    <button type="button" class="sm2-acao grande gol" @onclick="EscolherGol">
-                                        <svg viewBox="0 0 24 24" aria-hidden="true">@IconeAcao(TipoLance.Gol)</svg>
-                                        <span>Gol</span>
-                                    </button>
-                                    <button type="button" class="sm2-acao grande gol-contra" @onclick="() => RegistrarLance(TipoLance.GolContra)">
-                                        <svg viewBox="0 0 24 24" aria-hidden="true">@IconeAcao(TipoLance.GolContra)</svg>
-                                        <span>Gol contra</span>
-                                    </button>
-                                </div>
-                                <div class="sm2-acoes sm2-acoes-3">
-                                    @foreach (var tc in new[] { TipoLance.Amarelo, TipoLance.Azul, TipoLance.Vermelho })
-                                    {
-                                        var t3 = tc;
-                                        <button type="button" class="sm2-acao @ClasseAcao(t3)" @onclick="() => RegistrarLance(t3)">
-                                            <svg viewBox="0 0 24 24" aria-hidden="true">@IconeAcao(t3)</svg>
-                                            <span>@RotuloDe(t3)</span>
-                                        </button>
-                                    }
-                                </div>
-
-                                <span class="adm-rotulo">Outras ações</span>
-                                <div class="sm2-acoes">
-                                    @foreach (var tp in AcoesRapidas)
-                                    {
-                                        var t2 = tp;
-                                        <button type="button" class="sm2-acao @ClasseAcao(t2)" @onclick="() => RegistrarLance(t2)">
-                                            <svg viewBox="0 0 24 24" aria-hidden="true">@IconeAcao(t2)</svg>
-                                            <span>@RotuloDe(t2)</span>
-                                        </button>
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <span class="adm-rotulo">Quem deu a assistência? (opcional)</span>
-                                <ul class="chg-nomes">
-                                    @foreach (var j in jogadores.Where(x => x.AtletaId != jogadorLance))
-                                    {
-                                        var jog = j;
-                                        var atl = atletas.FirstOrDefault(a => a.Id == jog.AtletaId);
-                                        <li>
-                                            <button type="button" class="chg-nome" aria-pressed="@(assistLance == jog.AtletaId)" @onclick="() => AlternarAssist(jog.AtletaId)">
-                                                <FotoJogador Nome="@jog.Nome" FotoUrl="@atl?.FotoUrl" Posicoes="@atl?.Posicoes" Tamanho="32" />
-                                                <span class="chg-nome-txt">
-                                                    <strong>@jog.Nome</strong>
-                                                    <small>@Camisa(jog)</small>
-                                                </span>
-                                                <span class="chg-mais" aria-hidden="true">@(assistLance == jog.AtletaId ? "✓" : "+")</span>
-                                            </button>
-                                        </li>
-                                    }
-                                </ul>
-                                <div class="sm2-barra">
-                                    <button type="button" class="sm2-sec" @onclick="() => escolhendoAssist = false">Voltar</button>
-                                    <span class="sm2-barra-gap"></span>
-                                    <button type="button" class="sm2-salvar" @onclick="() => RegistrarLance(TipoLance.Gol, assistLance)">
-                                        @(assistLance is null ? "Registrar gol" : "Registrar gol com assistência")
-                                    </button>
-                                </div>
-                            }
                         }
                     }
                 </div>
@@ -577,8 +562,14 @@
     private record ItemLinha(Lance Ev, int Casa, int Visitante);
 
     private static readonly TipoLance[] ComTempo = { TipoLance.Gol, TipoLance.GolContra, TipoLance.Amarelo, TipoLance.Azul, TipoLance.Vermelho };
-    /// <summary>Botões de "Outras ações" no popup. A assistência não tem botão: vai junto do gol (ou pelo ✎ do gol).</summary>
-    private static readonly TipoLance[] AcoesRapidas = { TipoLance.ChuteGol, TipoLance.Defesa, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido };
+
+    /// <summary>Ações do popup de lance, na ordem da grade 3 x 3. A assistência não tem botão: vai junto do gol (ou pelo ✎ do gol).</summary>
+    private static readonly TipoLance[] AcoesDoLance =
+    {
+        TipoLance.Gol, TipoLance.ChuteGol, TipoLance.Defesa,
+        TipoLance.Amarelo, TipoLance.Azul, TipoLance.Vermelho,
+        TipoLance.GolContra, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido
+    };
 
     private static string ClasseAcao(TipoLance t) => t switch
     {
@@ -611,6 +602,7 @@
     private readonly List<Lance> lances = new();
     private bool modalLance, escolhendoAssist, abaLista;
     private Guid? jogadorLance, assistLance;
+    private TipoLance? acaoLance;   // ação escolhida antes do jogador: ações primeiro, depois quem fez
     private int tempoLance = 1;
 
     private static bool EhGol(TipoLance t) => t is TipoLance.Gol or TipoLance.GolContra;
@@ -811,6 +803,7 @@
         lado = ld;
         modalLance = true;
         abaLista = false;
+        acaoLance = null;
         jogadorLance = null;
         escolhendoAssist = false;
         assistLance = null;
@@ -819,13 +812,48 @@
     private void FecharLance()
     {
         modalLance = false;
+        acaoLance = null;
         jogadorLance = null;
         escolhendoAssist = false;
         assistLance = null;
     }
 
     private void TrocarJogador() { jogadorLance = null; escolhendoAssist = false; assistLance = null; }
-    private void EscolherGol() { escolhendoAssist = true; assistLance = null; }
+    /// <summary>"ATA - nº 10" (ou "ATA/MEI - sem nº"): posição e camisa do jogador no card.</summary>
+    private string InfoJogador(LinhaSumula jog, System.Collections.IEnumerable? posicoes)
+    {
+        var siglas = new List<string>();
+        if (posicoes is not null)
+            foreach (var p in posicoes)
+            {
+                var t = (p?.ToString() ?? "").Trim().ToLowerInvariant();
+                siglas.Add(t switch
+                {
+                    "goleiro" or "gol" => "GOL",
+                    "lateral" or "lat" => "LAT",
+                    "zagueiro" or "zag" => "ZAG",
+                    "meia" or "mei" => "MEI",
+                    "atacante" or "ata" => "ATA",
+                    "tecnico" or "técnico" or "tec" => "TEC",
+                    _ => t.ToUpperInvariant()
+                });
+            }
+        var pos = string.Join("/", siglas.Where(x => x.Length > 0).Distinct());
+        var camisa = confirmados.Contains(jog.AtletaId) ? $"nº {jog.Numero}" : "sem nº";
+        return pos.Length > 0 ? $"{pos} - {camisa}" : camisa;
+    }
+
+    private void TrocarAcao() { acaoLance = null; jogadorLance = null; escolhendoAssist = false; assistLance = null; }
+    private void EscolherAcao(TipoLance tipo) { acaoLance = tipo; jogadorLance = null; escolhendoAssist = false; assistLance = null; }
+
+    /// <summary>Gol segue para a assistência opcional; qualquer outra ação é registrada na hora.</summary>
+    private void EscolherJogador(Guid atletaId)
+    {
+        if (acaoLance is not { } tipo) return;
+        jogadorLance = atletaId;
+        if (tipo == TipoLance.Gol) { escolhendoAssist = true; assistLance = null; }
+        else RegistrarLance(tipo);
+    }
     private void AlternarAssist(Guid id) => assistLance = assistLance == id ? null : id;
 
     private void AbrirAdicionarDoLance() { FecharLance(); AbrirModal(); }
