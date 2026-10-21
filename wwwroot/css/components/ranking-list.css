@@ -19,11 +19,11 @@
     box-shadow: 0 1px 3px rgba(0,0,0,.08);
 }
 
-.rk-linha.voce {
+    .rk-linha.voce {
         outline: 2px solid var(--amarelo);
     }
 
-.rk-linha.ouro {
+    .rk-linha.ouro {
         border: 1px solid #d4a017;
         background: linear-gradient(90deg, rgba(245,197,24,.22), transparent 70%), var(--cartao);
         box-shadow: 0 0 14px rgba(245,197,24,.35);
@@ -63,11 +63,11 @@
     opacity: .7;
 }
 
-.rk-num.principal {
+    .rk-num.principal {
         opacity: 1;
     }
 
-.rk-num.principal strong {
+        .rk-num.principal strong {
             font-size: 1.2rem;
         }
 
@@ -76,12 +76,12 @@
 }
 
 @media (max-width: 560px) {
-.rk-linha {
+    .rk-linha {
         grid-template-columns: 1.6rem auto minmax(0, 1fr) auto;
         gap: .5rem;
     }
 
-.rk-num:not(.principal) {
+    .rk-num:not(.principal) {
         display: none;
     }
 }
@@ -91,7 +91,7 @@
     margin-bottom: .5rem;
 }
 
-.rk-item > .rk-linha {
+    .rk-item > .rk-linha {
         margin-bottom: 0;
         cursor: pointer;
     }
@@ -107,3 +107,166 @@
     gap: .8rem;
     margin-top: .6rem;
 }
+
+/* Ranking, aba "Pontos Atletas": pontuação de cada atleta na última partida */
+.rk-at-resumo {
+    margin: 0 0 .6rem;
+    font-size: .85rem;
+}
+
+.rk-at-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.rk-at-item {
+    margin-bottom: .5rem;
+}
+
+.rk-at-linha {
+    display: grid;
+    /* lados com a mesma largura (1fr) => a coluna do meio fica exatamente no centro da linha */
+    grid-template-columns: minmax(0, 1fr) 8rem minmax(0, 1fr);
+    align-items: center;
+    gap: .7rem;
+    background: var(--cartao);
+    border-radius: var(--raio);
+    padding: .5rem .8rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    cursor: pointer;
+}
+
+    .rk-at-linha.aberto {
+        outline: 2px solid var(--amarelo);
+    }
+
+    .rk-at-linha:focus-visible {
+        outline: 2px solid var(--acento);
+    }
+
+.rk-at-esq {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    min-width: 0;
+}
+
+.rk-at-dir {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .7rem;
+    min-width: 0;
+}
+
+.rk-at-time {
+    display: flex;
+    justify-content: flex-start; /* largura fixa e conteúdo alinhado: as imagens ficam na mesma coluna */
+    align-items: center;
+    gap: .4rem;
+    font-size: .85rem;
+    color: var(--suave);
+    white-space: nowrap;
+}
+
+.rk-at-escudo {
+    width: 1.6rem;
+    height: 1.6rem;
+    object-fit: contain;
+    flex: none;
+}
+
+.rk-at-extrato {
+    margin-top: .35rem;
+    padding: .7rem .9rem .5rem;
+    border-radius: var(--raio);
+    background: rgba(10,26,20,.38);
+    border: 1px solid rgba(255,255,255,.12);
+}
+
+.rk-ext-titulo {
+    margin: 0 0 .3rem;
+    font-size: .85rem;
+}
+
+.rk-ext-linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: .55rem 0;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+    .rk-ext-linha strong {
+        color: var(--menta);
+        font-variant-numeric: tabular-nums;
+    }
+
+        .rk-ext-linha strong.neg {
+            color: var(--vermelho);
+        }
+
+    .rk-ext-linha.total {
+        border-bottom: 0;
+        font-weight: 800;
+    }
+
+@media (max-width: 560px) {
+    .rk-at-linha {
+        gap: .5rem;
+        padding: .5rem .6rem;
+    }
+
+    .rk-at-linha {
+        grid-template-columns: minmax(0, 1fr) 2rem minmax(0, 1fr);
+    }
+
+    .rk-at-time {
+        justify-content: center;
+    }
+
+    .rk-at-time-nome {
+        display: none;
+    }
+}
+
+.rk-at-foto {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: none;
+}
+
+    .rk-at-foto.vazia {
+        background: rgba(128,128,128,.25);
+    }
+
+.rk-at-nome {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rk-at-pos {
+    color: var(--amarelo);
+    font-weight: 800;
+    font-size: .85rem;
+    white-space: nowrap;
+}
+
+.rk-at-pts {
+    min-width: 3.6rem;
+    text-align: right;
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--menta);
+    font-variant-numeric: tabular-nums;
+}
+
+    .rk-at-pts.neg {
+        color: var(--vermelho);
+    }

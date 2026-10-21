@@ -1,4 +1,5 @@
 @page "/ranking"
+@implements IDisposable
 @attribute [Authorize]
 @inject ServicoTorcida Torcidas
 @inject ServicoMercado Mercado
@@ -11,11 +12,12 @@
 
     <div class="rk-topo">
         <div class="rk-abas" role="tablist">
-            <button type="button" role="tab" class="@(porTorcida ? "" : "sel")" @onclick="() => porTorcida = false">Pontos</button>
-            <button type="button" role="tab" class="@(porTorcida ? "sel" : "")" @onclick="() => porTorcida = true">Torcida</button>
+            <button type="button" role="tab" class="@(aba == AbaRanking.PontosTime ? "sel" : "")" @onclick="() => TrocarAba(AbaRanking.PontosTime)">Pontos Time</button>
+            <button type="button" role="tab" class="@(aba == AbaRanking.PontosAtletas ? "sel" : "")" @onclick="() => TrocarAba(AbaRanking.PontosAtletas)">Pontos Atletas</button>
+            <button type="button" role="tab" class="@(aba == AbaRanking.Torcida ? "sel" : "")" @onclick="() => TrocarAba(AbaRanking.Torcida)">Torcida</button>
         </div>
 
-        @if (rodadas.Count > 0)
+        @if (rodadas.Count > 0 && aba != AbaRanking.PontosAtletas)
         {
             <select class="rk-filtro" aria-label="Filtrar por rodada" value="@(rodadaSel?.ToString() ?? "")" @onchange="TrocarRodada">
                 <option value="">Geral</option>
@@ -39,6 +41,101 @@
     else if (erro is not null)
     {
         <div class="erro" role="alert">@erro <button type="button" class="botao-sec" @onclick="Carregar">Tentar de novo</button></div>
+    }
+    else if (aba == AbaRanking.PontosAtletas)
+    {
+        if (carregandoAtletas)
+        {
+            <p class="suave centro">Carregando pontuação dos atletas…</p>
+        }
+        else if (erroAtletas is not null)
+        {
+            <div class="erro" role="alert">@erroAtletas <button type="button" class="botao-sec" @onclick="CarregarAtletas">Tentar de novo</button></div>
+        }
+        else if (atletasRodada is null || atletasRodada.Atletas.Count == 0)
+        {
+            <div class="cartao"><p class="suave">Nenhuma partida finalizada ainda.</p></div>
+        }
+        else
+        {
+            <div class="rk-rolagem">
+                <p class="suave rk-at-resumo">
+                    Última partida@(atletasRodada.Data is { } d ? " · " + d.ToString("dd/MM") : "") · @atletasRodada.Atletas.Count atletas
+                </p>
+                <ol class="rk-at-lista">
+                    @foreach (var a in atletasRodada.Atletas.OrderByDescending(x => x.Pontos))
+                    {
+                        var aberto = extratoAbertoId == a.Id;
+                        <li class="rk-at-item">
+                            <div class="rk-at-linha @(aberto ? "aberto" : "")" role="button" tabindex="0" aria-expanded="@(aberto ? "true" : "false")"
+                                 @onclick="() => AlternarExtrato(a)" @onkeydown="e => AoTeclarAtleta(e, a)">
+                                <div class="rk-at-esq">
+                                    @if (fotos.TryGetValue(a.Id, out var foto))
+                                    {
+                                        <img class="foto-redonda" style="--d:2.2rem" src="@foto" alt="@a.Nome" loading="lazy" draggable="false"
+                                             @onpointerdown="() => IniciarSegurar(a)" @onpointerup="PararSegurar" @onpointerleave="PararSegurar" @onpointercancel="PararSegurar"
+                                             @oncontextmenu="PararSegurar" @oncontextmenu:preventDefault="true" />
+                                    }
+                                    else
+                                    {
+                                        <span class="foto-redonda foto-redonda-sil" style="--d:2.2rem" aria-hidden="true">
+                                            <SilhuetaAtleta Sigla="@PrimeiraSigla(a.Posicao)" Nome="@a.Nome" />
+                                        </span>
+                                    }
+                                    <span class="rk-at-nome">@a.Nome</span>
+                                </div>
+                                <span class="rk-at-time">
+                                    @if (!string.IsNullOrWhiteSpace(a.TimeNome))
+                                    {
+                                        <img class="rk-at-escudo" src="img/time-@(SlugTime(a.TimeNome)).png" alt="" onerror="this.style.display='none'" />
+                                        <span class="rk-at-time-nome">@a.TimeNome</span>
+                                    }
+                                </span>
+                                <div class="rk-at-dir">
+                                    <span class="rk-at-pos">@a.Posicao</span>
+                                    <span class="rk-at-pts @(a.Pontos < 0 ? "neg" : "")">@Fmt2(a.Pontos)</span>
+                                </div>
+                            </div>
+                            @if (aberto)
+                            {
+                                <div class="rk-at-extrato">
+                                    @if (carregandoExtratoId == a.Id)
+                                    {
+                                        <p class="suave centro">Carregando extrato…</p>
+                                    }
+                                    else if (errosExtrato.TryGetValue(a.Id, out var msgExtrato))
+                                    {
+                                        <div class="erro" role="alert">@msgExtrato</div>
+                                    }
+                                    else if (extratos.TryGetValue(a.Id, out var extrato) && extrato is not null)
+                                    {
+                                        <p class="suave rk-ext-titulo">Última partida@(extrato.Data is { } dtExtrato ? " · " + dtExtrato.ToString("dd/MM") : "")</p>
+                                        @foreach (var linhaExtrato in extrato.Linhas)
+                                        {
+                                            <div class="rk-ext-linha">
+                                                <span>@linhaExtrato.Texto</span>
+                                                @if (linhaExtrato.Pontua)
+                                                {
+                                                    <strong class="@(linhaExtrato.Pontos < 0 ? "neg" : "")">@Fmt2(linhaExtrato.Pontos)</strong>
+                                                }
+                                            </div>
+                                        }
+                                        <div class="rk-ext-linha total">
+                                            <span>Total</span>
+                                            <strong class="@(extrato.Total < 0 ? "neg" : "")">@Fmt2(extrato.Total)</strong>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="suave centro">Sem extrato para esse atleta.</p>
+                                    }
+                                </div>
+                            }
+                        </li>
+                    }
+                </ol>
+            </div>
+        }
     }
     else if (linhas.Count == 0)
     {
@@ -144,12 +241,42 @@
 }
 </div>
 
+@* Foto ampliada enquanto o dedo/mouse está segurando a foto do atleta (classe .foto-zoom já existe no CSS) *@
+@if (zoomAtleta is not null && fotos.TryGetValue(zoomAtleta.Id, out var fotoZoom))
+{
+    <div class="foto-zoom" style="z-index:11000" aria-hidden="true">
+        <img src="@fotoZoom" alt="" />
+        <span class="foto-zoom-nome">@zoomAtleta.Nome</span>
+    </div>
+}
+
 @code {
     private List<LinhaRankingClube> linhas = new();
     private List<int> rodadas = new();
     private int? rodadaSel;   // null = geral; ao abrir a tela começa na última rodada
-    private bool carregando = true, porTorcida, filtroInicial;
+    private bool carregando = true, filtroInicial;
+    private enum AbaRanking { PontosTime, PontosAtletas, Torcida }
+    private AbaRanking aba = AbaRanking.PontosTime;
+    private bool porTorcida => aba == AbaRanking.Torcida;
+
+    // aba "Pontos Atletas": última partida finalizada (ObterRodadaAsync)
+    private PontuacaoDaRodada? atletasRodada;
+    private bool carregandoAtletas, atletasCarregados;
+    private string? erroAtletas;
     private string? erro, avisoSync;
+
+    // aba "Pontos Atletas": fotos por id do atleta
+    private Dictionary<string, string> fotos = new();
+
+    // segurar a foto para ampliar
+    private AtletaRodada? zoomAtleta;
+    private CancellationTokenSource? segurarCts;
+    private DateTime zoomFimEm = DateTime.MinValue;
+
+    // extrato (descrição dos pontos) do atleta aberto
+    private string? extratoAbertoId, carregandoExtratoId;
+    private readonly Dictionary<string, ExtratoJogo?> extratos = new();
+    private readonly Dictionary<string, string> errosExtrato = new();
 
     // escalação aberta embaixo de um time
     private string? abertoId, carregandoId;
@@ -214,6 +341,7 @@
     {
         carregando = true;
         erro = avisoSync = null;
+        atletasCarregados = false;
         try
         {
             // atualiza todos os times antes de listar; se falhar, atualiza só o seu e avisa
@@ -237,6 +365,14 @@
         }
         catch (ErroTorcidaException ex) { erro = ex.Message; }
         finally { carregando = false; }
+
+        if (aba == AbaRanking.PontosAtletas) await CarregarAtletas();
+    }
+
+    private async Task TrocarAba(AbaRanking nova)
+    {
+        aba = nova;
+        if (nova == AbaRanking.PontosAtletas && !atletasCarregados) await CarregarAtletas();
     }
 
     // Trocar a rodada só relê o ranking; a sincronização já foi feita ao abrir a tela
@@ -248,6 +384,87 @@
         try { linhas = await Torcidas.RankingAsync(rodadaSel); }
         catch (ErroTorcidaException ex) { erro = ex.Message; }
         finally { carregando = false; }
+    }
+
+    private async Task AoTeclarAtleta(KeyboardEventArgs e, AtletaRodada a)
+    {
+        if (e.Key is "Enter" or " ") await AlternarExtrato(a);
+    }
+
+    private async Task IniciarSegurar(AtletaRodada a)
+    {
+        PararSegurar();
+        var cts = segurarCts = new CancellationTokenSource();
+        try { await Task.Delay(350, cts.Token); }
+        catch (TaskCanceledException) { return; }
+        zoomAtleta = a;   // o Blazor redesenha quando o método termina
+    }
+
+    private void PararSegurar()
+    {
+        segurarCts?.Cancel();
+        segurarCts = null;
+        if (zoomAtleta is null) return;
+        zoomAtleta = null;
+        zoomFimEm = DateTime.UtcNow;   // o "click" que vem logo depois de soltar não deve abrir o extrato
+    }
+
+    public void Dispose() => segurarCts?.Cancel();
+
+    private async Task AlternarExtrato(AtletaRodada a)
+    {
+        if ((DateTime.UtcNow - zoomFimEm).TotalMilliseconds < 400) return;
+        if (extratoAbertoId == a.Id) { extratoAbertoId = null; return; }
+        extratoAbertoId = a.Id;
+        if (extratos.ContainsKey(a.Id)) return;
+
+        carregandoExtratoId = a.Id;
+        errosExtrato.Remove(a.Id);
+        try { extratos[a.Id] = await Mercado.ObterExtratoAsync(a.Id); }
+        catch (ErroMercadoException ex) { errosExtrato[a.Id] = ex.Message; }
+        finally { if (carregandoExtratoId == a.Id) carregandoExtratoId = null; }
+    }
+
+    private static string Fmt2(decimal v) => v.ToString("0.00", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
+
+    // "MEI/ZAG" -> "MEI": a silhueta usa a primeira posição do atleta
+    private static string PrimeiraSigla(string? posicao) => (posicao ?? "").Split('/')[0].Trim();
+
+    // "Vermelho" -> "vermelho": usado no nome do arquivo wwwroot/img/time-vermelho.png
+    private static string SlugTime(string? nome)
+    {
+        var d = (nome ?? "").Trim().ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
+        var sb = new System.Text.StringBuilder();
+        foreach (var c in d)
+        {
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) == System.Globalization.UnicodeCategory.NonSpacingMark) continue;
+            sb.Append(char.IsLetterOrDigit(c) ? c : '-');
+        }
+        return sb.ToString().Trim('-');
+    }
+
+    private async Task CarregarAtletas()
+    {
+        extratoAbertoId = null;
+        extratos.Clear();
+        errosExtrato.Clear();
+        carregandoAtletas = true;
+        erroAtletas = null;
+        try
+        {
+            atletasRodada = await Mercado.ObterRodadaAsync();
+            atletasCarregados = true;
+
+            // fotos vêm do elenco; se falhar, a lista aparece sem foto
+            try
+            {
+                elenco ??= await Mercado.ObterElencoAsync();
+                fotos = elenco.Where(x => !string.IsNullOrWhiteSpace(x.FotoUrl)).ToDictionary(x => x.Id, x => x.FotoUrl!);
+            }
+            catch (ErroMercadoException) { }
+        }
+        catch (ErroMercadoException ex) { erroAtletas = ex.Message; }
+        finally { carregandoAtletas = false; }
     }
 
     private IEnumerable<LinhaRankingClube> Ordenadas() => porTorcida

@@ -69,6 +69,14 @@
             color: var(--branco);
         }
 
+@media (max-width: 560px) {
+    .rk-abas button {
+        padding: .4rem .75rem;
+        font-size: .9rem;
+        white-space: nowrap;
+    }
+}
+
 /* Seletor de rodada: pílula igual à das abas, com seta própria (o hex da seta é o --acento) */
 .rk-filtro {
     appearance: none;
