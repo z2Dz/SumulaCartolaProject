@@ -243,6 +243,8 @@ export function desenhar(ctx, dados, imagens) {
     carta(ctx, 185, 315, 350, 510, TEMAS[1], p2, f[1], 2, e[1]);
     carta(ctx, 575, 235, 450, 630, TEMAS[0], p1, f[0], 1, e[0]);
     carta(ctx, 1065, 315, 350, 510, TEMAS[2], p3, f[2], 3, e[2]);
+
+    assinatura(ctx, 36, A - 30, 24, false);
 }
 
 function fundo(ctx) {
@@ -553,6 +555,27 @@ function blocoTime(ctx, img, nome, cx, cy, tam) {
     ctx.restore();
 }
 
+// Assinatura no canto inferior esquerdo das imagens geradas.
+const TEXTO_ASSINATURA = "Rivvals App - AFC";
+function assinatura(ctx, x, y, tam, comContorno) {
+    ctx.save();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.font = `700 ${tam}px "Segoe UI", Arial, sans-serif`;
+    if (comContorno) {
+        // o card tem fundo transparente: o contorno escuro garante leitura em fundo claro ou escuro
+        ctx.lineJoin = "round";
+        ctx.lineWidth = Math.max(2, tam * .22);
+        ctx.strokeStyle = "rgba(0,0,0,.7)";
+        ctx.strokeText(TEXTO_ASSINATURA, x, y);
+        ctx.fillStyle = "rgba(255,255,255,.95)";
+    } else {
+        ctx.fillStyle = "rgba(255,255,255,.6)";
+    }
+    ctx.fillText(TEXTO_ASSINATURA, x, y);
+    ctx.restore();
+}
+
 // canvas auxiliar (retorna o contexto 2D)
 function camada(w, h) {
     const cv = document.createElement("canvas");
@@ -732,4 +755,6 @@ function desenharCardJogador(ctx, d, im) {
     ctx.fillStyle = "rgba(255,255,255,.6)";
     ajustar(ctx, ("ÚLTIMA PARTIDA" + (d.data ? "  ·  " + d.data : "")), 280, 15, 700);
     ctx.fillText("ÚLTIMA PARTIDA" + (d.data ? "  ·  " + d.data : ""), W / 2, 726);
+
+    assinatura(ctx, 14, H - 12, 15, true);   // canto inferior esquerdo (fora da moldura, com contorno para ler em qualquer fundo)
 }
