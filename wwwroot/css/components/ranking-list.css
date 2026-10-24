@@ -232,18 +232,6 @@
     }
 }
 
-.rk-at-foto {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    object-fit: cover;
-    flex: none;
-}
-
-    .rk-at-foto.vazia {
-        background: rgba(128,128,128,.25);
-    }
-
 .rk-at-nome {
     font-weight: 600;
     overflow: hidden;

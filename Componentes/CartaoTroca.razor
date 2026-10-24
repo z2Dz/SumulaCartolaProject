@@ -1,0 +1,25 @@
+@* Card de atleta do popup de substituições: dá para arrastá-lo ou tocar nele e soltar/tocar em outro card para trocar os dois de lugar. *@
+<div class="tr-card @Papel @(Selecionado ? "sel" : "") @(Arrastando ? "arrastando" : "")"
+     draggable="@(Desabilitado ? "false" : "true")"
+     @ondragstart="() => OnIniciar.InvokeAsync()"
+     @ondragend="() => OnFim.InvokeAsync()"
+     @ondragover="() => { }" @ondragover:preventDefault
+     @ondrop="() => OnSoltar.InvokeAsync()" @ondrop:preventDefault
+     @onclick="() => OnToque.InvokeAsync()">
+    <FotoJogador Nome="@Atleta.Nome" FotoUrl="@Atleta.FotoUrl" Posicoes="@Atleta.Posicoes" Tamanho="56" />
+    <strong>@Atleta.Nome</strong>
+    <small>@(Atleta.Posicoes.Count == 0 ? "sem posição" : Atleta.PosicoesTexto)</small>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public AtletaResumo Atleta { get; set; } = default!;
+    /// <summary>"sai", "entra" ou vazio (lista de atletas).</summary>
+    [Parameter] public string Papel { get; set; } = "";
+    [Parameter] public bool Selecionado { get; set; }
+    [Parameter] public bool Arrastando { get; set; }
+    [Parameter] public bool Desabilitado { get; set; }
+    [Parameter] public EventCallback OnIniciar { get; set; }
+    [Parameter] public EventCallback OnFim { get; set; }
+    [Parameter] public EventCallback OnSoltar { get; set; }
+    [Parameter] public EventCallback OnToque { get; set; }
+}

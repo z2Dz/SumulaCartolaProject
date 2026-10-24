@@ -253,6 +253,9 @@
                             <button type="button" class="@(previaCampo ? "" : "ativa")" @onclick="() => previaCampo = false">Lista</button>
                             <button type="button" class="@(previaCampo ? "ativa" : "")" @onclick="() => previaCampo = true">No campo</button>
                         </div>
+                        <div class="previa-modo" role="group">
+                            <button type="button" @onclick="AbrirTrocas">Substituições</button>
+                        </div>
                         <button type="button" class="adm-icone" @onclick="() => previa = false" aria-label="Fechar">✕</button>
                     </div>
                 </div>
@@ -320,6 +323,84 @@
             </div>
         </div>
     }
+
+    @if (popupTrocas)
+    {
+        <div class="previa-fundo" @onclick="FecharTrocas">
+            <div class="previa previa-larga tr-pop" role="dialog" aria-modal="true" aria-label="Substituições" @onclick:stopPropagation="true">
+                <div class="previa-topo">
+                    <h3>Substituições</h3>
+                    <div class="previa-acoes">
+                        <button type="button" class="adm-icone" @onclick="FecharTrocas" aria-label="Fechar">✕</button>
+                    </div>
+                </div>
+                <p class="suave tr-dica">
+                    Arraste um atleta da lista (ou toque nele e depois no destino) para cima de quem sai ou de quem entra: os dois trocam de lugar.
+                    @if (salvandoAuto) { <span> Salvando…</span> }
+                </p>
+                @if (!string.IsNullOrEmpty(erro))
+                {
+                    <p class="erro">@erro</p>
+                }
+                <div class="tr-abas" role="tablist" aria-label="Time">
+                    @foreach (var ladoAba in new[] { TimePelada.Vermelho, TimePelada.Amarelo })
+                    {
+                        var l = ladoAba;
+                        <button type="button" role="tab" aria-selected="@(abaTrocas == l)" class="@TimePelada.Css(l) @(abaTrocas == l ? "ativa" : "")" @onclick="() => TrocarAbaTrocas(l)">
+                            <span class="adm-bolinha @TimePelada.Css(l)"></span> @TimePelada.Rotulo(l)
+                        </button>
+                    }
+                </div>
+                <div class="tr-time">
+                    @{
+                        var lado = abaTrocas;
+                        var todos = DoLado(lado).Where(j => !AnaliseTime.EhSoGoleiro(j)).ToList();
+                        var plano = PlanoTempos.Montar(todos);
+                        var trocas = plano.Trocas.ToList();
+                        var nosSlots = trocas.SelectMany(t => new[] { t.Sai.Id, t.Entra.Id }).ToHashSet();
+                        var restantes = todos.Where(j => !nosSlots.Contains(j.Id)).ToList();
+                        <section class="previa-time @TimePelada.Css(lado)">
+                            <h4><span class="adm-bolinha @TimePelada.Css(lado)"></span> @TimePelada.Rotulo(lado) (@todos.Count)</h4>
+
+                            <h5 class="tr-titulo">Substituições do 2º tempo (@trocas.Count)</h5>
+                            @if (trocas.Count == 0)
+                            {
+                                <p class="suave">Sem substituições: o time não tem reservas.</p>
+                            }
+                            <div class="tr-pares">
+                            @foreach (var t in trocas)
+                            {
+                                <div class="tr-par">
+                                    <CartaoTroca Atleta="t.Sai" Papel="sai" Selecionado="@(selecionadoTroca == t.Sai.Id)" Arrastando="@(arrastandoTroca == t.Sai.Id)" Desabilitado="Finalizada"
+                                                  OnIniciar="() => IniciarArrasto(t.Sai.Id)" OnFim="FimArrasto" OnSoltar="() => SoltarTroca(t.Sai.Id)" OnToque="() => TocarTroca(t.Sai.Id)" />
+                                    <div class="tr-setas" aria-hidden="true">
+                                        <span class="entra">Entra →</span>
+                                        <span class="sai">← Sai</span>
+                                    </div>
+                                    <CartaoTroca Atleta="t.Entra" Papel="entra" Selecionado="@(selecionadoTroca == t.Entra.Id)" Arrastando="@(arrastandoTroca == t.Entra.Id)" Desabilitado="Finalizada"
+                                                  OnIniciar="() => IniciarArrasto(t.Entra.Id)" OnFim="FimArrasto" OnSoltar="() => SoltarTroca(t.Entra.Id)" OnToque="() => TocarTroca(t.Entra.Id)" />
+                                </div>
+                            }
+                            </div>
+
+                            <h5 class="tr-titulo">Lista de atletas da partida</h5>
+                            @if (restantes.Count == 0)
+                            {
+                                <p class="suave">Todos os atletas do time estão nas substituições.</p>
+                            }
+                            <div class="tr-lista">
+                                @foreach (var j in restantes)
+                                {
+                                    <CartaoTroca Atleta="j" Papel="" Selecionado="@(selecionadoTroca == j.Id)" Arrastando="@(arrastandoTroca == j.Id)" Desabilitado="Finalizada"
+                                                  OnIniciar="() => IniciarArrasto(j.Id)" OnFim="FimArrasto" OnSoltar="() => SoltarTroca(j.Id)" OnToque="() => TocarTroca(j.Id)" />
+                                }
+                            </div>
+                        </section>
+                    }
+                </div>
+            </div>
+        </div>
+    }
 }
 </div>
 
@@ -334,6 +415,14 @@
     private bool popupAdd;
     private string? erro, aviso;
     private bool carregando = true, sujo, salvando, registrando, salvoOk;
+
+    // Salvamento automático: cada mudança na lista já grava e manda para a súmula
+    private bool salvandoAuto, repetirAuto;
+
+    // Popup de substituições: arrastar (ou tocar) um card sobre outro troca os dois de lugar na ordem de chegada
+    private bool popupTrocas;
+    private Guid? arrastandoTroca, selecionadoTroca;
+    private string abaTrocas = TimePelada.Vermelho;   // time mostrado no popup
 
     // Cadastro de atleta novo
     private string novoNome = "";
@@ -439,12 +528,13 @@
     {
         ordem.Add(Para(a, TimePelada.SemTime));
         Marcar();
+        aviso = $"{a.Nome} adicionado. Marque Verm. ou Amar. para salvar e mandar para a súmula.";
     }
 
     private static ChegadaItem Para(AtletaResumo a, string lado) =>
         new() { Id = a.Id, Nome = a.Nome, FotoUrl = a.FotoUrl, Posicoes = a.Posicoes, Lado = lado };
 
-    private void MudarLado(ChegadaItem a, string lado)
+    private async Task MudarLado(ChegadaItem a, string lado)
     {
         if (a.Lado == lado) return;
         if (Contar(lado) >= LinhaSumula.MaxNumero)
@@ -454,11 +544,12 @@
         }
         a.Lado = lado;
         Marcar();
+        await AutoSalvar();
     }
 
     private int arrastando = -1;
 
-    private void Soltar(int destino)
+    private async Task Soltar(int destino)
     {
         var origem = arrastando;
         arrastando = -1;
@@ -467,17 +558,98 @@
         ordem.RemoveAt(origem);
         ordem.Insert(destino, item);
         Marcar();
+        await AutoSalvar();
     }
 
-    private void Remover(int i) { ordem.RemoveAt(i); Marcar(); }
+    private async Task Remover(int i)
+    {
+        ordem.RemoveAt(i);
+        Marcar();
+        await AutoSalvar();
+    }
 
-    private void Mover(int i, int delta)
+    private async Task Mover(int i, int delta)
     {
         var j = i + delta;
         if (j < 0 || j >= ordem.Count) return;
         (ordem[i], ordem[j]) = (ordem[j], ordem[i]);
         Marcar();
+        await AutoSalvar();
     }
+
+    /// <summary>
+    /// Grava a chegada sozinha a cada mudança. Quem ainda está sem time não vai junto (o banco precisa do time):
+    /// ele fica na tela, marcado como pendente, e é salvo assim que o admin escolher Verm. ou Amar.
+    /// Toques em sequência não se atropelam: se já estiver salvando, grava de novo no final com o estado mais novo.
+    /// </summary>
+    private async Task AutoSalvar()
+    {
+        if (Finalizada) return;
+        if (salvandoAuto) { repetirAuto = true; return; }
+
+        salvandoAuto = true;
+        try
+        {
+            do
+            {
+                repetirAuto = false;
+                var paraSalvar = ordem.Where(o => o.Lado != TimePelada.SemTime).ToList();
+                await Servico.SalvarChegadaAsync(partidaId, paraSalvar);
+            }
+            while (repetirAuto);
+
+            erro = null;
+            salvoOk = true;
+            sujo = SemTime > 0;
+            aviso = SemTime > 0
+                ? $"Salvo na súmula. {SemTime} atleta(s) sem time ainda não foram salvos: marque Verm. ou Amar."
+                : "Salvo automaticamente. Os atletas já estão na súmula.";
+        }
+        catch (ErroAdminException ex)
+        {
+            erro = ex.Message;
+            sujo = true;
+            salvoOk = false;
+        }
+        finally { salvandoAuto = false; }
+    }
+
+    // ----- Substituições (popup) -----
+    private void AbrirTrocas() { erro = aviso = null; arrastandoTroca = selecionadoTroca = null; popupTrocas = true; }
+    private void TrocarAbaTrocas(string lado) { abaTrocas = lado; selecionadoTroca = null; arrastandoTroca = null; }
+    private void FecharTrocas() { popupTrocas = false; arrastandoTroca = selecionadoTroca = null; }
+
+    // O 2º tempo sai da ordem de chegada (PlanoTempos): quem sai/entra em cada vaga depende da posição de cada atleta na ordem.
+    // Trocar dois atletas de lugar na ordem do time é, portanto, trocar quem ocupa cada vaga, e já vale na súmula.
+    private async Task TrocarPosicoes(Guid a, Guid b)
+    {
+        if (a == b || Finalizada) return;
+        var ia = ordem.FindIndex(o => o.Id == a);
+        var ib = ordem.FindIndex(o => o.Id == b);
+        if (ia < 0 || ib < 0 || ordem[ia].Lado != ordem[ib].Lado) return;   // só dentro do mesmo time
+
+        (ordem[ia], ordem[ib]) = (ordem[ib], ordem[ia]);
+        Marcar();
+        await AutoSalvar();
+    }
+
+    private async Task SoltarTroca(Guid destino)
+    {
+        var origem = arrastandoTroca;
+        arrastandoTroca = null;
+        if (origem is { } o) await TrocarPosicoes(o, destino);
+    }
+
+    // Toque (celular): o primeiro toque seleciona, o segundo troca com o card tocado
+    private async Task TocarTroca(Guid id)
+    {
+        if (selecionadoTroca is not { } sel) { selecionadoTroca = id; return; }
+        selecionadoTroca = null;
+        if (sel != id) await TrocarPosicoes(sel, id);
+    }
+
+    private void IniciarArrasto(Guid id) => arrastandoTroca = id;
+    private void FimArrasto() => arrastandoTroca = null;
 
     private void Marcar() { Organizar(); sujo = true; salvoOk = false; aviso = null; erro = null; }
 
@@ -526,7 +698,7 @@
             Organizar();
             sujo = true;
 
-            aviso = $"{novo.Nome} registrado ({(novoAtivo ? "ativo" : "inativo")} no Cartola) e adicionado à chegada. Marque o time e salve.";
+            aviso = $"{novo.Nome} registrado ({(novoAtivo ? "ativo" : "inativo")} no Cartola) e adicionado à chegada. Marque Verm. ou Amar. para salvar na súmula.";
             novoNome = ""; novoAtivo = false; novasPosicoes = new(); fotoBytes = null;
             aba = "lista";
         }

@@ -52,6 +52,7 @@
                 <span class="sm2-aviso-sujo">Salve ou descarte para trocar de rodada.</span>
             }
             <span class="sm2-barra-gap"></span>
+            <button type="button" class="sm2-add" disabled="@partida.Finalizada" @onclick="AbrirTrocas"><IconeUi Nome="pessoas" Tamanho="18" /> Substituições</button>
             <button type="button" class="sm2-add" @onclick="AbrirModal"><IconeUi Nome="mais" Tamanho="18" /> Adicionar atleta</button>
         </div>
 
@@ -429,6 +430,88 @@
             </div>
         }
 
+        @if (popupTrocas)
+        {
+            <div class="previa-fundo" @onclick="FecharTrocas">
+                <div class="previa previa-larga tr-pop" role="dialog" aria-modal="true" aria-label="Substituições" @onclick:stopPropagation="true">
+                    <div class="previa-topo">
+                        <h3>Substituições</h3>
+                        <div class="previa-acoes">
+                            <button type="button" class="adm-icone" @onclick="FecharTrocas" aria-label="Fechar">✕</button>
+                        </div>
+                    </div>
+                    <p class="suave tr-dica">
+                        Arraste um atleta da lista (ou toque nele e depois no destino) para cima de quem sai ou de quem entra: os dois trocam de lugar.
+                        @if (salvandoTrocas) { <span> Salvando…</span> }
+                    </p>
+                    @if (!string.IsNullOrEmpty(erroTrocas))
+                    {
+                        <p class="erro">@erroTrocas</p>
+                    }
+                    <div class="tr-abas" role="tablist" aria-label="Time">
+                        @foreach (var ladoAba in new[] { LinhaSumula.Casa, LinhaSumula.Visitante })
+                        {
+                            var l = ladoAba;
+                            <button type="button" role="tab" aria-selected="@(abaTrocas == l)" class="@TimePelada.Css(l) @(abaTrocas == l ? "ativa" : "")" @onclick="() => TrocarAbaTrocas(l)">
+                                <span class="adm-bolinha @TimePelada.Css(l)"></span> @TimePelada.Rotulo(l)
+                            </button>
+                        }
+                    </div>
+                    <div class="tr-time">
+                        @{
+                            var ladoTroca = abaTrocas;
+                            var goleirosTroca = atletas.Where(AnaliseTime.EhSoGoleiro).Select(a => a.Id).ToHashSet();
+                            var todosTroca = LinhasDe(ladoTroca)
+                                .Where(l => !goleirosTroca.Contains(l.AtletaId))
+                                .Select(l => atletas.FirstOrDefault(a => a.Id == l.AtletaId) ?? new AtletaResumo { Id = l.AtletaId, Nome = l.Nome })
+                                .ToList();
+                            var planoTroca = PlanoDe(ladoTroca);
+                            var trocas = planoTroca.Trocas.ToList();
+                            var nosSlots = trocas.SelectMany(t => new[] { t.Sai.Id, t.Entra.Id }).ToHashSet();
+                            var restantes = todosTroca.Where(j => !nosSlots.Contains(j.Id)).ToList();
+                            <section class="previa-time @TimePelada.Css(ladoTroca)">
+                                <h4><span class="adm-bolinha @TimePelada.Css(ladoTroca)"></span> @TimePelada.Rotulo(ladoTroca) (@todosTroca.Count)</h4>
+
+                                <h5 class="tr-titulo">Substituições do 2º tempo (@trocas.Count)</h5>
+                                @if (trocas.Count == 0)
+                                {
+                                    <p class="suave">Sem substituições: o time não tem reservas.</p>
+                                }
+                                <div class="tr-pares">
+                                    @foreach (var t in trocas)
+                                    {
+                                        <div class="tr-par">
+                                            <CartaoTroca Atleta="t.Sai" Papel="sai" Selecionado="@(selecionadoTroca == t.Sai.Id)" Arrastando="@(arrastandoTroca == t.Sai.Id)" Desabilitado="@(partida.Finalizada || salvandoTrocas)"
+                                                          OnIniciar="() => IniciarArrasto(t.Sai.Id)" OnFim="FimArrasto" OnSoltar="() => SoltarTroca(t.Sai.Id)" OnToque="() => TocarTroca(t.Sai.Id)" />
+                                            <div class="tr-setas" aria-hidden="true">
+                                                <span class="entra">Entra →</span>
+                                                <span class="sai">← Sai</span>
+                                            </div>
+                                            <CartaoTroca Atleta="t.Entra" Papel="entra" Selecionado="@(selecionadoTroca == t.Entra.Id)" Arrastando="@(arrastandoTroca == t.Entra.Id)" Desabilitado="@(partida.Finalizada || salvandoTrocas)"
+                                                          OnIniciar="() => IniciarArrasto(t.Entra.Id)" OnFim="FimArrasto" OnSoltar="() => SoltarTroca(t.Entra.Id)" OnToque="() => TocarTroca(t.Entra.Id)" />
+                                        </div>
+                                    }
+                                </div>
+
+                                <h5 class="tr-titulo">Lista de atletas da partida</h5>
+                                @if (restantes.Count == 0)
+                                {
+                                    <p class="suave">Todos os atletas do time estão nas substituições.</p>
+                                }
+                                <div class="tr-lista">
+                                    @foreach (var j in restantes)
+                                    {
+                                        <CartaoTroca Atleta="j" Papel="" Selecionado="@(selecionadoTroca == j.Id)" Arrastando="@(arrastandoTroca == j.Id)" Desabilitado="@(partida.Finalizada || salvandoTrocas)"
+                                                      OnIniciar="() => IniciarArrasto(j.Id)" OnFim="FimArrasto" OnSoltar="() => SoltarTroca(j.Id)" OnToque="() => TocarTroca(j.Id)" />
+                                    }
+                                </div>
+                            </section>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
         @if (modal)
         {
             <div class="previa-fundo" @onclick="FecharModal">
@@ -456,20 +539,18 @@
                     @if (aba == "lista")
                     {
                         <input class="adm-campo" type="search" placeholder="Buscar pelo nome" @bind="busca" @bind:event="oninput" />
-                        <ul class="chg-nomes">
+                        <ul class="sm2-cards">
                             @foreach (var a in Disponiveis)
                             {
                                 var atl = a;
-                                <li>
-                                    <button type="button" class="chg-editar" title="Editar @atl.Nome" aria-label="Editar @atl.Nome" @onclick="() => editando = atl">✎</button>
-                                    <button type="button" class="chg-nome" @onclick="() => AdicionarDaLista(atl)">
-                                        <FotoJogador Nome="@atl.Nome" FotoUrl="@atl.FotoUrl" Posicoes="@atl.Posicoes" Tamanho="32" />
-                                        <span class="chg-nome-txt">
-                                            <strong>@atl.Nome</strong>
-                                            <small>@atl.PosicoesTexto</small>
-                                        </span>
-                                        <span class="chg-mais" aria-hidden="true">+</span>
+                                <li class="sm2-at-item">
+                                    <button type="button" class="sm2-card-jog" title="Adicionar @atl.Nome ao time" @onclick="() => AdicionarDaLista(atl)">
+                                        <span class="sm2-card-foto"><FotoJogador Nome="@atl.Nome" FotoUrl="@atl.FotoUrl" Posicoes="@atl.Posicoes" Tamanho="64" /></span>
+                                        <strong>@atl.Nome</strong>
+                                        <small>@atl.PosicoesTexto</small>
+                                        <span class="sm2-at-mais" aria-hidden="true">+</span>
                                     </button>
+                                    <button type="button" class="sm2-at-editar" title="Editar @atl.Nome" aria-label="Editar @atl.Nome" @onclick="() => editando = atl">✎</button>
                                 </li>
                             }
                         </ul>
@@ -540,6 +621,12 @@
     private string? erro, aviso;
     private bool carregando = true, sujo, salvando, statusMudou;
 
+    // Popup "Substituições": arrastar (ou tocar) um card sobre outro troca os dois de lugar na ordem de chegada
+    private bool popupTrocas, salvandoTrocas;
+    private string abaTrocas = LinhaSumula.Casa;
+    private string? erroTrocas;
+    private Guid? arrastandoTroca, selecionadoTroca;
+
     // Modal "Adicionar atleta"
     private AtletaResumo? editando;
 
@@ -600,7 +687,7 @@
     private static readonly TipoLance[] OutrasAcoes = { TipoLance.Assistencia, TipoLance.ChuteGol, TipoLance.Defesa, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido };
 
     private readonly List<Lance> lances = new();
-    private bool modalLance, escolhendoAssist, abaLista;
+    private bool modalLance, abaLista;
     private Guid? jogadorLance, assistLance;
     private TipoLance? acaoLance;   // ação escolhida antes do jogador: ações primeiro, depois quem fez
     private int tempoLance = 1;
@@ -615,6 +702,11 @@
         TipoLance.Vermelho => "sm2-tl-ver",
         TipoLance.Gol => "sm2-tl-gol",
         TipoLance.GolContra => "sm2-tl-gc",
+        TipoLance.ChuteGol => "sm2-tl-chute",
+        TipoLance.Defesa => "sm2-tl-def",
+        TipoLance.PenaltiCometido => "sm2-tl-pc",
+        TipoLance.PenaltiPerdido => "sm2-tl-pp",
+        TipoLance.Assistencia => "sm2-tl-ass",
         _ => "sm2-tl-out"
     };
 
@@ -805,7 +897,6 @@
         abaLista = false;
         acaoLance = null;
         jogadorLance = null;
-        escolhendoAssist = false;
         assistLance = null;
     }
 
@@ -814,11 +905,10 @@
         modalLance = false;
         acaoLance = null;
         jogadorLance = null;
-        escolhendoAssist = false;
         assistLance = null;
     }
 
-    private void TrocarJogador() { jogadorLance = null; escolhendoAssist = false; assistLance = null; }
+    private void TrocarJogador() { jogadorLance = null; assistLance = null; }
     /// <summary>"ATA - nº 10" (ou "ATA/MEI - sem nº"): posição e camisa do jogador no card.</summary>
     private string InfoJogador(LinhaSumula jog, System.Collections.IEnumerable? posicoes)
     {
@@ -843,16 +933,16 @@
         return pos.Length > 0 ? $"{pos} - {camisa}" : camisa;
     }
 
-    private void TrocarAcao() { acaoLance = null; jogadorLance = null; escolhendoAssist = false; assistLance = null; }
-    private void EscolherAcao(TipoLance tipo) { acaoLance = tipo; jogadorLance = null; escolhendoAssist = false; assistLance = null; }
+    private void TrocarAcao() { acaoLance = null; jogadorLance = null; assistLance = null; }
+    private void EscolherAcao(TipoLance tipo) { acaoLance = tipo; jogadorLance = null; assistLance = null; }
 
     /// <summary>Gol segue para a assistência opcional; qualquer outra ação é registrada na hora.</summary>
-    private void EscolherJogador(Guid atletaId)
+    private async Task EscolherJogador(Guid atletaId)
     {
         if (acaoLance is not { } tipo) return;
         jogadorLance = atletaId;
-        if (tipo == TipoLance.Gol) { escolhendoAssist = true; assistLance = null; }
-        else RegistrarLance(tipo);
+        if (tipo == TipoLance.Gol) assistLance = null;
+        else await RegistrarLance(tipo);
     }
     private void AlternarAssist(Guid id) => assistLance = assistLance == id ? null : id;
 
@@ -883,7 +973,7 @@
     }
 
     /// <summary>Registra o lance do jogador escolhido. Gol com assistente vira um cartão só (gol + assistência).</summary>
-    private void RegistrarLance(TipoLance tipo, Guid? assistenteId = null)
+    private async Task RegistrarLance(TipoLance tipo, Guid? assistenteId = null)
     {
         var l = linhas.FirstOrDefault(x => x.AtletaId == jogadorLance);
         if (l is null) return;
@@ -911,6 +1001,7 @@
 
         Marcar();
         FecharLance();
+        await AutoSalvar();
     }
 
     // ----- Edição de lance -----
@@ -932,7 +1023,7 @@
     private void FecharEdicao() => lanceEditando = null;
 
     /// <summary>Muda atleta, lance, tempo ou assistente: desfaz o lance antigo e aplica o novo (se o novo estourar o limite, volta tudo).</summary>
-    private void SalvarEdicao()
+    private async Task SalvarEdicao()
     {
         var lc = lanceEditando;
         if (lc is null) return;
@@ -967,15 +1058,35 @@
         lc.Reconstruido = false;
         lanceEditando = null;
         Marcar();
+        await AutoSalvar();
     }
 
-    private void DesfazerLance(Lance lc)
+    private async Task DesfazerLance(Lance lc)
     {
         var l = linhas.FirstOrDefault(x => x.AtletaId == lc.AtletaId);
         var ass = lc.AssistenteId is { } aid ? linhas.FirstOrDefault(x => x.AtletaId == aid) : null;
         if (l is not null) AplicarLance(lc.Tipo, l, lc.Tempo, ass, -1);
         lances.Remove(lc);
         Marcar();
+        await AutoSalvar();
+    }
+
+    /// <summary>
+    /// Cada lance registrado, editado ou desfeito já grava a súmula (mesmo caminho do botão Salvar: em partida finalizada ela é
+    /// reaberta e finalizada de novo, e é aí que placar e pontos dos atletas recalculam). Se outro lance chegar durante o
+    /// salvamento, grava de novo no final com o estado mais novo, para os toques em sequência não se atropelarem.
+    /// </summary>
+    private bool repetirAuto;
+    private async Task AutoSalvar()
+    {
+        if (salvando) { repetirAuto = true; return; }
+        do
+        {
+            repetirAuto = false;
+            await Salvar();
+        }
+        while (repetirAuto && string.IsNullOrEmpty(erro));
+        repetirAuto = false;
     }
 
     private void AplicarEdicao(AtletaResumo novo)
@@ -1021,7 +1132,7 @@
     private record PapelJogo(string Css, string Rotulo);
 
     /// <summary>Titulares (10 primeiros da chegada, só linha) e quem entra/sai no 2º tempo, para o time informado.</summary>
-    private Dictionary<Guid, PapelJogo> PapeisDe(string ld)
+    private PlanoTempos PlanoDe(string ld)
     {
         var noLado = linhas.Where(l => l.Lado == ld).ToList();
         var ids = noLado.Select(l => l.AtletaId).ToHashSet();
@@ -1033,7 +1144,12 @@
                            .OrderBy(l => l.Numero)
                            .Select(l => new AtletaResumo { Id = l.AtletaId, Nome = l.Nome });
 
-        var plano = PlanoTempos.Montar(ordemChegada.Concat(extras));
+        return PlanoTempos.Montar(ordemChegada.Concat(extras));
+    }
+
+    private Dictionary<Guid, PapelJogo> PapeisDe(string ld)
+    {
+        var plano = PlanoDe(ld);
         var mapa = new Dictionary<Guid, PapelJogo>();
         foreach (var a in plano.Primeiro) mapa[a.Id] = new("titular", "Titular");
         foreach (var t in plano.Trocas)
@@ -1138,6 +1254,66 @@
     }
 
     private void Marcar() { sujo = true; aviso = null; }
+
+    // ----- Substituições -----
+    private void AbrirTrocas()
+    {
+        if (sujo) { erro = "Salve ou descarte as alterações da súmula antes de mexer nas substituições."; return; }
+        erro = erroTrocas = null;
+        arrastandoTroca = selecionadoTroca = null;
+        popupTrocas = true;
+    }
+
+    private void FecharTrocas() { popupTrocas = false; arrastandoTroca = selecionadoTroca = null; }
+    private void TrocarAbaTrocas(string ld) { abaTrocas = ld; selecionadoTroca = null; arrastandoTroca = null; erroTrocas = null; }
+    private void IniciarArrasto(Guid id) => arrastandoTroca = id;
+    private void FimArrasto() => arrastandoTroca = null;
+
+    // O 2º tempo sai da ordem de chegada (PlanoTempos): trocar dois atletas de lugar nela troca quem ocupa cada vaga.
+    // A chegada é salva na hora e a súmula recarregada, então a troca já vale nos "sai no 2º / entra no 2º" da lista.
+    private async Task TrocarPosicoes(Guid a, Guid b)
+    {
+        if (a == b || partida is null || partida.Finalizada || salvandoTrocas) return;
+        erroTrocas = null;
+
+        var ia = chegada.FindIndex(c => c.Id == a);
+        var ib = chegada.FindIndex(c => c.Id == b);
+        if (ia < 0 || ib < 0)
+        {
+            erroTrocas = "Esse atleta entrou só na súmula e não está na ordem de chegada. Adicione-o na ordem de chegada para trocá-lo.";
+            return;
+        }
+        if (chegada[ia].Lado != chegada[ib].Lado) return;   // só dentro do mesmo time
+
+        (chegada[ia], chegada[ib]) = (chegada[ib], chegada[ia]);
+        salvandoTrocas = true;
+        try
+        {
+            await Servico.SalvarChegadaAsync(partida.Id, chegada);
+            await Carregar();
+        }
+        catch (ErroAdminException ex)
+        {
+            (chegada[ia], chegada[ib]) = (chegada[ib], chegada[ia]);   // não salvou: volta como estava
+            erroTrocas = ex.Message;
+        }
+        finally { salvandoTrocas = false; }
+    }
+
+    private async Task SoltarTroca(Guid destino)
+    {
+        var origem = arrastandoTroca;
+        arrastandoTroca = null;
+        if (origem is { } o) await TrocarPosicoes(o, destino);
+    }
+
+    // Toque (celular): o primeiro toque seleciona, o segundo troca com o card tocado
+    private async Task TocarTroca(Guid id)
+    {
+        if (selecionadoTroca is not { } sel) { selecionadoTroca = id; return; }
+        selecionadoTroca = null;
+        if (sel != id) await TrocarPosicoes(sel, id);
+    }
 
     private int ProximoNumero(string ld)
     {

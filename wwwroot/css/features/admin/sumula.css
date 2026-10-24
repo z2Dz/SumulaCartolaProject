@@ -670,8 +670,34 @@
     --tl-sobre: var(--grafite);
 }
 
+/* mesmas cores dos botões de ação do popup do lance */
 .sm2-tl-gc {
-    --tl-cor: #ff9f43;
+    --tl-cor: #a78bfa;
+    --tl-sobre: var(--grafite);
+}
+
+.sm2-tl-chute {
+    --tl-cor: #38bdf8;
+    --tl-sobre: var(--grafite);
+}
+
+.sm2-tl-def {
+    --tl-cor: #e879f9;
+    --tl-sobre: var(--grafite);
+}
+
+.sm2-tl-pc {
+    --tl-cor: #fb923c;
+    --tl-sobre: var(--grafite);
+}
+
+.sm2-tl-pp {
+    --tl-cor: #fb7185;
+    --tl-sobre: var(--grafite);
+}
+
+.sm2-tl-ass {
+    --tl-cor: #a3e635;
     --tl-sobre: var(--grafite);
 }
 
@@ -966,9 +992,9 @@
     }
     /* azul: chute ao gol */
     .sm2-acao.defesa {
-        --acao-rgb: 52, 211, 153;
+        --acao-rgb: 232, 121, 249;
     }
-    /* verde: defesa */
+    /* fúcsia: defesa (verde é do gol) */
     .sm2-acao.pen-com {
         --acao-rgb: 251, 146, 60;
     }
@@ -1188,3 +1214,45 @@
             height: 30px;
         }
 }
+
+
+/* Popup "Adicionar atleta": cards com lápis (editar) no canto esquerdo e + (adicionar) no direito */
+.sm2-at-item {
+    position: relative;
+}
+
+.sm2-at-mais {
+    position: absolute;
+    top: .5rem;
+    right: .5rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--verde-2);
+    color: var(--branco);
+    font-weight: 800;
+    line-height: 1;
+}
+
+.sm2-at-editar {
+    position: absolute;
+    top: .5rem;
+    left: .5rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.35);
+    color: inherit;
+    cursor: pointer;
+}
+
+    .sm2-at-editar:hover,
+    .sm2-at-editar:focus-visible {
+        border-color: var(--acento);
+    }
