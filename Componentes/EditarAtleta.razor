@@ -29,6 +29,12 @@
             <SeletorFoto Nome="@nome" FotoUrlAtual="@Atleta?.FotoUrl" Posicoes="@posicoes" Tamanho="72"
                          @bind-Foto="fotoBytes" @bind-Removida="removerFoto" />
 
+            @if (PodeEditarFoto)
+            {
+                @* Reabre o recorte sobre a foto que o atleta já tem (ou a que acabou de escolher): remover fundo, borda, reenquadrar. *@
+                <button type="button" class="botao-sec adm-topo-gap" @onclick="AbrirEdicaoFoto">✎ Editar foto (remover fundo, borda, enquadrar)</button>
+            }
+
             @if (MostrarAtivo)
             {
                 <div class="cartola-status adm-topo-gap">
@@ -50,6 +56,11 @@
     </div>
 </div>
 
+@if (origemEdicao is not null)
+{
+    <RecortarFoto Origem="@origemEdicao" MostrarCirculo="false" OnConfirmar="AplicarFotoEditada" OnCancelar="() => origemEdicao = null" />
+}
+
 @code {
     /// <summary>Atleta a editar. Nulo cria um atleta novo.</summary>
     [Parameter] public AtletaResumo? Atleta { get; set; }
@@ -62,6 +73,26 @@
     private byte[]? fotoBytes;
     private string? erro;
     private bool removerFoto, salvando, ativo = true;
+
+    private string? origemEdicao;   // foto sendo editada no recorte (URL da foto atual ou data URL da foto nova)
+
+    private bool PodeEditarFoto => fotoBytes is not null || (!removerFoto && !string.IsNullOrWhiteSpace(Atleta?.FotoUrl));
+
+    private void AbrirEdicaoFoto() =>
+        origemEdicao = fotoBytes is not null ? ParaDataUrl(fotoBytes) : Atleta!.FotoUrl;
+
+    private void AplicarFotoEditada(byte[] bytes)
+    {
+        fotoBytes = bytes;
+        removerFoto = false;
+        origemEdicao = null;
+    }
+
+    private static string ParaDataUrl(byte[] b)
+    {
+        var mime = b.Length > 3 && b[0] == 0x89 && b[1] == 0x50 ? "image/png" : "image/jpeg";
+        return $"data:{mime};base64,{Convert.ToBase64String(b)}";
+    }
 
     private string Titulo => Atleta is null ? "Novo atleta" : "Editar atleta";
 

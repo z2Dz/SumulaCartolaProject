@@ -161,3 +161,30 @@
     font-weight: 600;
     cursor: pointer;
 }
+
+
+/* Botão que gera a imagem do Top 3 da rodada (aba Pontos Atletas), à direita das abas */
+.rk-top3-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--menta);
+    background: transparent;
+    color: var(--menta);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+    .rk-top3-btn:hover:not(:disabled),
+    .rk-top3-btn:focus-visible {
+        background: rgba(52, 211, 153, .15);
+    }
+
+    .rk-top3-btn:disabled {
+        opacity: .5;
+        cursor: default;
+    }

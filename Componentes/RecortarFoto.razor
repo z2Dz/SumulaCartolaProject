@@ -3,7 +3,10 @@
 @inject IJSRuntime Js
 
 @* Janela para enquadrar a foto antes de salvar: arraste para mover e use o zoom.
-   Devolve um JPEG 480x600 (proporção 4:5) já recortado. *@
+   Devolve um JPEG 480x600 (proporção 4:5) já recortado; com "Remover fundo" devolve um PNG 480x600 com fundo
+   transparente. Ao ligar "Remover fundo" o atleta aparece selecionado em azul (como nos editores de celular)
+   e a seleção pode ser corrigida com Adicionar / Apagar antes de ver o resultado.
+   Serve tanto para foto nova (data URL) quanto para editar a foto que o atleta já tem (URL dela). *@
 <div class="rf-fundo" @onclick="Cancelar"
      @onpointermove="Mover" @onpointerup="Soltar" @onpointercancel="Soltar">
     <div class="rf-caixa" role="dialog" aria-modal="true" aria-label="Enquadrar foto" @onclick:stopPropagation="true">
@@ -11,15 +14,28 @@
             <h3>Enquadrar foto</h3>
             <button type="button" class="adm-icone" @onclick="Cancelar" aria-label="Fechar">✕</button>
         </div>
-        <p class="rf-dica">Arraste a foto e use o zoom para deixar o rosto no centro.</p>
+        <p class="rf-dica">@Dica</p>
 
-        <div class="rf-quadro" style="width:@(W)px;height:@(H)px" @onpointerdown="Pegar" @onpointerdown:preventDefault>
+        <div class="rf-quadro" style="width:@(W)px;height:@(H)px@(Resultado ? ";background:repeating-conic-gradient(#3b4440 0% 25%, #2b322f 0% 50%) 50% / 16px 16px" : "")" @onpointerdown="Pegar" @onpointerdown:preventDefault>
             @if (pronto)
             {
-                <img src="@Origem" alt="" draggable="false"
-                     style="width:@F(LarguraImg)px;height:@F(AlturaImg)px;transform:translate(-50%,-50%) translate(@(F(ox))px,@(F(oy))px)" />
-                <span class="rf-grade" aria-hidden="true"></span>
-                <span class="rf-circulo" aria-hidden="true"></span>
+                @if (UsaTela)
+                {
+                    <canvas @ref="tela" style="position:absolute;left:0;top:0;width:@(W)px;height:@(H)px;touch-action:none"></canvas>
+                }
+                else
+                {
+                    <img src="@Origem" alt="" draggable="false"
+                         style="width:@F(LarguraImg)px;height:@F(AlturaImg)px;transform:translate(-50%,-50%) translate(@(F(ox))px,@(F(oy))px)" />
+                }
+                @if (!Pintando)
+                {
+                    <span class="rf-grade" aria-hidden="true"></span>
+                }
+                @if (MostrarCirculo)
+                {
+                    <span class="rf-circulo" aria-hidden="true"></span>
+                }
             }
             else if (falhou)
             {
@@ -29,8 +45,58 @@
             {
                 <span class="rf-msg">Carregando…</span>
             }
+            @if (processando)
+            {
+                <span class="rf-msg" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;background:rgba(0,0,0,.55);z-index:3">Detectando o atleta…<br />Na primeira vez pode demorar um pouco.</span>
+            }
         </div>
-        <small class="rf-legenda">O círculo mostra como a foto aparece na lista; o quadro inteiro aparece no cartão.</small>
+        @if (MostrarCirculo)
+        {
+            <small class="rf-legenda">O círculo mostra como a foto aparece na lista; o quadro inteiro aparece no cartão.</small>
+        }
+
+        <div style="display:flex;flex-wrap:nowrap;justify-content:space-between;gap:10px;margin:10px 0 2px">
+            <button type="button" role="switch" aria-checked="@removerAtivo" disabled="@(!pronto || processando || salvando)" @onclick="AlternarFundo"
+                    style="display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:4px 0;color:inherit;font:inherit;font-size:.9rem;white-space:nowrap;cursor:pointer;">
+                <span style="position:relative;width:34px;height:19px;border-radius:10px;flex:none;transition:background .15s;background:@(removerAtivo ? "#1f9d6b" : "#3b4440")">
+                    <span style="position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:transform .15s;transform:translateX(@(removerAtivo ? 15 : 0)px)"></span>
+                </span>
+                <span>Remover fundo</span>
+            </button>
+            <button type="button" role="switch" aria-checked="@comBorda" disabled="@(!removerAtivo || processando || salvando)" @onclick="AlternarBorda"
+                    style="display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:4px 0;color:inherit;font:inherit;font-size:.9rem;white-space:nowrap;cursor:pointer;@(removerAtivo ? "" : "opacity:.45;")">
+                <span style="position:relative;width:34px;height:19px;border-radius:10px;flex:none;transition:background .15s;background:@(comBorda ? "#1f9d6b" : "#3b4440")">
+                    <span style="position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:transform .15s;transform:translateX(@(comBorda ? 15 : 0)px)"></span>
+                </span>
+                <span>Borda no atleta</span>
+            </button>
+        </div>
+
+        @if (UsaTela)
+        {
+            <div style="display:flex;flex-direction:column;gap:8px;margin:6px 0 4px">
+                <div style="display:flex;gap:6px">
+                    <button type="button" class="botao-sec" style="@Estilo(!verResultado)" aria-pressed="@(!verResultado)" @onclick="() => verResultado = false">Seleção</button>
+                    <button type="button" class="botao-sec" style="@Estilo(verResultado)" aria-pressed="@verResultado" @onclick="() => verResultado = true">Resultado</button>
+                </div>
+                @if (!verResultado)
+                {
+                    <div style="display:flex;flex-wrap:wrap;gap:6px">
+                        <button type="button" class="botao-sec" style="@Estilo(ferramenta == "mover")" @onclick='() => ferramenta = "mover"'>✥ Mover</button>
+                        <button type="button" class="botao-sec" style="@Estilo(ferramenta == "add")" @onclick='() => ferramenta = "add"'>＋ Adicionar</button>
+                        <button type="button" class="botao-sec" style="@Estilo(ferramenta == "apagar")" @onclick='() => ferramenta = "apagar"'>− Apagar</button>
+                        <button type="button" class="botao-sec" style="@Estilo(false)" @onclick="Redefinir">↺ Refazer</button>
+                    </div>
+                    @if (ferramenta != "mover")
+                    {
+                        <label class="rf-zoom">
+                            <span>Pincel</span>
+                            <input type="range" min="6" max="40" step="1" value="@pincel" @oninput="AoPincel" aria-label="Tamanho do pincel" />
+                        </label>
+                    }
+                }
+            </div>
+        }
 
         <label class="rf-zoom">
             <span>−</span>
@@ -45,25 +111,49 @@
 
         <div class="rf-botoes">
             <button type="button" class="botao-sec" @onclick="Cancelar">Cancelar</button>
-            <button type="button" class="botao" disabled="@(!pronto || salvando)" @onclick="Confirmar">@(salvando ? "Recortando…" : "Usar esta foto")</button>
+            <button type="button" class="botao" disabled="@(!pronto || salvando || processando)" @onclick="Confirmar">@(salvando ? "Recortando…" : "Usar esta foto")</button>
         </div>
     </div>
 </div>
 
 @code {
-    /// <summary>Imagem de origem como data URL (já reduzida).</summary>
+    /// <summary>Imagem de origem: data URL (já reduzida) ou a URL da foto atual do atleta, ao editar.</summary>
     [Parameter, EditorRequired] public string Origem { get; set; } = "";
     [Parameter] public EventCallback<byte[]> OnConfirmar { get; set; }
     [Parameter] public EventCallback OnCancelar { get; set; }
+    /// <summary>Mostra o círculo-guia de como a foto aparece na lista. Desligue ao editar uma foto que já existe.</summary>
+    [Parameter] public bool MostrarCirculo { get; set; } = true;
 
     // Quadro de enquadramento (4:5) e tamanho do arquivo final
     private const int W = 280, H = 350, SaidaW = 480, SaidaH = 600;
 
     private IJSObjectReference? modulo;
+    private ElementReference tela;
     private double nw, nh, zoom = 1, ox, oy;
     private bool pronto, falhou, salvando, arrastando;
     private double ultimoX, ultimoY;
     private string? erro;
+
+    // Remover fundo
+    private bool removerAtivo;          // interruptor "Remover fundo"
+    private bool selecaoPronta;         // o atleta já foi detectado (máscara guardada no módulo JS)
+    private bool processando;
+    private bool verResultado;          // false = mostra a seleção em azul; true = mostra o recorte final
+    private bool comBorda = true;
+    private string ferramenta = "mover"; // "mover" | "add" | "apagar"
+    private int pincel = 16;            // raio do pincel, em px do quadro
+
+    private bool UsaTela => removerAtivo && selecaoPronta;
+    private bool Resultado => UsaTela && verResultado;
+    private bool Pintando => UsaTela && !verResultado && ferramenta != "mover";
+    private string Dica => !UsaTela
+        ? (MostrarCirculo ? "Arraste a foto e use o zoom para deixar o rosto no centro." : "Arraste a foto e use o zoom para reenquadrar.")
+        : verResultado
+            ? "É assim que a foto vai ficar. Volte em Seleção para corrigir."
+            : "A parte em azul é o atleta. Use Adicionar e Apagar para corrigir a seleção.";
+
+    private static string Estilo(bool ligado) =>
+        "padding:6px 10px;min-height:0;height:auto;font-size:.85rem" + (ligado ? ";background:#12594a;border-color:#1f9d6b;color:#fff" : "");
 
     private double Base => Math.Max(W / nw, H / nh);
     private double Escala => Base * zoom;
@@ -84,6 +174,58 @@
         catch { falhou = true; }
     }
 
+    // Redesenha a seleção/resultado no canvas sempre que algo muda (arrastar, zoom, ferramenta, borda...)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!UsaTela || modulo is null || tela.Id is null) return;
+        try
+        {
+            await modulo.InvokeVoidAsync("desenhar", tela, new
+            {
+                w = W, h = H, saidaW = SaidaW, saidaH = SaidaH,
+                resultado = verResultado, borda = comBorda,
+                ox, oy, escala = Escala, ferramenta, pincel
+            });
+        }
+        catch { }
+    }
+
+    private async Task AlternarFundo()
+    {
+        erro = null;
+        if (removerAtivo) { removerAtivo = false; return; }
+        if (selecaoPronta) { removerAtivo = true; return; }
+
+        removerAtivo = true;
+        processando = true;
+        try
+        {
+            await modulo!.InvokeVoidAsync("iniciarSelecao", Origem);
+            selecaoPronta = true;
+            verResultado = false;
+            ferramenta = "mover";
+        }
+        catch
+        {
+            removerAtivo = false;
+            erro = "Não consegui detectar o atleta nesta foto. Verifique a conexão e tente de novo.";
+        }
+        processando = false;
+    }
+
+    private void AlternarBorda() => comBorda = !comBorda;
+
+    private async Task Redefinir()
+    {
+        if (modulo is not null) await modulo.InvokeVoidAsync("redefinirSelecao");
+    }
+
+    private void AoPincel(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var p))
+            pincel = Math.Clamp(p, 6, 40);
+    }
+
     private void Limitar()
     {
         var mx = Math.Max(0, (LarguraImg - W) / 2);
@@ -94,7 +236,7 @@
 
     private void Pegar(PointerEventArgs e)
     {
-        if (!pronto) return;
+        if (!pronto || Pintando) return;   // pintando, quem trata o gesto é o JS (foto.js)
         arrastando = true; ultimoX = e.ClientX; ultimoY = e.ClientY;
     }
 
@@ -123,7 +265,9 @@
             var sw = W / Escala; var sh = H / Escala;
             var sx = nw / 2 - ox / Escala - sw / 2;
             var sy = nh / 2 - oy / Escala - sh / 2;
-            var b64 = await modulo!.InvokeAsync<string>("recortar", Origem, sx, sy, sw, sh, SaidaW, SaidaH);
+            var b64 = UsaTela
+                ? await modulo!.InvokeAsync<string>("recortarSelecao", sx, sy, sw, sh, SaidaW, SaidaH, comBorda)
+                : await modulo!.InvokeAsync<string>("recortar", Origem, sx, sy, sw, sh, SaidaW, SaidaH);
             await OnConfirmar.InvokeAsync(Convert.FromBase64String(b64));
         }
         catch { erro = "Não consegui recortar a foto. Tente outra imagem."; }
@@ -134,6 +278,10 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (modulo is not null) await modulo.DisposeAsync();
+        if (modulo is not null)
+        {
+            try { await modulo.InvokeVoidAsync("liberarSelecao"); } catch { }
+            await modulo.DisposeAsync();
+        }
     }
 }

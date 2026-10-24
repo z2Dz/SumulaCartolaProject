@@ -1,9 +1,11 @@
 @page "/ranking"
+@using Microsoft.JSInterop
 @implements IDisposable
 @attribute [Authorize]
 @inject ServicoTorcida Torcidas
 @inject ServicoMercado Mercado
 @inject ServicoEscalacao Escalacoes
+@inject IJSRuntime JS
 
 <PageTitle>Ranking · Cartola dos Amigos</PageTitle>
 
@@ -17,6 +19,13 @@
             <button type="button" role="tab" class="@(aba == AbaRanking.Torcida ? "sel" : "")" @onclick="() => TrocarAba(AbaRanking.Torcida)">Torcida</button>
         </div>
 
+        @if (aba == AbaRanking.PontosAtletas)
+        {
+            <button type="button" class="rk-top3-btn" disabled="@(gerandoTop3 || atletasRodada is null || atletasRodada.Atletas.Count < 3)" @onclick="GerarTop3">
+                @(gerandoTop3 ? "Gerando…" : "Gerar Top 3")
+            </button>
+        }
+
         @if (rodadas.Count > 0 && aba != AbaRanking.PontosAtletas)
         {
             <select class="rk-filtro" aria-label="Filtrar por rodada" value="@(rodadaSel?.ToString() ?? "")" @onchange="TrocarRodada">
@@ -28,6 +37,11 @@
             </select>
         }
     </div>
+
+    @if (!string.IsNullOrEmpty(erroTop3))
+    {
+        <p class="erro" role="alert">@erroTop3</p>
+    }
 
     @if (!string.IsNullOrEmpty(avisoSync))
     {
@@ -123,6 +137,15 @@
                                         <div class="rk-ext-linha total">
                                             <span>Total</span>
                                             <strong class="@(extrato.Total < 0 ? "neg" : "")">@Fmt2(extrato.Total)</strong>
+                                        </div>
+                                        <div class="rk-ext-acoes" style="margin-top:.85rem;display:flex;flex-direction:column;align-items:center;gap:.4rem">
+                                            <button type="button" class="rk-top3-btn" disabled="@(gerandoCardId is not null)" @onclick="() => GerarCardJogador(a)">
+                                                @(gerandoCardId == a.Id ? "Gerando…" : "Gerar card do jogador")
+                                            </button>
+                                            @if (!string.IsNullOrEmpty(erroCard) && erroCardId == a.Id)
+                                            {
+                                                <p class="erro" role="alert">@erroCard</p>
+                                            }
                                         </div>
                                     }
                                     else
@@ -384,6 +407,70 @@
         try { linhas = await Torcidas.RankingAsync(rodadaSel); }
         catch (ErroTorcidaException ex) { erro = ex.Message; }
         finally { carregando = false; }
+    }
+
+    // ----- Imagem "Top 3 da rodada" (js/top3.js desenha num canvas e baixa/compartilha o PNG) -----
+    private bool gerandoTop3;
+    private string? erroTop3;
+
+    private async Task GerarTop3()
+    {
+        if (atletasRodada is null || atletasRodada.Atletas.Count < 3) return;
+        erroTop3 = null;
+        gerandoTop3 = true;
+        try
+        {
+            var top = atletasRodada.Atletas
+                .OrderByDescending(a => a.Pontos)
+                .Take(3)
+                .Select(a => new
+                {
+                    nome = a.Nome,
+                    pos = PrimeiraSigla(a.Posicao),
+                    pontos = Fmt2(a.Pontos),
+                    foto = fotos.TryGetValue(a.Id, out var f) ? f : null,
+                    silhueta = SilhuetasAtleta.Caminho(PrimeiraSigla(a.Posicao), a.Nome),   // usada quando o atleta não tem foto
+                    time = a.TimeNome,   // define a cor do contorno do atleta (Vermelho / Amarelo)
+                    escudo = string.IsNullOrWhiteSpace(a.TimeNome) ? null : $"img/time-{SlugTime(a.TimeNome)}.png"
+                })
+                .ToList();
+
+            var dados = new { data = atletasRodada.Data?.ToString("dd/MM"), atletas = top };
+            await using var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/top3.js");
+            await modulo.InvokeVoidAsync("gerarTop3", dados);
+        }
+        catch (JSDisconnectedException) { }
+        catch (JSException ex) { erroTop3 = "Não consegui gerar a imagem: " + ex.Message; }
+        finally { gerandoTop3 = false; }
+    }
+
+    // ----- Card de um jogador só (js/top3.js, moldura wwwroot/img/moldura-card.png) -----
+    private string? gerandoCardId, erroCardId, erroCard;
+
+    private async Task GerarCardJogador(AtletaRodada a)
+    {
+        erroCard = null;
+        erroCardId = a.Id;
+        gerandoCardId = a.Id;
+        try
+        {
+            var dados = new
+            {
+                nome = a.Nome,
+                pos = PrimeiraSigla(a.Posicao),
+                pontos = Fmt2(a.Pontos),
+                data = atletasRodada?.Data?.ToString("dd/MM"),
+                foto = fotos.TryGetValue(a.Id, out var f) ? f : null,
+                silhueta = SilhuetasAtleta.Caminho(PrimeiraSigla(a.Posicao), a.Nome),
+                time = a.TimeNome,
+                escudo = string.IsNullOrWhiteSpace(a.TimeNome) ? null : $"img/time-{SlugTime(a.TimeNome)}.png"
+            };
+            await using var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/top3.js");
+            await modulo.InvokeVoidAsync("gerarCardJogador", dados);
+        }
+        catch (JSDisconnectedException) { }
+        catch (JSException ex) { erroCard = "Não consegui gerar o card: " + ex.Message; }
+        finally { gerandoCardId = null; }
     }
 
     private async Task AoTeclarAtleta(KeyboardEventArgs e, AtletaRodada a)
