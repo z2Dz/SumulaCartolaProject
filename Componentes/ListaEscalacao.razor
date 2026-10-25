@@ -31,31 +31,33 @@
             var atleta = Elenco.FirstOrDefault(x => x.Id == a.Id);
             var aberto = rodadaAberta == a.Id;
             <button type="button" class="esc-lista-item esc-linha @(Escalacao.EstaNoCampo(a.Id) ? "meu" : "") @(aberto ? "sel" : "")" aria-expanded="@aberto.ToString().ToLowerInvariant()" @onclick="() => AlternarRodada(a.Id)">
-                <span class="esc-linha-foto">@if (atleta is not null) {
-                    <FotoAtleta Atleta="atleta" Tamanho="26" />
-                }
-            </span>
-            <span class="esc-lista-nome">@a.Nome@(a.Id == Escalacao.CapitaoId ? " (C)" : "")</span>
-            <span class="esc-linha-pos">@a.Posicao</span>
-            <span class="esc-linha-pontos @Classe(a.Pontos)">@Fmt(a.Pontos)</span>
-        </button>
-        @if (aberto)
+                <span class="esc-linha-foto">
+                    @if (atleta is not null)
+                    {
+                        <FotoAtleta Atleta="atleta" Tamanho="26" />
+                    }
+                </span>
+                <span class="esc-lista-nome">@a.Nome@(a.Id == Escalacao.CapitaoId ? " (C)" : "")</span>
+                <span class="esc-linha-pos">@a.Posicao</span>
+                <span class="esc-linha-pontos @Classe(a.Pontos)">@Fmt(a.Pontos)</span>
+            </button>
+            @if (aberto)
+            {
+                @PainelExtrato(extratoRodada, carregandoExtratoRodada, erroExtratoRodada)
+            }
+        }
+        @if (TemTimes)
         {
-            @PainelExtrato(extratoRodada, carregandoExtratoRodada, erroExtratoRodada)
+            <div class="esc-filtro-time">
+                <div class="rk-abas" role="tablist" aria-label="Filtrar por time">
+                    @foreach (var (chave, rotulo) in Filtros)
+                    {
+                        <button type="button" role="tab" class="@(filtroTime == chave ? "sel" : "")" aria-selected="@((filtroTime == chave).ToString().ToLowerInvariant())" @onclick="() => filtroTime = chave">@rotulo</button>
+                    }
+                </div>
+            </div>
         }
     }
-    @if (TemTimes)
-    {
-        <div class="esc-filtro-time">
-            <div class="rk-abas" role="tablist" aria-label="Filtrar por time">
-                @foreach (var (chave, rotulo) in Filtros)
-                {
-                    <button type="button" role="tab" class="@(filtroTime == chave ? "sel" : "")" aria-selected="@((filtroTime == chave).ToString().ToLowerInvariant())" @onclick="() => filtroTime = chave">@rotulo</button>
-                }
-            </div>
-        </div>
-    }
-}
 }
 else
 {
@@ -68,27 +70,32 @@ else
             var pontosVaga = at is null ? null : PontosDaVaga(pos, at);
             var aberto = pontosVaga is not null && ExtratoSlot == vaga;   // sem pontuação na rodada, não abre extrato
             <button type="button" class="esc-lista-item esc-linha @(at is null ? "vazio" : "") @(Selecionado == vaga || aberto ? "sel" : "")" aria-expanded="@(at is null ? null : aberto.ToString().ToLowerInvariant())" @onclick="() => OnSlot.InvokeAsync(vaga)">
-                <span class="esc-linha-foto">@if (at is not null) {
-                    <FotoAtleta Atleta="at" Posicao="pos" Tamanho="26" />
+                <span class="esc-linha-foto">
+                    @if (at is not null)
+                    {
+                        <FotoAtleta Atleta="at" Posicao="pos" Tamanho="26" />
+                    }
+                </span>
+                <span class="esc-lista-nome">@(at?.Nome ?? "Escolher " + pos.Nome().ToLowerInvariant())@(at is not null && at.Id == Escalacao.CapitaoId ? " (C)" : "")</span>
+                <span class="esc-linha-pos">@pos.Sigla()</span>
+                @if (at is null)
+                {
+                    <span class="esc-linha-pontos">+</span>
                 }
-            </span>
-            <span class="esc-lista-nome">@(at?.Nome ?? "Escolher " + pos.Nome().ToLowerInvariant())@(at is not null && at.Id == Escalacao.CapitaoId ? " (C)" : "")</span>
-            <span class="esc-linha-pos">@pos.Sigla()</span>
-            @if (at is null)
+                else
+                {
+                    <span class="esc-linha-pontos @(pontosVaga is null ? "" : Classe(pontosVaga.Value))">@if (MostraMult(pos, at, pontosVaga)) {
+                        <small class="esc-linha-mult">@Fmt(at.UltimaPontuacao!.Value) ×@MultTxt</small>
+                    }
+                    @(pontosVaga is null ? "—" : Fmt(pontosVaga.Value))</span>
+                }
+            </button>
+            @if (aberto)
             {
-                <span class="esc-linha-pontos">+</span>
+                @PainelExtrato(Extrato, Carregando, Erro, MostraMult(pos, at, pontosVaga) ? Mult : 1m)
             }
-            else
-            {
-                <span class="esc-linha-pontos @(pontosVaga is null ? "" : Classe(pontosVaga.Value))">@(pontosVaga is null ? "—" : Fmt(pontosVaga.Value))</span>
-            }
-        </button>
-        @if (aberto)
-        {
-            @PainelExtrato(Extrato, Carregando, Erro)
         }
     }
-}
 }
 
 @code {
@@ -133,8 +140,18 @@ else
     private static string Classe(decimal v) => v > 0 ? "pos" : v < 0 ? "neg" : "zero";
 
     /// <summary>Pontos da última partida na vaga. O técnico pontua pela média do time.</summary>
-    private decimal? PontosDaVaga(PosicaoCampo pos, AtletaEscalavel at) =>
-        pos == PosicaoCampo.Tecnico ? SumulaCartolaProject.Servicos.PontosDoTecnico.Valor(Escalacao) : at.UltimaPontuacao;
+    private decimal? PontosDaVaga(PosicaoCampo pos, AtletaEscalavel at)
+    {
+        if (pos == PosicaoCampo.Tecnico) return SumulaCartolaProject.Servicos.PontosDoTecnico.Valor(Escalacao);
+        var p = at.UltimaPontuacao;
+        return p.HasValue && at.Id == Escalacao.CapitaoId ? p.Value * Mult : p;   // capitão: ×1,5
+    }
+
+    // o capitão vale ×1,5 (regra única em EscalacaoMontada.MultCapitao); o técnico nunca recebe o multiplicador
+    private const decimal Mult = EscalacaoMontada.MultCapitao;
+    private static string MultTxt => Mult.ToString("0.##", Br);
+    private bool MostraMult(PosicaoCampo pos, AtletaEscalavel? at, decimal? pontosVaga) =>
+        pos != PosicaoCampo.Tecnico && at is not null && pontosVaga is not null && at.Id == Escalacao.CapitaoId;
 
     private async Task AlternarRodada(string id)
     {
@@ -153,7 +170,7 @@ else
     }
 
     /// <summary>Extrato de pontos (usado pelas duas listas).</summary>
-    private RenderFragment PainelExtrato(ExtratoJogo? extrato, bool carregando, string? erro) => @<div class="esc-extrato">
+    private RenderFragment PainelExtrato(ExtratoJogo? extrato, bool carregando, string? erro, decimal mult = 1m) => @<div class="esc-extrato">
         @if (carregando)
         {
             <p class="suave">Carregando extrato…</p>
@@ -174,8 +191,13 @@ else
                 {
                     <li><span>@l.Texto</span><b class="@Classe(l)">@Fmt(l.Pontos)</b></li>
                 }
+                @if (mult != 1m)
+                {
+                    var extra = extrato.Total * (mult - 1m);
+                    <li><span>Capitão ×@mult.ToString("0.##", Br)</span><b class="@Classe(extra)">@Fmt(extra)</b></li>
+                }
             </ul>
-            <div class="esc-extrato-total"><span>Total</span><b class="@Classe(extrato.Total)">@Fmt(extrato.Total)</b></div>
+            <div class="esc-extrato-total"><span>Total</span><b class="@Classe(extrato.Total * mult)">@Fmt(extrato.Total * mult)</b></div>
         }
     </div>;
 }
@@ -208,17 +230,25 @@ else
         color: var(--acento);
     }
 
-        .esc-linha-pontos.pos {
-            color: #2fbf71;
-        }
+    .esc-linha-mult {
+        margin-right: .4rem;
+        font-size: .7rem;
+        font-weight: 600;
+        color: var(--texto);
+        opacity: .6;
+    }
 
-        .esc-linha-pontos.neg {
-            color: #e5484d;
-        }
+    .esc-linha-pontos.pos {
+        color: #2fbf71;
+    }
 
-        .esc-linha-pontos.zero {
-            opacity: .55;
-        }
+    .esc-linha-pontos.neg {
+        color: #e5484d;
+    }
+
+    .esc-linha-pontos.zero {
+        opacity: .55;
+    }
 
     .esc-linha-msg {
         margin: .4rem 0;

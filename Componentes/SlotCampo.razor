@@ -293,7 +293,11 @@
     // Pontuação do atleta na última partida, na etiqueta acima da foto: verde positiva, vermelha negativa, cinza zerada ou sem jogo
     // Sempre com duas casas e vírgula (0,00); sem jogo mostra "—"
     private static readonly CultureInfo Br = new("pt-BR");
-    private decimal? PontosExibidos => Posicao == PosicaoCampo.Tecnico ? PontosTecnico : Atleta?.UltimaPontuacao;
+    // O capitão mostra os pontos já multiplicados (×1,5, regra única em EscalacaoMontada.MultCapitao); o técnico nunca recebe o multiplicador.
+    private decimal? PontosExibidos =>
+        Posicao == PosicaoCampo.Tecnico ? PontosTecnico
+        : EhCapitao && Atleta?.UltimaPontuacao is { } bruto ? bruto * EscalacaoMontada.MultCapitao
+        : Atleta?.UltimaPontuacao;
     private string Pontos => PontosExibidos is { } p ? p.ToString("0.00", Br) : "—";
     private string ClassePontos => PontosExibidos switch { > 0 => "pos", < 0 => "neg", _ => "zero" };
 

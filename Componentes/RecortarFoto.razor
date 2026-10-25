@@ -16,7 +16,7 @@
         </div>
         <p class="rf-dica">@Dica</p>
 
-        <div class="rf-quadro" style="width:@(W)px;height:@(H)px@(Resultado ? ";background:repeating-conic-gradient(#3b4440 0% 25%, #2b322f 0% 50%) 50% / 16px 16px" : "")" @onpointerdown="Pegar" @onpointerdown:preventDefault>
+        <div class="rf-quadro" style="width:@(W)px;height:@(H)px;@(UsaTela ? "background:repeating-conic-gradient(#3b4440 0% 25%, #2b322f 0% 50%) 50% / 16px 16px" : "background:#fff")" @onpointerdown="Pegar" @onpointerdown:preventDefault>
             @if (pronto)
             {
                 @if (UsaTela)
@@ -98,9 +98,13 @@
             </div>
         }
 
+        <div style="display:flex;gap:6px;margin:6px 0 2px">
+            <button type="button" class="botao-sec" style="@Estilo(false)" disabled="@(!pronto)" @onclick="Preencher">Preencher</button>
+            <button type="button" class="botao-sec" style="@Estilo(false)" disabled="@(!pronto)" @onclick="FotoInteira">Foto inteira</button>
+        </div>
         <label class="rf-zoom">
             <span>−</span>
-            <input type="range" min="1" max="4" step="0.01" value="@F(zoom)" @oninput="AoZoom" disabled="@(!pronto)" aria-label="Zoom" />
+            <input type="range" min="@F(ZoomMin)" max="@F(ZoomMax)" step="0.01" value="@F(zoom)" @oninput="AoZoom" disabled="@(!pronto)" aria-label="Zoom" />
             <span>+</span>
         </label>
 
@@ -147,13 +151,18 @@
     private bool Resultado => UsaTela && verResultado;
     private bool Pintando => UsaTela && !verResultado && ferramenta != "mover";
     private string Dica => !UsaTela
-        ? (MostrarCirculo ? "Arraste a foto e use o zoom para deixar o rosto no centro." : "Arraste a foto e use o zoom para reenquadrar.")
+        ? (MostrarCirculo ? "Arraste a foto para qualquer lado e use o zoom para encaixar o rosto na moldura." : "Arraste a foto para qualquer lado e use o zoom para encaixar na moldura.")
         : verResultado
             ? "É assim que a foto vai ficar. Volte em Seleção para corrigir."
             : "A parte em azul é o atleta. Use Adicionar e Apagar para corrigir a seleção.";
 
     private static string Estilo(bool ligado) =>
         "padding:6px 10px;min-height:0;height:auto;font-size:.85rem" + (ligado ? ";background:#12594a;border-color:#1f9d6b;color:#fff" : "");
+
+    // Enquadramento livre: dá para afastar a foto (zoom < 1 deixa margem em volta), aproximar bastante
+    // e arrastar para qualquer lado; só não deixa a foto sumir inteira do quadro.
+    private const double ZoomMax = 6, MinVisivel = 48;
+    private double ZoomMin => Math.Min(0.25, Math.Min(W / nw, H / nh) / Base);
 
     private double Base => Math.Max(W / nw, H / nh);
     private double Escala => Base * zoom;
@@ -182,9 +191,17 @@
         {
             await modulo.InvokeVoidAsync("desenhar", tela, new
             {
-                w = W, h = H, saidaW = SaidaW, saidaH = SaidaH,
-                resultado = verResultado, borda = comBorda,
-                ox, oy, escala = Escala, ferramenta, pincel
+                w = W,
+                h = H,
+                saidaW = SaidaW,
+                saidaH = SaidaH,
+                resultado = verResultado,
+                borda = comBorda,
+                ox,
+                oy,
+                escala = Escala,
+                ferramenta,
+                pincel
             });
         }
         catch { }
@@ -228,8 +245,8 @@
 
     private void Limitar()
     {
-        var mx = Math.Max(0, (LarguraImg - W) / 2);
-        var my = Math.Max(0, (AlturaImg - H) / 2);
+        var mx = Math.Max(0, (LarguraImg + W) / 2 - MinVisivel);
+        var my = Math.Max(0, (AlturaImg + H) / 2 - MinVisivel);
         ox = Math.Clamp(ox, -mx, mx);
         oy = Math.Clamp(oy, -my, my);
     }
@@ -253,9 +270,13 @@
     private void AoZoom(ChangeEventArgs e)
     {
         if (!double.TryParse(e.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var z)) return;
-        zoom = Math.Clamp(z, 1, 4);
+        zoom = Math.Clamp(z, ZoomMin, ZoomMax);
         Limitar();
     }
+
+    // zoom 1 = a foto cobre o quadro inteiro; "foto inteira" = a foto toda cabe dentro do quadro
+    private void Preencher() { zoom = 1; ox = 0; oy = 0; }
+    private void FotoInteira() { zoom = Math.Min(W / nw, H / nh) / Base; ox = 0; oy = 0; }
 
     private async Task Confirmar()
     {

@@ -14,6 +14,9 @@ public class EscalacaoMontada
     public Tatica Tatica { get; private set; } = Tatica.Padrao;
     public string? CapitaoId { get; private set; }
 
+    /// <summary>O capitão vale ×1,5 nos pontos. Regra única: o campo, a lista e o total da tela Escalar usam este valor.</summary>
+    public const decimal MultCapitao = 1.5m;
+
     public void AplicarTatica(Tatica t)
     {
         Tatica = t;

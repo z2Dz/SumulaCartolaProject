@@ -250,7 +250,7 @@
     private PontuacaoDaRodada? rodada;
     private bool carregandoRodada;
     private string? erroRodada;
-    private const decimal MultCapitao = 1.5m;   // o capitão vale ×1,5
+    private const decimal MultCapitao = EscalacaoMontada.MultCapitao;   // o capitão vale ×1,5 (regra única em EscalacaoMontada)
     private bool mostrarRegras;
     private bool personalizando;
     private bool salvando;
@@ -452,11 +452,38 @@
 }
 
 <style>
-    .esc-dica.aviso { border-color: var(--amarelo); color: var(--amarelo); }
-    .esc-ajuda .esc-aviso { color: var(--amarelo); font-weight: 700; }
-    .esc-abas-lista { display: flex; gap: .4rem; margin: 0 0 .6rem; }
-    .esc-abas-lista button { flex: 1; padding: .5rem .6rem; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); background: rgba(8,20,15,.7); color: var(--texto); font-weight: 700; font-size: .85rem; cursor: pointer; }
-    .esc-abas-lista button.ativa { border-color: var(--amarelo); color: var(--amarelo); }
+    .esc-dica.aviso {
+        border-color: var(--amarelo);
+        color: var(--amarelo);
+    }
+
+    .esc-ajuda .esc-aviso {
+        color: var(--amarelo);
+        font-weight: 700;
+    }
+
+    .esc-abas-lista {
+        display: flex;
+        gap: .4rem;
+        margin: 0 0 .6rem;
+    }
+
+        .esc-abas-lista button {
+            flex: 1;
+            padding: .5rem .6rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,.12);
+            background: rgba(8,20,15,.7);
+            color: var(--texto);
+            font-weight: 700;
+            font-size: .85rem;
+            cursor: pointer;
+        }
+
+            .esc-abas-lista button.ativa {
+                border-color: var(--amarelo);
+                color: var(--amarelo);
+            }
     /* Aviso de mercado fechado na barra de cima: neutro, sem aparência de erro */
     .esc-mercado {
         display: flex;

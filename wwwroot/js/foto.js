@@ -51,6 +51,17 @@ function desenharComBorda(ctx, w, h, desenhar, espessura, cor) {
 
 const espessuraSaida = (w, h) => Math.max(2, Math.round(Math.min(w, h) * 0.008));   // ~0,8% do lado menor (discreto)
 
+// drawImage de um retângulo de origem que pode sair da foto (enquadramento livre): desenha só a parte
+// que existe e deixa o resto do destino como está (branco no JPEG, transparente no PNG).
+function desenharRecorte(ctx, img, sx, sy, sw, sh, dw, dh) {
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    const x0 = Math.max(sx, 0), y0 = Math.max(sy, 0);
+    const x1 = Math.min(sx + sw, iw), y1 = Math.min(sy + sh, ih);
+    if (x1 <= x0 || y1 <= y0) return;
+    const kx = dw / sw, ky = dh / sh;
+    ctx.drawImage(img, x0, y0, x1 - x0, y1 - y0, (x0 - sx) * kx, (y0 - sy) * ky, (x1 - x0) * kx, (y1 - y0) * ky);
+}
+
 // Recorte simples (sem remover fundo): fundo branco, JPEG.
 export function recortar(src, sx, sy, sw, sh, w, h) {
     return new Promise((ok, erro) => {
@@ -63,7 +74,7 @@ export function recortar(src, sx, sy, sw, sh, w, h) {
             x.imageSmoothingQuality = 'high';
             x.fillStyle = '#fff';
             x.fillRect(0, 0, w, h);
-            x.drawImage(i, sx, sy, sw, sh, 0, 0, w, h);
+            desenharRecorte(x, i, sx, sy, sw, sh, w, h);
             ok(c.toDataURL('image/jpeg', 0.92).split(',')[1]);
         };
         i.onerror = () => erro('imagem');
@@ -217,7 +228,7 @@ export function recortarSelecao(sx, sy, sw, sh, w, h, borda) {
     const desenhar = k => {
         k.imageSmoothingEnabled = true;
         k.imageSmoothingQuality = 'high';
-        k.drawImage(corte, sx, sy, sw, sh, 0, 0, w, h);
+        desenharRecorte(k, corte, sx, sy, sw, sh, w, h);
     };
     if (borda) desenharComBorda(x, w, h, desenhar, espessuraSaida(w, h), 'rgba(255,255,255,0.95)');
     else desenhar(x);
