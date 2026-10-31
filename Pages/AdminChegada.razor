@@ -72,7 +72,7 @@
                         <IconeUi Nome="lupa" Tamanho="20" />
                         <input type="search" placeholder="Buscar pelo nome ou posição…" @bind="busca" @bind:event="oninput" />
                     </div>
-                    <p class="chg2-dica">Toque no atleta para marcar a chegada. Ele entra sem time: escolha Verm. ou Amar. na lista ao lado.</p>
+                    <p class="chg2-dica">Toque no atleta para marcar a chegada: ele já entra num time (o que tem menos gente) e é salvo na hora. Para trocar de time, use a lista ao lado ou a prévia.</p>
                     <ul class="chg-nomes">
                         @foreach (var a in Faltando)
                         {
@@ -250,8 +250,9 @@
                             <button type="button" class="@(tempo == 2 ? "ativa" : "")" @onclick="() => tempo = 2">2º tempo</button>
                         </div>
                         <div class="previa-modo" role="tablist">
-                            <button type="button" class="@(previaCampo ? "" : "ativa")" @onclick="() => previaCampo = false">Lista</button>
-                            <button type="button" class="@(previaCampo ? "ativa" : "")" @onclick="() => previaCampo = true">No campo</button>
+                            <button type="button" class="@(modoPrevia == "lista" ? "ativa" : "")" @onclick='() => modoPrevia = "lista"'>Lista</button>
+                            <button type="button" class="@(modoPrevia == "campo" ? "ativa" : "")" @onclick='() => modoPrevia = "campo"'>No campo</button>
+                            <button type="button" class="@(modoPrevia == "ajustar" ? "ativa" : "")" @onclick='() => modoPrevia = "ajustar"'>Ajustar times@(SemTime > 0 ? $" ({SemTime})" : "")</button>
                         </div>
                         <div class="previa-modo" role="group">
                             <button type="button" @onclick="AbrirTrocas">Substituições</button>
@@ -259,7 +260,65 @@
                         <button type="button" class="adm-icone" @onclick="() => previa = false" aria-label="Fechar">✕</button>
                     </div>
                 </div>
+                @if (!string.IsNullOrEmpty(erro))
+                {
+                    <p class="erro">@erro</p>
+                }
+                @if (salvandoAuto)
+                {
+                    <p class="suave">Salvando…</p>
+                }
+                @if (SemTime > 0 && !previaAjustar)
+                {
+                    <p class="previa-goleiro sem"><span><b>@SemTime atleta(s) sem time.</b>
+                        <button type="button" class="botao-sec" style="padding:4px 10px;min-height:0;height:auto;font-size:.85rem;margin-left:.5rem" @onclick='() => modoPrevia = "ajustar"'>Escolher o time</button></span></p>
+                }
                 <div class="previa-times">
+                    @if (previaAjustar)
+                    {
+                        <p class="suave" style="grid-column:1 / -1;margin:0">Troque o time de qualquer atleta aqui: a mudança já é salva na súmula.</p>
+                        @if (SemTime > 0)
+                        {
+                            <section class="previa-time" style="grid-column:1 / -1">
+                                <h4>Sem time (@SemTime)</h4>
+                                <ol>
+                                    @foreach (var semTimeItem in ordem.Where(o => o.Lado == TimePelada.SemTime).ToList())
+                                    {
+                                        <li @key="semTimeItem.Id">
+                                            <FotoJogador Nome="@semTimeItem.Nome" FotoUrl="@semTimeItem.FotoUrl" Posicoes="@semTimeItem.Posicoes" Tamanho="40" />
+                                            <span class="previa-nome">@semTimeItem.Nome</span>
+                                            <small>@(semTimeItem.Posicoes.Count == 0 ? "sem posição" : semTimeItem.PosicoesTexto)</small>
+                                            @TrocaDeTime(semTimeItem)
+                                        </li>
+                                    }
+                                </ol>
+                            </section>
+                        }
+                        @foreach (var ladoAjuste in new[] { TimePelada.Vermelho, TimePelada.Amarelo })
+                        {
+                            var ladoDaSecao = ladoAjuste;
+                            <section class="previa-time @TimePelada.Css(ladoDaSecao)">
+                                <h4><span class="adm-bolinha @TimePelada.Css(ladoDaSecao)"></span> @TimePelada.Rotulo(ladoDaSecao) (@Contar(ladoDaSecao))</h4>
+                                @if (Contar(ladoDaSecao) == 0)
+                                {
+                                    <p class="suave">Ninguém ainda.</p>
+                                }
+                                <ol>
+                                    @foreach (var membro in DoLado(ladoDaSecao).ToList())
+                                    {
+                                        <li @key="membro.Id">
+                                            <FotoJogador Nome="@membro.Nome" FotoUrl="@membro.FotoUrl" Posicoes="@membro.Posicoes" Tamanho="40" />
+                                            <span class="previa-nome">@membro.Nome</span>
+                                            <small>@(membro.Posicoes.Count == 0 ? "sem posição" : membro.PosicoesTexto)@(AnaliseTime.EhSoGoleiro(membro) ? " · goleiro" : "")</small>
+                                            @TrocaDeTime(membro)
+                                        </li>
+                                    }
+                                </ol>
+                            </section>
+                        }
+                    }
+                    else
+                    {
                     @foreach (var lado in new[] { TimePelada.Vermelho, TimePelada.Amarelo })
                     {
                         var todos = DoLado(lado).Where(j => !AnaliseTime.EhSoGoleiro(j)).ToList(); // o goleiro vem da chegada, mas fica fora da divisão de tempos
@@ -318,6 +377,7 @@
                                 <SubstituicoesPrevia Plano="plano" />
                             }
                         </section>
+                    }
                     }
                 </div>
             </div>
@@ -432,7 +492,9 @@
 
     private bool Finalizada => partidas.FirstOrDefault(p => p.Id == partidaId)?.Finalizada == true;
     private bool previa;
-    private bool previaCampo;
+    private string modoPrevia = "lista";   // "lista" | "campo" | "ajustar"
+    private bool previaCampo => modoPrevia == "campo";
+    private bool previaAjustar => modoPrevia == "ajustar";
     private int tempo = 1; // tempo mostrado na prévia: 1 ou 2
 
     // Substituições: o 1º tempo é dos 10 primeiros de cada time; do 11º em diante entram no 2º tempo, saindo de baixo para cima
@@ -523,13 +585,48 @@
 
     private Task Descartar() => Carregar();
 
-    // Quem acabou de chegar entra sem time; o admin marca Verm. ou Amar. na lista
-    private void Adicionar(AtletaResumo a)
+    // Quem chega entra direto num time e a chegada já é gravada, sem precisar escolher nada.
+    // Para trocar de time: botões Verm./Amar. da lista, ou a aba "Ajustar times" da prévia.
+    private async Task Adicionar(AtletaResumo a)
     {
-        ordem.Add(Para(a, TimePelada.SemTime));
+        if (Finalizada) return;
+        var lado = TimeAutomatico(a);
+        ordem.Add(Para(a, lado));
         Marcar();
-        aviso = $"{a.Nome} adicionado. Marque Verm. ou Amar. para salvar e mandar para a súmula.";
+        if (lado == TimePelada.SemTime)
+        {
+            erro = $"Os dois times já têm {LinhaSumula.MaxNumero} atletas. {a.Nome} ficou sem time.";
+            return;
+        }
+        await AutoSalvar();
+        if (erro is null) aviso = $"{a.Nome} entrou no time {TimePelada.Rotulo(lado)} e já está salvo na súmula.";
     }
+
+    // Regra do time automático: jogador de linha vai para o time com menos jogadores de linha; goleiro vai para o time
+    // que ainda não tem goleiro; em empate fica o Vermelho (então a chegada alterna Vermelho, Amarelo, Vermelho...).
+    // Time cheio (LinhaSumula.MaxNumero) não recebe mais ninguém.
+    private string TimeAutomatico(AtletaResumo a)
+    {
+        var abertos = new[] { TimePelada.Vermelho, TimePelada.Amarelo }.Where(l => Contar(l) < LinhaSumula.MaxNumero).ToList();
+        if (abertos.Count == 0) return TimePelada.SemTime;
+        if (abertos.Count == 1) return abertos[0];
+
+        if (AnaliseTime.EhSoGoleiro(a))
+        {
+            var semGoleiro = abertos.Where(l => GoleiroDe(l) is null).ToList();
+            if (semGoleiro.Count == 1) return semGoleiro[0];
+            return Contar(TimePelada.Vermelho) <= Contar(TimePelada.Amarelo) ? TimePelada.Vermelho : TimePelada.Amarelo;
+        }
+
+        int Linha(string l) => DoLado(l).Count(j => !AnaliseTime.EhSoGoleiro(j));
+        return Linha(TimePelada.Vermelho) <= Linha(TimePelada.Amarelo) ? TimePelada.Vermelho : TimePelada.Amarelo;
+    }
+
+    // Botões Verm./Amar. de um atleta (usados na aba "Ajustar times" da prévia)
+    private RenderFragment TrocaDeTime(ChegadaItem a) => @<div class="adm-seg" role="group" aria-label="Time de @a.Nome" style="margin-left:auto">
+        <button type="button" class="vermelho @(a.Lado == TimePelada.Vermelho ? "on" : "")" disabled="@Finalizada" @onclick="() => MudarLado(a, TimePelada.Vermelho)">Verm.</button>
+        <button type="button" class="amarelo @(a.Lado == TimePelada.Amarelo ? "on" : "")" disabled="@Finalizada" @onclick="() => MudarLado(a, TimePelada.Amarelo)">Amar.</button>
+    </div>;
 
     private static ChegadaItem Para(AtletaResumo a, string lado) =>
         new() { Id = a.Id, Nome = a.Nome, FotoUrl = a.FotoUrl, Posicoes = a.Posicoes, Lado = lado };
@@ -694,13 +791,22 @@
 
             atletas.Add(novo);
             atletas = atletas.OrderBy(a => a.Nome, StringComparer.CurrentCultureIgnoreCase).ToList();
-            ordem.Add(Para(novo, TimePelada.SemTime));
+            var lado = TimeAutomatico(novo);
+            ordem.Add(Para(novo, lado));
             Organizar();
             sujo = true;
 
-            aviso = $"{novo.Nome} registrado ({(novoAtivo ? "ativo" : "inativo")} no Cartola) e adicionado à chegada. Marque Verm. ou Amar. para salvar na súmula.";
+            var situacao = novoAtivo ? "ativo" : "inativo";
             novoNome = ""; novoAtivo = false; novasPosicoes = new(); fotoBytes = null;
             aba = "lista";
+
+            if (lado == TimePelada.SemTime)
+                aviso = $"{novo.Nome} registrado ({situacao} no Cartola), mas os dois times estão cheios: ele ficou sem time.";
+            else
+            {
+                await AutoSalvar();
+                if (erro is null) aviso = $"{novo.Nome} registrado ({situacao} no Cartola) e adicionado ao time {TimePelada.Rotulo(lado)}. Já está salvo na súmula.";
+            }
         }
         catch (ErroAdminException ex) { erro = ex.Message; }
         registrando = false;

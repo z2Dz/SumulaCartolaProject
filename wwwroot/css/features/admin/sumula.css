@@ -1256,3 +1256,56 @@
     .sm2-at-editar:focus-visible {
         border-color: var(--acento);
     }
+
+
+/* ===== Popup de lance: compacto (largura de cartão, não de tela) ===== */
+.previa.previa-lance {
+    width: min(440px, 94vw);
+    padding: 1.1rem 1.2rem;
+    gap: .7rem;
+    overflow-y: auto;
+}
+
+.previa-lance .adm-seg.sm2-seg button {
+    padding: .55rem .6rem;
+    font-size: .85rem;
+}
+
+/* grade 3 x 3 compacta, tiles quadradinhos como na referência */
+.previa-lance .sm2-acoes.sm2-acoes-grade {
+    gap: .5rem;
+}
+
+.previa-lance .sm2-acoes-grade .sm2-acao {
+    min-height: 0;
+    aspect-ratio: 1 / 0.9;
+    gap: .35rem;
+    padding: .5rem .25rem;
+    border-radius: 14px;
+    font-size: .76rem;
+    line-height: 1.1;
+}
+
+.previa-lance .sm2-acao-img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    flex: none;
+}
+
+@media (max-width: 480px) {
+    .previa.previa-lance {
+        padding: 1rem;
+    }
+
+    .previa-lance .sm2-acoes-grade .sm2-acao {
+        font-size: .7rem;
+        aspect-ratio: 1 / 1;
+    }
+
+    .previa-lance .sm2-acao-img {
+        width: 30px;
+        height: 30px;
+    }
+}

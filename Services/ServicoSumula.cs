@@ -124,7 +124,13 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
                 PenaltisCometidos1T = Inteiro(t["penaltis_cometidos_1t"]) ?? 0,
                 PenaltisCometidos2T = Inteiro(t["penaltis_cometidos_2t"]) ?? 0,
                 PenaltisPerdidos1T = Inteiro(t["penaltis_perdidos_1t"]) ?? 0,
-                PenaltisPerdidos2T = Inteiro(t["penaltis_perdidos_2t"]) ?? 0
+                PenaltisPerdidos2T = Inteiro(t["penaltis_perdidos_2t"]) ?? 0,
+                PassesCertos = Inteiro(t["passes_certos"]) ?? 0,
+                PassesCertos1T = Inteiro(t["passes_certos_1t"]) ?? 0,
+                PassesCertos2T = Inteiro(t["passes_certos_2t"]) ?? 0,
+                FaltasCometidas = Inteiro(t["faltas_cometidas"]) ?? 0,
+                FaltasCometidas1T = Inteiro(t["faltas_cometidas_1t"]) ?? 0,
+                FaltasCometidas2T = Inteiro(t["faltas_cometidas_2t"]) ?? 0
             }).ToList();
 
     // ----- Partidas -----
@@ -262,7 +268,13 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
                 ["penaltis_cometidos_1t"] = l.PenaltisCometidos1T,
                 ["penaltis_cometidos_2t"] = l.PenaltisCometidos2T,
                 ["penaltis_perdidos_1t"] = l.PenaltisPerdidos1T,
-                ["penaltis_perdidos_2t"] = l.PenaltisPerdidos2T
+                ["penaltis_perdidos_2t"] = l.PenaltisPerdidos2T,
+                ["passes_certos"] = l.PassesCertos,
+                ["passes_certos_1t"] = l.PassesCertos1T,
+                ["passes_certos_2t"] = l.PassesCertos2T,
+                ["faltas_cometidas"] = l.FaltasCometidas,
+                ["faltas_cometidas_1t"] = l.FaltasCometidas1T,
+                ["faltas_cometidas_2t"] = l.FaltasCometidas2T
             }).ToList()
         };
         if (status is not null) p["p_status"] = status;

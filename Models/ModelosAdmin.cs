@@ -160,6 +160,14 @@ public class LinhaSumula
     public int PenaltisPerdidos1T { get; set; }
     public int PenaltisPerdidos2T { get; set; }
 
+    /// <summary>Passe certo (+0,5 ponto cada) e falta cometida (-0,5 cada): total do jogo e quantos foram no 1T / 2T.</summary>
+    public int PassesCertos { get; set; }
+    public int PassesCertos1T { get; set; }
+    public int PassesCertos2T { get; set; }
+    public int FaltasCometidas { get; set; }
+    public int FaltasCometidas1T { get; set; }
+    public int FaltasCometidas2T { get; set; }
+
     /// <summary>Total de gols. Ao editar, grava tudo em gols_1t e zera gols_2t (a tela não separa por tempo).</summary>
     public int Gols
     {

@@ -129,17 +129,10 @@
                                 </span>
                                 <small class="sm2-tl-sub">@RotuloDe(lc.Tipo)</small>
                             </div>
-                            @if (EhCartao(lc.Tipo) || EhGol(lc.Tipo))
+                            @if (ArquivoIcone(lc.Tipo) is not null)
                             {
                                 <div class="sm2-tl-ico" aria-hidden="true">
-                                    @if (EhCartao(lc.Tipo))
-                                    {
-                                        <span class="sm2-tl-carta"></span>
-                                    }
-                                    else
-                                    {
-                                        <IconeUi Nome="bola" Tamanho="26" />
-                                    }
+                                    <img class="sm2-tl-img" src="@CaminhoIcone(lc.Tipo)" alt="" draggable="false" />
                                 </div>
                             }
                         </div>
@@ -173,7 +166,7 @@
             var jogadores = LinhasDe(lado).ToList();
             var faltam = SemCamisa(lado);
             <div class="previa-fundo" @onclick="FecharLance">
-                <div class="previa" role="dialog" aria-modal="true" aria-label="Registrar lance" @onclick:stopPropagation="true">
+                <div class="previa previa-lance" role="dialog" aria-modal="true" aria-label="Registrar lance" @onclick:stopPropagation="true">
                     <div class="previa-topo">
                         <h3>@TimePelada.Rotulo(lado) (@Contar(lado))</h3>
                         <button type="button" class="adm-icone" @onclick="FecharLance" aria-label="Fechar">✕</button>
@@ -277,7 +270,7 @@
                             {
                                 var tipoAcao = ta;
                                 <button type="button" class="sm2-acao @ClasseAcao(tipoAcao)" @onclick="() => EscolherAcao(tipoAcao)">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true">@IconeAcao(tipoAcao)</svg>
+                                    <img class="sm2-acao-img" src="@CaminhoIcone(tipoAcao)" alt="" draggable="false" />
                                     <span>@RotuloDe(tipoAcao)</span>
                                 </button>
                             }
@@ -631,7 +624,7 @@
     private AtletaResumo? editando;
 
     // ----- Linha do tempo / popup de lance -----
-    private enum TipoLance { Gol, GolContra, Assistencia, ChuteGol, Defesa, PenaltiCometido, PenaltiPerdido, Amarelo, Azul, Vermelho }
+    private enum TipoLance { Gol, GolContra, Assistencia, ChuteGol, Defesa, PenaltiCometido, PenaltiPerdido, Amarelo, Azul, Vermelho, PasseCerto, FaltaCometida }
 
     /// <summary>Um lance da linha do tempo. Tempo 0 = sem tempo gravado (o banco só guarda por tempo gols, gols contra e cartões).</summary>
     private class Lance
@@ -655,7 +648,8 @@
     {
         TipoLance.Gol, TipoLance.ChuteGol, TipoLance.Defesa,
         TipoLance.Amarelo, TipoLance.Azul, TipoLance.Vermelho,
-        TipoLance.GolContra, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido
+        TipoLance.GolContra, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido,
+        TipoLance.PasseCerto, TipoLance.FaltaCometida
     };
 
     private static string ClasseAcao(TipoLance t) => t switch
@@ -664,6 +658,8 @@
         TipoLance.Defesa => "defesa",
         TipoLance.PenaltiCometido => "pen-com",
         TipoLance.PenaltiPerdido => "pen-perd",
+        TipoLance.PasseCerto => "passe",
+        TipoLance.FaltaCometida => "falta",
         TipoLance.Gol => "gol",
         TipoLance.GolContra => "gol-contra",
         TipoLance.Amarelo => "cartao-am",
@@ -672,19 +668,26 @@
         _ => ""
     };
 
-    private static MarkupString IconeAcao(TipoLance t) => new(t switch
+    /// <summary>Arquivo do ícone (wwwroot/img/acoes) de cada lance; nulo = sem ícone (assistência vai junto do gol).</summary>
+    private static string? ArquivoIcone(TipoLance t) => t switch
     {
-        TipoLance.ChuteGol => "<circle cx=\"12\" cy=\"12\" r=\"9\"/><circle cx=\"12\" cy=\"12\" r=\"4\"/><circle cx=\"12\" cy=\"12\" r=\"0.8\" fill=\"currentColor\"/>",
-        TipoLance.Defesa => "<path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"/>",
-        TipoLance.PenaltiCometido => "<path d=\"M12 3l10 18H2z\"/><path d=\"M12 10v5\"/><circle cx=\"12\" cy=\"18\" r=\"0.8\" fill=\"currentColor\"/>",
-        TipoLance.PenaltiPerdido => "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M8.5 8.5l7 7M15.5 8.5l-7 7\"/>",
-        TipoLance.Gol => "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8l3.5 2.5-1.3 4h-4.4l-1.3-4z\"/><path d=\"M12 8V3.5M15.5 10.5l4-1.3M14.2 14.5l2.4 3.3M9.8 14.5l-2.4 3.3M8.5 10.5l-4-1.3\"/>",
-        TipoLance.GolContra => "<path d=\"M9 14l-4-4 4-4\"/><path d=\"M5 10h9a5 5 0 010 10h-3\"/>",
-        TipoLance.Amarelo or TipoLance.Azul or TipoLance.Vermelho => "<rect x=\"7\" y=\"3\" width=\"10\" height=\"18\" rx=\"2\" fill=\"currentColor\" fill-opacity=\".9\"/>",
-        _ => ""
-    });
+        TipoLance.Gol => "gol.png",
+        TipoLance.GolContra => "gol-contra.png",
+        TipoLance.ChuteGol => "chute-ao-gol.png",
+        TipoLance.Defesa => "defesa.png",
+        TipoLance.PenaltiCometido => "penalti-cometido.png",
+        TipoLance.PenaltiPerdido => "penalti-perdido.png",
+        TipoLance.PasseCerto => "passe-certo.png",
+        TipoLance.FaltaCometida => "falta-cometida.png",
+        TipoLance.Amarelo => "cartao-amarelo.png",
+        TipoLance.Azul => "cartao-azul.png",
+        TipoLance.Vermelho => "cartao-vermelho.png",
+        _ => null
+    };
 
-    private static readonly TipoLance[] OutrasAcoes = { TipoLance.Assistencia, TipoLance.ChuteGol, TipoLance.Defesa, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido };
+    private static string CaminhoIcone(TipoLance t) => $"img/acoes/{ArquivoIcone(t)}";
+
+    private static readonly TipoLance[] OutrasAcoes = { TipoLance.Assistencia, TipoLance.ChuteGol, TipoLance.Defesa, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido, TipoLance.PasseCerto, TipoLance.FaltaCometida };
 
     private readonly List<Lance> lances = new();
     private bool modalLance, abaLista;
@@ -729,6 +732,8 @@
         TipoLance.Defesa => "Defesa",
         TipoLance.PenaltiCometido => "Pênalti cometido",
         TipoLance.PenaltiPerdido => "Pênalti perdido",
+        TipoLance.PasseCerto => "Passe certo",
+        TipoLance.FaltaCometida => "Falta cometida",
         TipoLance.Amarelo => "Cartão amarelo",
         TipoLance.Azul => "Cartão azul",
         _ => "Cartão vermelho"
@@ -741,6 +746,8 @@
         TipoLance.Defesa => "DEF",
         TipoLance.PenaltiCometido => "P.C.",
         TipoLance.PenaltiPerdido => "P.P.",
+        TipoLance.PasseCerto => "PAS",
+        TipoLance.FaltaCometida => "FAL",
         _ => ""
     };
 
@@ -769,6 +776,8 @@
         TipoLance.ChuteGol => l.ChutesGol,
         TipoLance.Defesa => l.Defesas,
         TipoLance.PenaltiCometido => l.PenaltisCometidos,
+        TipoLance.PasseCerto => l.PassesCertos,
+        TipoLance.FaltaCometida => l.FaltasCometidas,
         _ => l.PenaltisPerdidos
     };
 
@@ -790,6 +799,8 @@
             case TipoLance.ChuteGol: l.ChutesGol = v; break;
             case TipoLance.Defesa: l.Defesas = v; break;
             case TipoLance.PenaltiCometido: l.PenaltisCometidos = v; break;
+            case TipoLance.PasseCerto: l.PassesCertos = v; break;
+            case TipoLance.FaltaCometida: l.FaltasCometidas = v; break;
             default: l.PenaltisPerdidos = v; break;
         }
 
@@ -811,6 +822,10 @@
         (TipoLance.PenaltiCometido, 2) => l.PenaltisCometidos2T,
         (TipoLance.PenaltiPerdido, 1) => l.PenaltisPerdidos1T,
         (TipoLance.PenaltiPerdido, 2) => l.PenaltisPerdidos2T,
+        (TipoLance.PasseCerto, 1) => l.PassesCertos1T,
+        (TipoLance.PasseCerto, 2) => l.PassesCertos2T,
+        (TipoLance.FaltaCometida, 1) => l.FaltasCometidas1T,
+        (TipoLance.FaltaCometida, 2) => l.FaltasCometidas2T,
         _ => 0
     };
 
@@ -829,6 +844,10 @@
             case (TipoLance.PenaltiCometido, 2): l.PenaltisCometidos2T = v; break;
             case (TipoLance.PenaltiPerdido, 1): l.PenaltisPerdidos1T = v; break;
             case (TipoLance.PenaltiPerdido, 2): l.PenaltisPerdidos2T = v; break;
+            case (TipoLance.PasseCerto, 1): l.PassesCertos1T = v; break;
+            case (TipoLance.PasseCerto, 2): l.PassesCertos2T = v; break;
+            case (TipoLance.FaltaCometida, 1): l.FaltasCometidas1T = v; break;
+            case (TipoLance.FaltaCometida, 2): l.FaltasCometidas2T = v; break;
         }
     }
 
@@ -1525,3 +1544,22 @@
         salvando = false;
     }
 }
+<style>
+/* Grade 3 x 3 do popup "O que foi o lance?" */
+.sm2-acao .sm2-acao-img {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    image-rendering: auto;      /* troque por "pixelated" se quiser o visual pixel art bem marcado */
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Linha do tempo (substitui o antigo .sm2-tl-carta e a bola) */
+.sm2-tl-ico .sm2-tl-img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    display: block;
+}
+</style>
