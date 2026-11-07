@@ -1314,3 +1314,105 @@
         height: 30px;
     }
 }
+
+
+/* ===== Notas da partida (estilo SofaScore) ===== */
+.sm2-notas {
+    margin-top: 1rem;
+}
+
+.sm2-notas-tit {
+    margin: 0 0 .5rem;
+    font-size: 1rem;
+}
+
+.sm2-notas-cols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .8rem;
+}
+
+.sm2-notas-col {
+    padding: .7rem .8rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.1);
+    background: rgba(255,255,255,.04);
+}
+
+    .sm2-notas-col.vermelho {
+        border-top: 3px solid var(--vermelho);
+    }
+
+    .sm2-notas-col.amarelo {
+        border-top: 3px solid var(--amarelo);
+    }
+
+    .sm2-notas-col h3 {
+        margin: 0 0 .4rem;
+        font-size: .85rem;
+    }
+
+    .sm2-notas-col ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: .35rem;
+    }
+
+    .sm2-notas-col li {
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+        font-size: .88rem;
+    }
+
+.sm2-notas-nome {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sm2-notas-mvp {
+    color: #facc15;
+}
+
+.sm2-nota {
+    min-width: 2.6rem;
+    padding: .15rem .4rem;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 800;
+    font-size: .85rem;
+    color: #0b1410;
+}
+
+    .sm2-nota.nota-azul {
+        background: #3b82f6;
+        color: #fff;
+    }
+
+    .sm2-nota.nota-verde {
+        background: #22c55e;
+    }
+
+    .sm2-nota.nota-amarela {
+        background: #a3e635;
+    }
+
+    .sm2-nota.nota-laranja {
+        background: #fb923c;
+    }
+
+    .sm2-nota.nota-vermelha {
+        background: #ef4444;
+        color: #fff;
+    }
+
+@media (max-width: 560px) {
+    .sm2-notas-cols {
+        grid-template-columns: 1fr;
+    }
+}

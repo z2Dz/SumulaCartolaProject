@@ -258,3 +258,39 @@
     .rk-at-pts.neg {
         color: var(--vermelho);
     }
+
+
+/* Nota da partida ao lado do nome (aba Pontos Atletas) */
+.rk-at-nota {
+    flex: none;
+    min-width: 2.4rem;
+    padding: .12rem .4rem;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 800;
+    font-size: .8rem;
+    font-variant-numeric: tabular-nums;
+    color: #0b1410;
+}
+
+    .rk-at-nota.nota-azul {
+        background: #3b82f6;
+        color: #fff;
+    }
+
+    .rk-at-nota.nota-verde {
+        background: #22c55e;
+    }
+
+    .rk-at-nota.nota-amarela {
+        background: #a3e635;
+    }
+
+    .rk-at-nota.nota-laranja {
+        background: #fb923c;
+    }
+
+    .rk-at-nota.nota-vermelha {
+        background: #ef4444;
+        color: #fff;
+    }

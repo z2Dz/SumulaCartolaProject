@@ -150,6 +150,36 @@
             }
         </div>
 
+        @if (linhas.Count > 0)
+        {
+            var melhor = lances.Count > 0 ? linhas.OrderByDescending(x => NotaDe(x)).ThenBy(x => x.Nome).First() : null;
+            <div class="sm2-notas" aria-label="Notas dos jogadores">
+                <h2 class="sm2-notas-tit">Notas da partida</h2>
+                <div class="sm2-notas-cols">
+                    @foreach (var ld in new[] { LinhaSumula.Casa, LinhaSumula.Visitante })
+                    {
+                        <div class="sm2-notas-col @TimePelada.Css(ld)">
+                            <h3>@TimePelada.Rotulo(ld)</h3>
+                            <ul>
+                                @foreach (var j in linhas.Where(x => x.Lado == ld).OrderByDescending(x => NotaDe(x)).ThenBy(x => x.Nome))
+                                {
+                                    var nota = NotaDe(j);
+                                    <li @key="j.AtletaId">
+                                        <span class="sm2-nota @NotaJogador.Classe(nota)">@nota.ToString("0.0")</span>
+                                        <span class="sm2-notas-nome">@j.Nome</span>
+                                        @if (melhor is not null && melhor.AtletaId == j.AtletaId)
+                                        {
+                                            <span class="sm2-notas-mvp" title="Melhor da partida">★</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
         <div class="sm2-barra">
             <span class="sm2-barra-gap"></span>
             @if (sujo || statusMudou)
@@ -1191,6 +1221,13 @@
     }
 
     private bool EhGoleiro(Guid atletaId) => atletas.Any(a => a.Id == atletaId && AnaliseTime.EhSoGoleiro(a));
+
+    /// <summary>Nota do atleta na partida (ver Models/NotaJogador.cs).</summary>
+    private double NotaDe(LinhaSumula l)
+    {
+        var outro = l.Lado == LinhaSumula.Casa ? LinhaSumula.Visitante : LinhaSumula.Casa;
+        return NotaJogador.Calcular(l, EhGoleiro(l.AtletaId), GolsDoLado(l.Lado), GolsDoLado(outro));
+    }
 
     private int Contar(string ld) => linhas.Count(l => l.Lado == ld);
     // Placar: gols do lado + gols contra cometidos pelo adversário.

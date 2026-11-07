@@ -26,7 +26,7 @@ export async function gerarTop3(dados) {
         escudosAtletas: await Promise.all(dados.atletas.map(a => (a.escudo ? carregar(a.escudo) : null)))
     };
     desenhar(canvas.getContext("2d"), dados, imagens);
-    await entregar(canvas, "top3-rodada.png");
+    await entregar(canvas, dados.arquivo || "top3-rodada.png");
 }
 
 function carregar(src) {
@@ -234,7 +234,7 @@ export function desenhar(ctx, dados, imagens) {
 
     ctx.font = `700 22px ${FONTE}`;
     ctx.fillStyle = "rgba(255,255,255,.75)";
-    ctx.fillText(("MELHORES DA RODADA" + (dados.data ? "  ·  " + dados.data : "")).toUpperCase(), L / 2, 212);
+    ctx.fillText(((dados.subtitulo || "MELHORES DA RODADA") + (dados.data ? "  ·  " + dados.data : "")).toUpperCase(), L / 2, 212);
 
     // cards: 2º, 1º, 3º
     const [p1, p2, p3] = dados.atletas;
@@ -339,6 +339,28 @@ function forma(ctx, x, y, w, h) {
     ctx.closePath();
 }
 
+// Formato da moldura das cartas do Top 3 (vetorizado de img/moldura: topo arqueado, ombros recortados para dentro,
+// laterais retas e base em ponta com cantos arredondados). Coordenadas em fração da caixa (x, y, w, h), espelhadas no meio.
+function formaMoldura(ctx, x, y, w, h) {
+    const P = (u, v) => [x + u * w, y + v * h];          // lado esquerdo
+    const E = (u, v) => [x + (1 - u) * w, y + v * h];    // espelho (lado direito)
+    ctx.beginPath();
+    ctx.moveTo(...P(.5, 0));
+    // direita: topo arqueado, ombro côncavo, lateral, canto de baixo e curva até a ponta
+    ctx.quadraticCurveTo(...E(.3, 0), ...E(.123, .047));
+    ctx.quadraticCurveTo(...E(.118, .115), ...E(0, .115));
+    ctx.lineTo(...E(0, .823));
+    ctx.quadraticCurveTo(...E(0, .875), ...E(.083, .886));
+    ctx.quadraticCurveTo(...E(.35, .912), ...P(.5, 1));
+    // esquerda (o mesmo, de volta)
+    ctx.quadraticCurveTo(...P(.35, .912), ...P(.083, .886));
+    ctx.quadraticCurveTo(...P(0, .875), ...P(0, .823));
+    ctx.lineTo(...P(0, .115));
+    ctx.quadraticCurveTo(...P(.118, .115), ...P(.123, .047));
+    ctx.quadraticCurveTo(...P(.3, 0), ...P(.5, 0));
+    ctx.closePath();
+}
+
 function ajustar(ctx, texto, maxW, tam, peso) {
     let t = tam;
     do {
@@ -349,12 +371,14 @@ function ajustar(ctx, texto, maxW, tam, peso) {
 
 function carta(ctx, x, y, w, h, t, atleta, foto, posicao, escudoTime) {
     if (!atleta) return;
+    // com lista de ações (Top 3 pontuação / notas): foto e nome sobem para abrir espaço para a lista
+    const lista = Array.isArray(atleta.acoes);
 
     // brilho e corpo
     ctx.save();
     ctx.shadowColor = t.brilho;
     ctx.shadowBlur = posicao === 1 ? 60 : 34;
-    forma(ctx, x, y, w, h);
+    formaMoldura(ctx, x, y, w, h);
     const g = ctx.createLinearGradient(x, y, x + w, y + h);
     g.addColorStop(0, t.a);
     g.addColorStop(.5, t.b);
@@ -363,9 +387,15 @@ function carta(ctx, x, y, w, h, t, atleta, foto, posicao, escudoTime) {
     ctx.fill();
     ctx.restore();
 
-    // listras diagonais
+    // listras diagonais só acima da faixa do nome; do nome para baixo a carta fica com cor sólida
+    const ny = y + h * (lista ? .53 : .645), nh = h * (lista ? .08 : .105);
     ctx.save();
-    forma(ctx, x, y, w, h);
+    formaMoldura(ctx, x, y, w, h);
+    ctx.clip();
+    ctx.fillStyle = t.b;
+    ctx.fillRect(x, ny, w, y + h - ny);
+    ctx.beginPath();
+    ctx.rect(x, y, w, ny - y);
     ctx.clip();
     ctx.strokeStyle = "rgba(255,255,255,.12)";
     ctx.lineWidth = 16;
@@ -378,16 +408,24 @@ function carta(ctx, x, y, w, h, t, atleta, foto, posicao, escudoTime) {
     ctx.restore();
 
     // borda
-    forma(ctx, x, y, w, h);
+    formaMoldura(ctx, x, y, w, h);
     ctx.lineJoin = "round";
     ctx.lineWidth = 7;
     ctx.strokeStyle = t.borda;
     ctx.stroke();
+    // filete interno (a moldura original tem borda dupla)
+    const ins = w * .028;
+    formaMoldura(ctx, x + ins, y + ins * 1.1, w - ins * 2, h - ins * 2.4);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = t.c;
+    ctx.globalAlpha = .55;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
 
     // foto (ou silhueta)
-    const fx = x + w * .31, fy = y + h * .13, fw = w * .65, fh = h * .5;
+    const fx = x + w * .31, fy = y + h * .13, fw = w * .65, fh = h * (lista ? .395 : .5);
     ctx.save();
-    forma(ctx, x, y, w, h);
+    formaMoldura(ctx, x, y, w, h);
     ctx.clip();
     if (foto && foto.isRecorte) {
         // pessoa sem fundo: "em pé" na base da área da foto, um pouco maior que ela
@@ -435,7 +473,7 @@ function carta(ctx, x, y, w, h, t, atleta, foto, posicao, escudoTime) {
 
     // esmaece a base da foto na faixa do nome
     ctx.save();
-    forma(ctx, x, y, w, h);
+    formaMoldura(ctx, x, y, w, h);
     ctx.clip();
     const fade = ctx.createLinearGradient(0, fy + fh * .75, 0, fy + fh);
     fade.addColorStop(0, "rgba(0,0,0,0)");
@@ -449,19 +487,40 @@ function carta(ctx, x, y, w, h, t, atleta, foto, posicao, escudoTime) {
     ctx.textBaseline = "alphabetic";
     ctx.fillStyle = t.texto;
     const colW = w * .26;
-    ajustar(ctx, atleta.pos || "", colW, h * .052, 800);
-    ctx.fillText(atleta.pos || "", x + w * .07, y + h * .24);
-    ajustar(ctx, atleta.pontos, colW, h * .075, 900);
-    ctx.fillText(atleta.pontos, x + w * .07, y + h * .32);
+    if (lista) {
+        // como nos cards de um jogador: o número (pontuação ou nota) em cima e a posição embaixo
+        const num = atleta.topo || "";
+        ctx.save();
+        ajustar(ctx, num, colW, h * .08, 900);
+        if (atleta.topoCor) {
+            // nota na cor da faixa, com contorno escuro para ler no fundo dourado/prateado/bronze
+            ctx.lineJoin = "round";
+            ctx.lineWidth = Math.max(3, h * .008);
+            ctx.strokeStyle = "rgba(0,0,0,.75)";
+            ctx.strokeText(num, x + w * .07, y + h * .245);
+            ctx.fillStyle = COR_NOTA[atleta.topoCor] || t.texto;
+        } else if (atleta.topoNeg) {
+            ctx.fillStyle = "#b91c1c";
+        }
+        ctx.fillText(num, x + w * .07, y + h * .245);
+        ctx.restore();
+        ctx.fillStyle = t.texto;
+        ajustar(ctx, atleta.pos || "", colW, h * .052, 800);
+        ctx.fillText(atleta.pos || "", x + w * .07, y + h * .32);
+    } else {
+        ajustar(ctx, atleta.pos || "", colW, h * .052, 800);
+        ctx.fillText(atleta.pos || "", x + w * .07, y + h * .24);
+        ajustar(ctx, atleta.pontos, colW, h * .075, 900);
+        ctx.fillText(atleta.pontos, x + w * .07, y + h * .32);
+    }
 
     // time do atleta, logo abaixo da posição
     const tamEsc = w * .22;
     blocoTime(ctx, escudoTime, atleta.time, x + w * .07 + tamEsc / 2, y + h * .345 + tamEsc / 2, tamEsc);
 
     // faixa do nome
-    const ny = y + h * .645, nh = h * .105;
     ctx.save();
-    forma(ctx, x, y, w, h);
+    formaMoldura(ctx, x, y, w, h);
     ctx.clip();
     const faixa = ctx.createLinearGradient(0, ny, 0, ny + nh);
     faixa.addColorStop(0, "rgba(255,255,255,.35)");
@@ -477,21 +536,45 @@ function carta(ctx, x, y, w, h, t, atleta, foto, posicao, escudoTime) {
     ajustar(ctx, (atleta.nome || "").toUpperCase(), w * .78, h * .05, 800);
     ctx.fillText((atleta.nome || "").toUpperCase(), x + w / 2, ny + nh * .66);
 
-    // caixa de pontos
-    const bx = x + w * .2, by = y + h * .765, bw = w * .6, bh = h * .145;
-    retArredondado(ctx, bx, by, bw, bh, bh * .28);
-    ctx.fillStyle = "#0f1013";
-    ctx.fill();
-    ctx.fillStyle = "#e9e9e9";
-    ajustar(ctx, "PONTOS", bw * .5, bh * .2, 700);
-    ctx.fillText("PONTOS", x + w / 2, by + bh * .3);
-    ctx.fillStyle = t.destaque;
-    ajustar(ctx, atleta.pontos, bw * .8, bh * .5, 900);
-    ctx.fillText(atleta.pontos, x + w / 2, by + bh * .86);
+    if (lista) {
+        // lista de ações (mesma dos cards de um jogador) direto na cor sólida da carta, com cores escuras
+        // termina antes dos cantos de baixo da moldura (a base afunila em ponta a partir de ~82% da altura)
+        const bx = x + w * .07, by = y + h * .62, bw = w * .86, bh = h * .225;
+        const pad = w * .04;
+        caixaAcoes(ctx, atleta, L, {
+            meio: x + w / 2,
+            gap: w * .025,
+            colW: bw / 2 - pad - w * .025,
+            topo: by + bh * .05,
+            base: by + bh * .95,
+            maxRow: h * .05,
+            maxNum: h * .04,
+            minNum: 8,
+            minPts: 9,
+            ptsRatio: .66,
+            cores: {
+                num: t.texto, rot: t.texto, numVazio: "rgba(0,0,0,.22)", rotVazio: "rgba(0,0,0,.28)",
+                pos: "#0b6b2c", neg: "#a3121b", zero: "rgba(0,0,0,.55)", div: "rgba(0,0,0,.3)"
+            }
+        });
+    } else {
+        // caixa de pontos
+        const bx = x + w * .2, by = y + h * .765, bw = w * .6, bh = h * .145;
+        retArredondado(ctx, bx, by, bw, bh, bh * .28);
+        ctx.fillStyle = "#0f1013";
+        ctx.fill();
+        ctx.fillStyle = "#e9e9e9";
+        ajustar(ctx, "PONTOS", bw * .5, bh * .2, 700);
+        ctx.fillText("PONTOS", x + w / 2, by + bh * .3);
+        ctx.fillStyle = t.destaque;
+        ajustar(ctx, atleta.pontos, bw * .8, bh * .5, 900);
+        ctx.fillText(atleta.pontos, x + w / 2, by + bh * .86);
+    }
 
     // posição no pódio
     const base = y + h;
     const cy = base + (posicao === 1 ? 78 : 76);
+    ctx.textAlign = "center";   // a lista de ações deixa o alinhamento à esquerda
     louro(ctx, x + w / 2 - 40, cy - 6, 36, t.destaque, -1);
     louro(ctx, x + w / 2 + 40, cy - 6, 36, t.destaque, 1);
     ctx.fillStyle = t.destaque;
@@ -623,7 +706,9 @@ function slugNome(nome) {
 }
 
 // ----- Card de um jogador só (moldura genérica) -----
-// dados = { nome, pos, pontos, data, foto, silhueta, escudo }
+// dados = { nome, pos, data, pontosTopo, pontosNeg, topoCor, foto, silhueta, escudo, time, nota, notaClasse, acoes, total, totalRotulo, totalNeg, totalCor, arquivo }
+// acoes = [{ rotulo, qtd, pontos, neg }]: no card de pontuação "pontos" são os pontos da ação; no card com nota, quanto ela somou na nota.
+// pontosTopo (card de pontuação) aparece só como número no topo da coluna da esquerda; senão a nota (opcional) aparece no topo da coluna da esquerda; totalRotulo = "TOTAL" ou "NOTA"; totalCor = classe da nota (cor do valor).
 const CARD_W = 499, CARD_H = 802, CARD_K = 2;   // tamanho da moldura x resolução (saída 998x1604)
 const OURO = "#ffc928";
 
@@ -632,39 +717,264 @@ export async function gerarCardJogador(dados) {
     canvas.width = CARD_W * CARD_K;
     canvas.height = CARD_H * CARD_K;
     const [moldura, escudoImg, foto] = await Promise.all([
-        carregar("img/moldura-card.png"),
+        null,   // a moldura agora é desenhada (molduraPadrao); img/moldura-card.png não é mais usada
         dados.escudo ? carregar(dados.escudo) : null,
         prepararFoto(dados.foto)   // detecta se já está sem fundo antes de tentar remover
     ]);
     const ctx = canvas.getContext("2d");
     ctx.scale(CARD_K, CARD_K);
     desenharCardJogador(ctx, dados, { moldura, escudo: escudoImg, foto });
-    await entregar(canvas, `card-${slugNome(dados.nome)}.png`, dados.nome);
+    await entregar(canvas, `${dados.arquivo || "card"}-${slugNome(dados.nome)}.png`, dados.nome);
 }
 
-function molduraPadrao(ctx, W, H) {
-    forma(ctx, 8, 8, W - 16, H - 16);
-    const g = ctx.createLinearGradient(0, 0, W, H);
-    g.addColorStop(0, "#2a2540");
-    g.addColorStop(1, "#0c0c12");
-    ctx.fillStyle = g;
+// ----- Moldura do card individual (vetorizada da arte: coroa no topo, ombros arredondados,
+// borda tripla dourado/preto/dourado, base em ponta e dois raios dourados em cada lado) -----
+// Caixa da moldura dentro do card de 499x802 (sobra espaço nas laterais para os raios saírem da borda).
+const MJ = { x: 26, y: 12, w: 447, h: 776 };
+
+// Contorno, em fração da caixa, espelhado no meio. Medido da arte (1024x1536).
+function formaJogador(ctx, x, y, w, h) {
+    const P = (u, v) => [x + u * w, y + v * h];
+    const E = (u, v) => [x + (1 - u) * w, y + v * h];
+    ctx.beginPath();
+    ctx.moveTo(...P(.5, 0));                                   // ponta da coroa
+    // lado direito: coroa, ombro, lateral, canto de baixo e curva até a ponta
+    ctx.lineTo(...E(.452, .027));
+    ctx.quadraticCurveTo(...E(.415, .05), ...E(.378, .016));
+    ctx.quadraticCurveTo(...E(.365, .008), ...E(.34, .012));
+    ctx.quadraticCurveTo(...E(.2, .045), ...E(0, .106));
+    ctx.lineTo(...E(0, .833));
+    ctx.quadraticCurveTo(...E(.005, .89), ...E(.075, .899));
+    ctx.quadraticCurveTo(...E(.35, .93), ...P(.5, 1));
+    // lado esquerdo (o mesmo, de volta)
+    ctx.quadraticCurveTo(...P(.35, .93), ...P(.075, .899));
+    ctx.quadraticCurveTo(...P(.005, .89), ...P(0, .833));
+    ctx.lineTo(...P(0, .106));
+    ctx.quadraticCurveTo(...P(.2, .045), ...P(.34, .012));
+    ctx.quadraticCurveTo(...P(.365, .008), ...P(.378, .016));
+    ctx.quadraticCurveTo(...P(.415, .05), ...P(.452, .027));
+    ctx.closePath();
+}
+
+// mesma forma, encolhida d px para dentro (para as faixas da borda e o miolo)
+function formaJogadorDentro(ctx, d) {
+    formaJogador(ctx, MJ.x + d, MJ.y + d * 1.25, MJ.w - d * 2, MJ.h - d * 2.6);
+}
+
+function douradoMetal(ctx) {
+    const g = ctx.createLinearGradient(MJ.x, MJ.y, MJ.x + MJ.w, MJ.y + MJ.h);
+    g.addColorStop(0, "#fff1a6");
+    g.addColorStop(.3, "#e2ad1a");
+    g.addColorStop(.55, "#fbe07a");
+    g.addColorStop(.8, "#b8800a");
+    g.addColorStop(1, "#f2cf5a");
+    return g;
+}
+
+// borda tripla (dourado / preto / dourado) e o miolo escuro do card.
+// yNome = topo da faixa do nome: acima dela o miolo é listrado, abaixo é cor sólida.
+const MIOLO_SOLIDO = "#15131c";
+function molduraPadrao(ctx, yNome = 488) {
+    const ouro = douradoMetal(ctx);
+    formaJogador(ctx, MJ.x, MJ.y, MJ.w, MJ.h);
+    ctx.fillStyle = ouro;
     ctx.fill();
-    ctx.lineJoin = "round";
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = "#9aa0a8";
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "#3a2a05";
     ctx.stroke();
+    formaJogadorDentro(ctx, 4);
+    ctx.fillStyle = "#0a0a0a";
+    ctx.fill();
+    formaJogadorDentro(ctx, 12);
+    ctx.fillStyle = ouro;
+    ctx.fill();
+    // miolo: degradê escuro com listras diagonais em cima, cor sólida do nome para baixo
+    ctx.save();
+    formaJogadorDentro(ctx, 16);
+    ctx.clip();
+    const g = ctx.createLinearGradient(0, 0, CARD_W, yNome);
+    g.addColorStop(0, "#2a2540");
+    g.addColorStop(1, "#14121c");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, CARD_W, yNome);
+    ctx.fillStyle = MIOLO_SOLIDO;
+    ctx.fillRect(0, yNome, CARD_W, CARD_H - yNome);
+    // listras (mesmo desenho das cartas do Top 3), só acima do nome
+    ctx.beginPath();
+    ctx.rect(0, 0, CARD_W, yNome);
+    ctx.clip();
+    ctx.strokeStyle = "rgba(255,255,255,.05)";
+    ctx.lineWidth = 16;
+    for (let k = -CARD_H; k < CARD_W + CARD_H; k += 44) {
+        ctx.beginPath();
+        ctx.moveTo(k, CARD_H);
+        ctx.lineTo(k + CARD_H, 0);
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+// raios dourados das laterais (dois de cada lado); desenhados por cima da foto, como na arte
+function raiosJogador(ctx) {
+    const ouro = douradoMetal(ctx);
+    const P = (u, v, lado) => [MJ.x + (lado < 0 ? u : 1 - u) * MJ.w, MJ.y + v * MJ.h];
+    for (const lado of [-1, 1]) {
+        for (const dv of [0, .126]) {
+            // A = topo, B = ponta, C = dobra interna, D = ponta de fora
+            const A = P(.002, .173 + dv, lado), B = P(.182, .378 + dv, lado), C = P(.031, .291 + dv, lado), D = P(-.055, .241 + dv, lado);
+            ctx.save();
+            ctx.shadowColor = "rgba(0,0,0,.5)";
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.moveTo(...A); ctx.lineTo(...B); ctx.lineTo(...C); ctx.lineTo(...D); ctx.closePath();
+            ctx.fillStyle = ouro;
+            ctx.fill();
+            ctx.restore();
+            // face mais escura (dá o efeito de dobra da arte)
+            ctx.beginPath();
+            ctx.moveTo(...A); ctx.lineTo(...C); ctx.lineTo(...D); ctx.closePath();
+            ctx.fillStyle = "rgba(120,80,0,.35)";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(...A); ctx.lineTo(...B); ctx.lineTo(...C); ctx.lineTo(...D); ctx.closePath();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = "#3a2a05";
+            ctx.stroke();
+        }
+    }
+}
+
+// Cor da nota por faixa (mesmas faixas do ranking e da súmula: NotaJogador.Classe)
+const COR_NOTA = {
+    "nota-azul": "#3b82f6",
+    "nota-verde": "#22c55e",
+    "nota-amarela": "#a3e635",
+    "nota-laranja": "#fb923c",
+    "nota-vermelha": "#ef4444"
+};
+
+// Sigla curta da ação (estilo carta de FIFA: "78 PAC"). Desconhecida: primeiras letras da descrição.
+const SIGLAS_ACAO = [
+    ["saldo", "SALDO"], ["pontos iniciais", "BASE"], ["base", "BASE"], ["outros ajustes", "AJUS"], ["ajuste", "AJUS"],
+    ["gol do time", "G.TIME"], ["gols do time", "G.TIME"], ["gol sofrido", "G.SOF"], ["gols sofrido", "G.SOF"],
+    ["gol contra", "G.CON"], ["gols contra", "G.CON"], ["g. contra", "G.CON"],
+    ["pen. com", "P.COM"], ["pen. perd", "P.PER"],
+    ["sem sofrer", "SG"], ["chute", "CHU"], ["assist", "ASS"], ["desarme", "DES"], ["defesa", "DEF"],
+    ["passe", "PAS"], ["falta", "FAL"], ["penalti comet", "P.COM"], ["penalti perd", "P.PER"], ["penalti defend", "P.DEF"],
+    ["amarelo", "AMA"], ["azu", "AZU"], ["vermelho", "VER"], ["gol", "GOL"]
+];
+function siglaAcao(rotulo) {
+    const n = String(rotulo || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+    for (const [chave, sigla] of SIGLAS_ACAO) if (n.includes(chave)) return sigla;
+    return n.replace(/[^a-z]/g, "").slice(0, 4).toUpperCase() || "?";
+}
+
+// Lista de ações do card, no estilo carta de FIFA: duas colunas com divisória no meio,
+// "quantidade SIGLA" grande e os pontos da ação pequenos ao lado; o total embaixo.
+// d.acoes = [{ rotulo, qtd, pontos ("+8,00" ou null), neg }], d.total = "12,50", d.totalNeg
+// cfg (opcional, usado pelas cartas do Top 3): { meio, colW, gap, topo, base, maxRow, maxNum, minNum, minPts, ptsRatio, cores }
+// cores (opcional, para fundo claro): { num, rot, numVazio, rotVazio, pos, neg, zero, div }
+const CORES_LISTA = {
+    num: OURO, rot: "#ffffff", numVazio: "rgba(255,201,40,.25)", rotVazio: "rgba(255,255,255,.28)",
+    pos: "#22c55e", neg: "#ef4444", zero: "rgba(255,255,255,.6)", div: "rgba(255,201,40,.55)"
+};
+function caixaAcoes(ctx, d, W, cfg = {}) {
+    const cor = { ...CORES_LISTA, ...(cfg.cores || {}) };
+    const acoes = d.acoes || [];
+    const topo = cfg.topo ?? 556, base = cfg.base ?? (d.total ? 676 : 690);   // faixa das ações (o total fica abaixo)
+    ctx.textBaseline = "alphabetic";
+
+    if (acoes.length === 0) {
+        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(255,255,255,.55)";
+        ajustar(ctx, "SEM LANCES REGISTRADOS", (cfg.colW ?? 170) * 2, 16, 700);
+        ctx.fillText("SEM LANCES REGISTRADOS", cfg.meio ?? W / 2, (topo + base) / 2 + 6);
+    } else {
+        const porColuna = Math.ceil(acoes.length / 2);   // enche a coluna da esquerda primeiro, como na carta
+        const rowH = Math.min(cfg.maxRow ?? 40, (base - topo) / porColuna);
+        const tamNum = Math.max(cfg.minNum ?? 13, Math.min(cfg.maxNum ?? 30, rowH * .78));
+        const tamRot = tamNum * .78, tamPts = Math.max(cfg.minPts ?? 9, tamNum * (cfg.ptsRatio ?? .45));
+        const colW = cfg.colW ?? 168, meio = cfg.meio ?? W / 2, gap = cfg.gap ?? 14;
+        const colunas = [meio - gap - colW, meio + gap];   // x inicial de cada coluna
+
+        // divisória vertical
+        if (acoes.length > 1) {
+            ctx.fillStyle = cor.div;
+            ctx.fillRect(meio - 1, topo + 4, 2, rowH * porColuna - 8);
+        }
+
+        acoes.forEach((a, i) => {
+            if (!a.rotulo) return;   // linha vazia só para alinhar as colunas
+            const col = i < porColuna ? 0 : 1;
+            const lin = col === 0 ? i : i - porColuna;
+            const x = colunas[col];
+            const yb = topo + rowH * lin + rowH * .74;
+            // a.vazio = ação que o atleta não fez (lista completa do card com nota): aparece apagada, sem número nem valor
+            // a.num substitui a quantidade quando ela não é um número simples (ex.: PLACAR "6x3")
+            const num = a.vazio ? "–" : (a.num || String(a.qtd > 0 || a.qtd < 0 ? a.qtd : "-"));
+            const rot = a.sigla || siglaAcao(a.rotulo);
+
+            // pontos da ação, pequenos, alinhados à direita da coluna
+            ctx.textAlign = "right";
+            ctx.font = `800 ${tamPts}px ${FONTE}`;
+            let wP = 0;
+            if (a.pontos) {
+                ctx.fillStyle = a.neg ? cor.neg : (a.pontos.startsWith("+") ? cor.pos : cor.zero);
+                ctx.fillText(a.pontos, x + colW, yb);
+                wP = ctx.measureText(a.pontos).width + 8;
+            }
+
+            // número grande (dourado) e sigla (branca), como "78 PAC"
+            ctx.textAlign = "left";
+            ctx.font = `900 ${tamNum}px ${FONTE}`;
+            ctx.fillStyle = a.vazio ? cor.numVazio : cor.num;
+            ctx.fillText(num, x, yb);
+            const wN = Math.max(ctx.measureText(num).width, ctx.measureText("00").width) + 10;
+            ctx.fillStyle = a.vazio ? cor.rotVazio : cor.rot;
+            ajustar(ctx, rot, colW - wN - wP, tamRot, 900);
+            ctx.fillText(rot, x + wN, yb);
+        });
+    }
+
+    if (d.total) {
+        const yLinha = base + 4;
+        const lg = ctx.createLinearGradient(60, 0, W - 60, 0);
+        lg.addColorStop(0, "rgba(255,201,40,0)");
+        lg.addColorStop(.5, "rgba(255,201,40,.8)");
+        lg.addColorStop(1, "rgba(255,201,40,0)");
+        ctx.fillStyle = lg;
+        ctx.fillRect(60, yLinha, W - 120, 2);
+
+        ctx.textAlign = "center";
+        const rotT = (d.totalRotulo || "TOTAL") + "  ", valT = d.total;
+        ctx.font = `900 18px ${FONTE}`;
+        const wR = ctx.measureText(rotT).width;
+        ctx.font = `900 24px ${FONTE}`;
+        const wV = ctx.measureText(valT).width;
+        const x0 = W / 2 - (wR + wV) / 2;
+        ctx.textAlign = "left";
+        ctx.font = `900 18px ${FONTE}`;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(rotT, x0, yLinha + 28);
+        ctx.font = `900 24px ${FONTE}`;
+        ctx.fillStyle = d.totalCor ? (COR_NOTA[d.totalCor] || OURO) : (d.totalNeg ? "#ef4444" : OURO);
+        ctx.fillText(valT, x0 + wR, yLinha + 28);
+    }
 }
 
 function desenharCardJogador(ctx, d, im) {
     const W = CARD_W, H = CARD_H;
-    if (im.moldura) ctx.drawImage(im.moldura, 0, 0, W, H);
-    else molduraPadrao(ctx, W, H);
+    const ny = 488, nh = 62;   // faixa do nome (o miolo é listrado acima dela e sólido abaixo)
+    molduraPadrao(ctx, ny);   // moldura vetorizada (borda tripla + miolo escuro)
 
     // área da foto (o atleta "em pé" na base dela, em cima da linha do horizonte da moldura)
-    const fx = 138, fy = 120, fw = 348, fh = 354;   // começa abaixo dos ombros da moldura, ao lado da coluna posição/escudo
+    const fx = 178, fy = 120, fw = 284, fh = 354;   // começa abaixo dos ombros da moldura, ao lado da coluna posição/escudo
     ctx.save();
     ctx.beginPath();
-    ctx.rect(14, 60, W - 28, fy + fh - 60);
+    formaJogadorDentro(ctx, 16);   // a foto não passa da borda da moldura
+    ctx.clip();
+    ctx.beginPath();
+    ctx.rect(0, 0, W, fy + fh);
     ctx.clip();
     const foto = im.foto;
     if (foto && foto.isRecorte) {
@@ -708,17 +1018,42 @@ function desenharCardJogador(ctx, d, im) {
     }
     ctx.restore();
 
+    raiosJogador(ctx);   // por cima da foto e por baixo dos textos
+
     // coluna da esquerda: posição e escudo do time
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = OURO;
-    ajustar(ctx, d.pos || "", 100, 50, 900);
-    ctx.fillText(d.pos || "", 76, 172);
-    ctx.fillRect(52, 186, 48, 4);
-    blocoTime(ctx, im.escudo, d.time, 76, 268, 104);   // time, logo abaixo da posição
+    if (d.pontosTopo) {
+        // pontuação total (card de pontuação) ou nota (card com nota): só o número, sem moldura nem fundo;
+        // embaixo, posição e escudo empilhados ao lado da foto
+        ctx.save();
+        ctx.fillStyle = d.topoCor ? (COR_NOTA[d.topoCor] || OURO) : (d.pontosNeg ? "#ef4444" : "#ffffff");
+        ctx.shadowColor = "rgba(0,0,0,.6)";
+        ctx.shadowBlur = 8;
+        // coluna em x = 124: à direita dos raios dourados da moldura (eles ocupam a borda até x ~107)
+        const cx = 124;
+        ajustar(ctx, d.pontosTopo, 100, 44, 900);
+        ctx.fillText(d.pontosTopo, cx, 192);
+        ctx.restore();
+        ctx.textAlign = "center";
+        ctx.save();
+        ctx.fillStyle = OURO;
+        ctx.shadowColor = "rgba(0,0,0,.6)";
+        ctx.shadowBlur = 6;
+        ajustar(ctx, d.pos || "", 90, 40, 900);
+        ctx.fillText(d.pos || "", cx + 6, 254);
+        ctx.fillRect(cx - 18, 265, 48, 4);
+        ctx.restore();
+        blocoTime(ctx, im.escudo, d.time, cx + 4, 352, 80);
+    } else {
+        ctx.fillStyle = OURO;
+        ajustar(ctx, d.pos || "", 100, 50, 900);
+        ctx.fillText(d.pos || "", 76, 172);
+        ctx.fillRect(52, 186, 48, 4);
+        blocoTime(ctx, im.escudo, d.time, 76, 268, 104);   // time, logo abaixo da posição
+    }
 
     // faixa do nome
-    const ny = 488, nh = 62;
     for (const yy of [ny, ny + nh]) {
         const lg = ctx.createLinearGradient(40, 0, W - 40, 0);
         lg.addColorStop(0, "rgba(255,201,40,0)");
@@ -736,25 +1071,14 @@ function desenharCardJogador(ctx, d, im) {
     ctx.fillText(nome, W / 2, ny + nh * .68);
     ctx.restore();
 
-    // caixa de pontos: retangular, cantos arredondados
-    const bw = 260, bh = 104, bx = (W - bw) / 2, by = 574;
-    retArredondado(ctx, bx, by, bw, bh, 26);
-    ctx.fillStyle = "#0f1013";
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(255,201,40,.55)";
-    ctx.stroke();
-    ctx.fillStyle = "#e9e9e9";
-    ajustar(ctx, "PONTOS", bw * .5, 16, 700);
-    ctx.fillText("PONTOS", W / 2, by + 31);
-    ctx.fillStyle = OURO;
-    ajustar(ctx, d.pontos || "", bw * .8, 56, 900);
-    ctx.fillText(d.pontos || "", W / 2, by + 90);
+    // lista de ações: no card de pontuação, os pontos de cada ação; no card com nota, quanto cada ação somou na nota
+    caixaAcoes(ctx, d, W);
 
     // rodapé
+    ctx.textAlign = "center";
     ctx.fillStyle = "rgba(255,255,255,.6)";
-    ajustar(ctx, ("ÚLTIMA PARTIDA" + (d.data ? "  ·  " + d.data : "")), 280, 15, 700);
-    ctx.fillText("ÚLTIMA PARTIDA" + (d.data ? "  ·  " + d.data : ""), W / 2, 726);
+    ajustar(ctx, ("ÚLTIMA PARTIDA" + (d.data ? "  ·  " + d.data : "")), 170, 14, 700);
+    ctx.fillText("ÚLTIMA PARTIDA" + (d.data ? "  ·  " + d.data : ""), W / 2, 720);   // acima da ponta da moldura
 
     assinatura(ctx, 14, H - 12, 15, true);   // canto inferior esquerdo (fora da moldura, com contorno para ler em qualquer fundo)
 }

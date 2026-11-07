@@ -21,8 +21,11 @@
 
         @if (aba == AbaRanking.PontosAtletas)
         {
-            <button type="button" class="rk-top3-btn" disabled="@(gerandoTop3 || atletasRodada is null || atletasRodada.Atletas.Count < 3)" @onclick="GerarTop3">
-                @(gerandoTop3 ? "Gerando…" : "Gerar Top 3")
+            <button type="button" class="rk-top3-btn" disabled="@(gerandoTop3 || atletasRodada is null || atletasRodada.Atletas.Count < 3)" @onclick="() => GerarTop3(false)">
+                @(gerandoTop3 && !top3Nota ? "Gerando…" : "Top 3 pontuação")
+            </button>
+            <button type="button" class="rk-top3-btn" disabled="@(gerandoTop3 || atletasRodada is null || atletasRodada.Atletas.Count(x => x.Nota is not null) < 3)" @onclick="() => GerarTop3(true)">
+                @(gerandoTop3 && top3Nota ? "Gerando…" : "Top 3 notas")
             </button>
         }
 
@@ -97,6 +100,10 @@
                                         </span>
                                     }
                                     <span class="rk-at-nome">@a.Nome</span>
+                                    @if (a.Nota is { } notaAtleta)
+                                    {
+                                        <span class="rk-at-nota @NotaJogador.Classe(notaAtleta)" title="Nota da partida">@Fmt1(notaAtleta)</span>
+                                    }
                                 </div>
                                 <span class="rk-at-time">
                                     @if (!string.IsNullOrWhiteSpace(a.TimeNome))
@@ -139,9 +146,17 @@
                                             <strong class="@(extrato.Total < 0 ? "neg" : "")">@Fmt2(extrato.Total)</strong>
                                         </div>
                                         <div class="rk-ext-acoes" style="margin-top:.85rem;display:flex;flex-direction:column;align-items:center;gap:.4rem">
-                                            <button type="button" class="rk-top3-btn" disabled="@(gerandoCardId is not null)" @onclick="() => GerarCardJogador(a)">
-                                                @(gerandoCardId == a.Id ? "Gerando…" : "Gerar card do jogador")
-                                            </button>
+                                            <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem">
+                                                <button type="button" class="rk-top3-btn" disabled="@(gerandoCardId is not null)" @onclick="() => GerarCardJogador(a)">
+                                                    @(gerandoCardId == a.Id && !cardComNota ? "Gerando…" : "Gerar card de pontuação")
+                                                </button>
+                                                @if (a.Nota is not null)
+                                                {
+                                                    <button type="button" class="rk-top3-btn" disabled="@(gerandoCardId is not null)" @onclick="() => GerarCardJogador(a, true)">
+                                                        @(gerandoCardId == a.Id && cardComNota ? "Gerando…" : "Gerar card com nota")
+                                                    </button>
+                                                }
+                                            </div>
                                             @if (!string.IsNullOrEmpty(erroCard) && erroCardId == a.Id)
                                             {
                                                 <p class="erro" role="alert">@erroCard</p>
@@ -413,21 +428,48 @@
     private bool gerandoTop3;
     private string? erroTop3;
 
-    private async Task GerarTop3()
+    // porNota = false: os 3 que mais pontuaram, cada carta com a lista de pontos (como o card de pontuação).
+    // porNota = true: as 3 maiores notas, cada carta com a lista da nota (como o card com nota).
+    private bool top3Nota;
+
+    private async Task GerarTop3(bool porNota)
     {
-        if (atletasRodada is null || atletasRodada.Atletas.Count < 3) return;
+        if (atletasRodada is null) return;
         erroTop3 = null;
+        top3Nota = porNota;
         gerandoTop3 = true;
         try
         {
-            var top = atletasRodada.Atletas
-                .OrderByDescending(a => a.Pontos)
-                .Take(3)
+            var escolhidos = porNota
+                ? atletasRodada.Atletas.Where(a => a.Nota is not null).OrderByDescending(a => a.Nota).ThenByDescending(a => a.Pontos).Take(3).ToList()
+                : atletasRodada.Atletas.OrderByDescending(a => a.Pontos).Take(3).ToList();
+            if (escolhidos.Count < 3)
+            {
+                erroTop3 = porNota ? "Precisa de pelo menos 3 atletas com nota na partida." : "Precisa de pelo menos 3 atletas na partida.";
+                return;
+            }
+
+            // a lista de pontos vem do extrato: busca o de quem ainda não foi aberto (sem extrato, a carta sai sem os pontos de cada ação)
+            if (!porNota)
+            {
+                foreach (var a in escolhidos.Where(a => !extratos.ContainsKey(a.Id)))
+                {
+                    try { extratos[a.Id] = await Mercado.ObterExtratoAsync(a.Id); }
+                    catch (ErroMercadoException) { }
+                }
+            }
+
+            var top = escolhidos
                 .Select(a => new
                 {
                     nome = a.Nome,
                     pos = PrimeiraSigla(a.Posicao),
                     pontos = Fmt2(a.Pontos),
+                    // canto da carta: pontuação (Top 3 pontuação) ou nota na cor da faixa (Top 3 notas)
+                    topo = porNota ? Fmt1(a.Nota!.Value) : Fmt2(a.Pontos),
+                    topoCor = porNota ? NotaJogador.Classe(a.Nota!.Value) : null,
+                    topoNeg = !porNota && a.Pontos < 0,
+                    acoes = porNota ? ItensNotaDoCard(a) : AcoesDoCard(a, extratos.GetValueOrDefault(a.Id)),
                     foto = fotos.TryGetValue(a.Id, out var f) ? f : null,
                     silhueta = SilhuetasAtleta.Caminho(PrimeiraSigla(a.Posicao), a.Nome),   // usada quando o atleta não tem foto
                     time = a.TimeNome,   // define a cor do contorno do atleta (Vermelho / Amarelo)
@@ -435,7 +477,13 @@
                 })
                 .ToList();
 
-            var dados = new { data = atletasRodada.Data?.ToString("dd/MM"), atletas = top };
+            var dados = new
+            {
+                data = atletasRodada.Data?.ToString("dd/MM"),
+                atletas = top,
+                subtitulo = porNota ? "MELHORES NOTAS DA RODADA" : "MELHORES DA RODADA",
+                arquivo = porNota ? "top3-notas.png" : "top3-pontuacao.png"
+            };
             await using var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/top3.js");
             await modulo.InvokeVoidAsync("gerarTop3", dados);
         }
@@ -446,14 +494,19 @@
 
     // ----- Card de um jogador só (js/top3.js, moldura wwwroot/img/moldura-card.png) -----
     private string? gerandoCardId, erroCardId, erroCard;
+    private bool cardComNota;
 
-    private async Task GerarCardJogador(AtletaRodada a)
+    // comNota = false: "card de pontuação" (pontos de cada ação + total). comNota = true: quanto cada ação somou na nota + a nota.
+    private async Task GerarCardJogador(AtletaRodada a, bool comNota = false)
     {
+        cardComNota = comNota;
         erroCard = null;
         erroCardId = a.Id;
         gerandoCardId = a.Id;
         try
         {
+            var extratoCard = extratos.TryGetValue(a.Id, out var extAt) ? extAt : null;
+            var totalPontos = extratoCard?.Total ?? a.Pontos;
             var dados = new
             {
                 nome = a.Nome,
@@ -463,7 +516,17 @@
                 foto = fotos.TryGetValue(a.Id, out var f) ? f : null,
                 silhueta = SilhuetasAtleta.Caminho(PrimeiraSigla(a.Posicao), a.Nome),
                 time = a.TimeNome,
-                escudo = string.IsNullOrWhiteSpace(a.TimeNome) ? null : $"img/time-{SlugTime(a.TimeNome)}.png"
+                escudo = string.IsNullOrWhiteSpace(a.TimeNome) ? null : $"img/time-{SlugTime(a.TimeNome)}.png",
+                // canto superior esquerdo: no card de pontuação, a pontuação total; no card com nota, a nota
+                // (só o número, sem moldura; no card com nota ele vem na cor da faixa da nota)
+                pontosTopo = comNota ? (a.Nota is { } n ? Fmt1(n) : "-") : Fmt2(totalPontos),
+                pontosNeg = !comNota && totalPontos < 0,
+                topoCor = comNota && a.Nota is { } n2 ? NotaJogador.Classe(n2) : null,
+                // pontuação: cada ação com os pontos dela (extrato) e o total de pontos.
+                // com nota: cada ação com quanto somou na nota e, no fim, a nota.
+                acoes = comNota ? ItensNotaDoCard(a) : AcoesDoCard(a, extratoCard),
+                // sem total embaixo da lista nos dois cards: pontuação / nota já aparecem no canto superior esquerdo
+                arquivo = comNota ? "card-nota" : "card-pontuacao"
             };
             await using var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/top3.js");
             await modulo.InvokeVoidAsync("gerarCardJogador", dados);
@@ -472,6 +535,101 @@
         catch (JSException ex) { erroCard = "Não consegui gerar o card: " + ex.Message; }
         finally { gerandoCardId = null; }
     }
+
+    // ----- Lista do card de pontuação: mesmos grupos do card com nota, com os pontos de cada grupo -----
+    // 1ª linha = contexto do jogo: BASE (pontos iniciais) à esquerda e PLACAR (gols feitos e sofridos pelo time) à direita.
+    // Esquerda = BASE, GOL, ASS, CHU, PAS, DEF; direita = PLACAR, G.CON, PÊN, FAL, CART (linha vazia no fim para alinhar).
+    private static readonly string[] GruposPontuacao = { "BASE", "GOL", "ASS", "CHU", "PAS", "DEF", "PLACAR", "G.CON", "PÊN", "FAL", "CART", "" };
+
+    // Em qual grupo do card entra uma linha do extrato (ou um contador da súmula). Null = não aparece no card (só "Outros ajustes").
+    // "G.TIME" e "G.SOF" vão os dois para a linha PLACAR (separados aqui só para montar o "6x3").
+    private static string? GrupoDaAcao(string? descricao)
+    {
+        var n = new string((descricao ?? "").Trim().ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD)
+            .Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+            .ToArray());
+        if (n.Contains("ajuste")) return null;
+        if (n.Contains("inicia") || n == "base") return "BASE";
+        if (n.Contains("do time")) return "G.TIME";
+        if (n.Contains("sofrid") || n.Contains("sem sofrer")) return "G.SOF";
+        if (n.Contains("contra")) return "G.CON";
+        if (n.Contains("defend") || n.Contains("desarme") || n.Contains("defesa")) return "DEF";   // pênalti defendido conta como defesa
+        if (n.Contains("penalti") || n.StartsWith("pen.")) return "PÊN";
+        if (n.Contains("cartao") || n.Contains("amarel") || n.Contains("azu") || n.Contains("vermelh")) return "CART";
+        if (n.Contains("falta")) return "FAL";
+        if (n.Contains("assist")) return "ASS";
+        if (n.Contains("chute")) return "CHU";
+        if (n.Contains("passe")) return "PAS";
+        if (n.StartsWith("gol")) return "GOL";
+        return null;
+    }
+
+    // Lista completa do card de pontuação. Com extrato: quantidade e pontos somados por grupo.
+    // Sem extrato (não deveria acontecer): contadores da súmula, sem pontos.
+    private static List<object> AcoesDoCard(AtletaRodada a, ExtratoJogo? extrato)
+    {
+        var qtd = GruposPontuacao.ToDictionary(g => g, _ => 0);
+        var pts = GruposPontuacao.ToDictionary(g => g, _ => 0m);
+        var temPontos = extrato is not null;
+        int golsFeitos = 0, golsSofridos = 0;
+        var temPlacar = false;
+
+        if (extrato is not null)
+        {
+            foreach (var l in extrato.Linhas)
+            {
+                if (GrupoDaAcao(l.Descricao ?? l.Texto) is not { } g) continue;
+                if (g is "G.TIME" or "G.SOF")
+                {
+                    temPlacar = true;
+                    // "sem sofrer gol" não tem quantidade: só soma os pontos
+                    if (g == "G.TIME") golsFeitos += l.Qtd;
+                    else if (!(l.Descricao ?? l.Texto).Contains("sem sofrer", StringComparison.OrdinalIgnoreCase)) golsSofridos += l.Qtd;
+                    if (l.Pontua) pts["PLACAR"] += l.Pontos;
+                    continue;
+                }
+                qtd[g] += Math.Max(l.Qtd, 1);   // linha do extrato sem quantidade = aconteceu 1 vez
+                if (l.Pontua) pts[g] += l.Pontos;
+            }
+        }
+        else
+        {
+            foreach (var f in a.Feitos ?? new())
+                if (GrupoDaAcao(f.Rotulo) is { } g && qtd.ContainsKey(g)) qtd[g] += f.Qtd;
+        }
+        if (temPlacar) qtd["PLACAR"] = 1;
+
+        return GruposPontuacao
+            .Select(g => (object)new
+            {
+                rotulo = g,
+                sigla = g,
+                qtd = qtd[g],
+                num = g == "PLACAR" && temPlacar ? $"{golsFeitos}x{golsSofridos}" : null,   // no lugar da quantidade
+                pontos = !temPontos || qtd[g] == 0 ? null : FmtSinal(pts[g]),
+                neg = pts[g] < 0,
+                vazio = qtd[g] == 0
+            })
+            .ToList();
+    }
+
+    // Composição da nota (lista completa, ServicoMercado.ItensDaNota): valor com sinal e até 2 casas, ex.: "+1,2", "-0,25"
+    private static List<object> ItensNotaDoCard(AtletaRodada a) => (a.ItensNota ?? new())
+        .Select(x => (object)new
+        {
+            rotulo = x.Rotulo,
+            sigla = x.Rotulo,   // já vem como sigla (GOL, DEF, CART...)
+            qtd = x.Qtd,
+            // linha sem nada (quantidade 0 e valor 0): aparece apagada, sem quantidade nem valor
+            pontos = EhVazio(x) ? null : x.Valor.ToString("+0.0#;-0.0#;0.0", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")),
+            neg = x.Valor < 0,
+            vazio = EhVazio(x)
+        })
+        .ToList();
+
+    private static bool EhVazio(ItemNota x) => x.Qtd == 0 && Math.Abs(x.Valor) < 0.005;
+
+    private static string FmtSinal(decimal v) => (v > 0 ? "+" : "") + Fmt2(v);
 
     private async Task AoTeclarAtleta(KeyboardEventArgs e, AtletaRodada a)
     {
@@ -511,6 +669,8 @@
         catch (ErroMercadoException ex) { errosExtrato[a.Id] = ex.Message; }
         finally { if (carregandoExtratoId == a.Id) carregandoExtratoId = null; }
     }
+
+    private static string Fmt1(double v) => v.ToString("0.0", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
 
     private static string Fmt2(decimal v) => v.ToString("0.00", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
 

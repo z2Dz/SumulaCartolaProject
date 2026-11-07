@@ -5,13 +5,22 @@ using SumulaCartolaProject.Models;
 namespace SumulaCartolaProject.Servicos;
 
 /// <summary>Uma linha do extrato de pontos. Pontua = false para eventos que contam na súmula mas não valem ponto.</summary>
-public record LinhaExtrato(string Texto, decimal Pontos, bool Pontua = true);
+/// <summary>Descricao e Qtd vêm separados (sem o "×2" do Texto) para o card com nota montar "Ação = quantidade".</summary>
+public record LinhaExtrato(string Texto, decimal Pontos, bool Pontua = true, string? Descricao = null, int Qtd = 0);
 
 /// <summary>Extrato do atleta na última partida finalizada.</summary>
 public record ExtratoJogo(DateTimeOffset? Data, decimal Total, List<LinhaExtrato> Linhas);
 
 /// <summary>Um atleta que jogou a última rodada, com os pontos dela (posição já em sigla, ex.: "MEI/ZAG") e o time em que jogou (ex.: "Vermelho").</summary>
-public record AtletaRodada(string Id, string Nome, string Posicao, decimal Pontos, string? TimeNome = null);
+/// <summary>Nota = nota da partida (Models/NotaJogador.cs). Fica null enquanto o banco não devolve os contadores do atleta (função pontuacao_ultima_rodada).</summary>
+/// <summary>ItensNota = quanto cada ação somou (ou tirou) na nota, para o card com nota. Null nas mesmas condições da Nota.</summary>
+public record AtletaRodada(string Id, string Nome, string Posicao, decimal Pontos, string? TimeNome = null, double? Nota = null, List<FeitoAtleta>? Feitos = null, List<ItemNota>? ItensNota = null);
+
+/// <summary>Uma linha da composição da nota: a ação, a quantidade e quanto ela mexeu na nota (ex.: Gols, 2, +1,2).</summary>
+public record ItemNota(string Rotulo, int Qtd, double Valor);
+
+/// <summary>Algo que o atleta fez na partida (só o que aconteceu, quantidade > 0). Rotulo já é curto, para caber no card.</summary>
+public record FeitoAtleta(string Rotulo, int Qtd);
 public record PontuacaoDaRodada(DateTimeOffset? Data, List<AtletaRodada> Atletas);
 
 /// <summary>Falha ao carregar o mercado, com texto pronto para mostrar ao usuário.</summary>
@@ -116,7 +125,7 @@ public class ServicoMercado(Supabase.Client supabase)
             var desc = (string?)l["descricao"] ?? "";
             if (desc.Trim().Equals("Base", StringComparison.OrdinalIgnoreCase)) desc = "Pontos iniciais";
             var qtd = l["quantidade"] is { Type: not JTokenType.Null } q ? (int)(decimal)q : 0;
-            linhas.Add(new LinhaExtrato(qtd > 1 ? $"{desc} ×{qtd}" : desc, Dec(l["pontos"], 0m)));
+            linhas.Add(new LinhaExtrato(qtd > 1 ? $"{desc} ×{qtd}" : desc, Dec(l["pontos"], 0m), true, desc, qtd));
         }
 
         // Rede de segurança: se um dia a soma não bater com o total oficial, o extrato mostra a diferença
@@ -157,8 +166,8 @@ public class ServicoMercado(Supabase.Client supabase)
         var atletas = new List<AtletaRodada>();
         foreach (var a in o["atletas"] as JArray ?? new JArray())
         {
-            var siglas = (a["posicoes"] as JArray ?? new JArray()).Select(p => ((string?)p ?? "").ToUpperInvariant()).Where(s => s.Length > 0);
-            atletas.Add(new AtletaRodada((string?)a["id"] ?? "", (string?)a["nome"] ?? "", string.Join("/", siglas), Dec(a["pontos"], 0m), (string?)a["time_nome"]));
+            var siglas = (a["posicoes"] as JArray ?? new JArray()).Select(p => ((string?)p ?? "").ToUpperInvariant()).Where(s => s.Length > 0).ToList();
+            atletas.Add(new AtletaRodada((string?)a["id"] ?? "", (string?)a["nome"] ?? "", string.Join("/", siglas), Dec(a["pontos"], 0m), (string?)a["time_nome"], NotaDoAtleta(a, siglas), FeitosDoAtleta(a), ItensDaNota(a, siglas)));
         }
 
         DateTimeOffset? data = DateTimeOffset.TryParse((string?)o["data_hora"], System.Globalization.CultureInfo.InvariantCulture,
@@ -166,6 +175,106 @@ public class ServicoMercado(Supabase.Client supabase)
 
         return new PontuacaoDaRodada(data, atletas);
     }
+
+    /// <summary>
+    /// Nota do atleta na partida. Precisa que a função pontuacao_ultima_rodada devolva os contadores
+    /// (gols, assistencias, desarmes... e gols_time / gols_adversario); sem eles devolve null e a tela não mostra nota.
+    /// </summary>
+    private static double? NotaDoAtleta(JToken a, List<string> siglas)
+    {
+        if (a["gols_time"] is null || a["gols_time"]!.Type == JTokenType.Null) return null;
+
+        var l = LerContadores(a);
+        var goleiro = siglas.Count == 1 && siglas[0] == "GOL";
+        return NotaJogador.Calcular(l, goleiro, Int(a["gols_time"]), Int(a["gols_adversario"]));
+    }
+
+    /// <summary>O que o atleta fez na partida, na ordem em que aparece no card. Só entram as ações com quantidade maior que zero.</summary>
+    private static List<FeitoAtleta>? FeitosDoAtleta(JToken a)
+    {
+        if (a["gols_time"] is null || a["gols_time"]!.Type == JTokenType.Null) return null;
+
+        var l = LerContadores(a);
+        var todos = new (string Rotulo, int Qtd)[]
+        {
+            ("Gols", l.Gols), ("Assist.", l.Assistencias), ("Desarmes", l.Desarmes), ("Defesas", l.Defesas),
+            ("Chutes", l.ChutesGol), ("Passes", l.PassesCertos), ("Faltas", l.FaltasCometidas),
+            ("Pên. com.", l.PenaltisCometidos), ("Pên. perd.", l.PenaltisPerdidos), ("G. contra", l.GolsContra),
+            ("Amarelos", l.Amarelos), ("Azuis", l.Azuis), ("Vermelhos", l.Vermelhos)
+        };
+        return todos.Where(x => x.Qtd > 0).Select(x => new FeitoAtleta(x.Rotulo, x.Qtd)).ToList();
+    }
+
+    // Linhas do card com nota: cada uma junta uma ou mais ações da fórmula (NotaJogador.Composicao).
+    // Esquerda = o que soma; direita = o que tira. O card preenche a coluna da esquerda primeiro.
+    private static readonly (string Sigla, string[] Acoes)[] GruposEsquerda =
+    {
+        ("GOL", new[] { "Gol" }),
+        ("ASS", new[] { "Assistência" }),
+        ("CHU", new[] { "Chute ao gol" }),
+        ("PAS", new[] { "Passe certo" }),
+        ("DEF", new[] { "Desarme", "Defesa" })
+        // saldo de gols (e, no goleiro, "sem sofrer gol" / "gols sofridos") entram na nota mas não aparecem no card:
+        // falam do placar, não de algo que o atleta fez
+    };
+    private static readonly (string Sigla, string[] Acoes)[] GruposDireita =
+    {
+        ("G.CON", new[] { "Gol contra" }),
+        ("PÊN", new[] { "Pênalti cometido", "Pênalti perdido" }),
+        ("FAL", new[] { "Falta cometida" }),
+        ("CART", new[] { "Cartão amarelo", "Cartão azul", "Cartão vermelho" })
+    };
+
+    /// <summary>
+    /// Lista completa da nota para o card, já agrupada (ex.: CART = amarelo + azul + vermelho): quantidade e valor de cada
+    /// linha são a soma das ações do grupo. Linha com Qtd 0 = o atleta não fez nada daquilo (o card mostra apagada).
+    /// Os valores vêm direto da fórmula; o saldo de gols não aparece, então a soma das linhas pode não bater exatamente com a nota.
+    /// </summary>
+    private static List<ItemNota>? ItensDaNota(JToken a, List<string> siglas)
+    {
+        if (a["gols_time"] is null || a["gols_time"]!.Type == JTokenType.Null) return null;
+
+        var goleiro = siglas.Count == 1 && siglas[0] == "GOL";
+        var partes = NotaJogador.Composicao(LerContadores(a), goleiro, Int(a["gols_time"]), Int(a["gols_adversario"]))
+            .ToDictionary(x => x.Nome);
+
+        ItemNota Linha((string Sigla, string[] Acoes) g)
+        {
+            var doGrupo = g.Acoes.Where(partes.ContainsKey).Select(n => partes[n]).ToList();
+            var qtd = doGrupo.Sum(x => x.Qtd);
+            var valor = doGrupo.Sum(x => x.Valor);
+            return new ItemNota(g.Sigla, qtd, valor);
+        }
+
+        var esquerda = GruposEsquerda.Select(Linha).ToList();
+        var direita = GruposDireita.Select(Linha).ToList();
+        // completa com linhas vazias para as duas colunas terem o mesmo tamanho
+        while (direita.Count < esquerda.Count) direita.Add(new ItemNota("", 0, 0));
+        while (esquerda.Count < direita.Count) esquerda.Add(new ItemNota("", 0, 0));
+        return esquerda.Concat(direita).ToList();
+    }
+
+    private static LinhaSumula LerContadores(JToken a)
+    {
+        return new LinhaSumula
+        {
+            Gols = Int(a["gols"]),
+            GolsContra = Int(a["gols_contra"]),
+            Amarelos = Int(a["amarelos"]),
+            Azuis = Int(a["azuis"]),
+            Vermelhos = Int(a["vermelhos"]),
+            Assistencias = Int(a["assistencias"]),
+            ChutesGol = Int(a["chutes_gol"]),
+            Defesas = Int(a["defesas"]),
+            PenaltisCometidos = Int(a["penaltis_cometidos"]),
+            PenaltisPerdidos = Int(a["penaltis_perdidos"]),
+            PassesCertos = Int(a["passes_certos"]),
+            FaltasCometidas = Int(a["faltas_cometidas"]),
+            Desarmes = Int(a["desarmes"])
+        };
+    }
+
+    private static int Int(JToken? t) => t is null || t.Type == JTokenType.Null ? 0 : (int)(decimal)t;
 
     private static string TraduzirExtrato(string bruto)
     {
