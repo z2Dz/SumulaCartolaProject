@@ -485,7 +485,8 @@
                 arquivo = porNota ? "top3-notas.png" : "top3-pontuacao.png"
             };
             await using var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/top3.js");
-            await modulo.InvokeVoidAsync("gerarTop3", dados);
+            // sem limite de tempo: a prévia fica aberta até a pessoa baixar ou cancelar (o padrão do Blazor Server é 1 minuto)
+            await modulo.InvokeVoidAsync("gerarTop3", CancellationToken.None, dados);
         }
         catch (JSDisconnectedException) { }
         catch (JSException ex) { erroTop3 = "Não consegui gerar a imagem: " + ex.Message; }
@@ -529,7 +530,8 @@
                 arquivo = comNota ? "card-nota" : "card-pontuacao"
             };
             await using var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/top3.js");
-            await modulo.InvokeVoidAsync("gerarCardJogador", dados);
+            // sem limite de tempo: a prévia fica aberta até a pessoa baixar ou cancelar (o padrão do Blazor Server é 1 minuto)
+            await modulo.InvokeVoidAsync("gerarCardJogador", CancellationToken.None, dados);
         }
         catch (JSDisconnectedException) { }
         catch (JSException ex) { erroCard = "Não consegui gerar o card: " + ex.Message; }

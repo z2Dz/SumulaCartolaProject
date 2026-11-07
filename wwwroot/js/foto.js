@@ -1,4 +1,5 @@
 ﻿// Funções de imagem usadas pelo recorte de foto (RecortarFoto.razor).
+import { limparIlhas } from './top3.js';   // mesma limpeza de "pedaços soltos" usada nos cards
 export function medir(src) {
     return new Promise(ok => {
         const i = new Image();
@@ -95,6 +96,9 @@ export function recortar(src, sx, sy, sw, sh, w, h) {
 let _lib = null;
 let _sel = null;     // { orig, mask, auto, w, h }
 let _vista = null;   // último estado de visualização enviado por desenhar()
+let _tela = null;    // canvas da edição (para redesenhar depois de desfazer)
+let _hist = [];      // máscaras anteriores, para desfazer (até 20)
+const MAX_HIST = 20;
 
 export async function iniciarSelecao(src) {
     _lib ??= await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm');
@@ -103,8 +107,12 @@ export async function iniciarSelecao(src) {
     try {
         const [orig, corte] = await Promise.all([carregar(src), carregar(url)]);
         const w = orig.naturalWidth, h = orig.naturalHeight;
-        const mask = camada(w, h); mask.drawImage(corte, 0, 0, w, h);
-        const auto = camada(w, h); auto.drawImage(mask.canvas, 0, 0);
+        const mask = novoCanvas(w, h).getContext('2d', { willReadFrequently: true });
+        mask.drawImage(corte, 0, 0, w, h);
+        // limpeza automática: fica só a figura principal (tira manchas e pedaços do fundo que a detecção deixou)
+        try { limparIlhas(mask, w, h); } catch { }
+        const auto = camada(w, h); auto.drawImage(mask.canvas, 0, 0);   // "Redefinir" volta para esta versão já limpa
+        _hist = [];
         _sel = { orig, mask: mask.canvas, auto: auto.canvas, w, h };
     } finally {
         URL.revokeObjectURL(url);
@@ -113,13 +121,31 @@ export async function iniciarSelecao(src) {
 
 export function redefinirSelecao() {
     if (!_sel) return;
+    guardarHistorico();   // dá para desfazer o "redefinir" também
     const c = _sel.mask.getContext('2d');
     c.globalCompositeOperation = 'copy';
     c.drawImage(_sel.auto, 0, 0);
     c.globalCompositeOperation = 'source-over';
 }
 
-export function liberarSelecao() { _sel = null; _vista = null; }
+export function liberarSelecao() { _sel = null; _vista = null; _tela = null; _hist = []; }
+
+// ----- Desfazer -----
+function guardarHistorico() {
+    if (!_sel) return;
+    _hist.push(_sel.mask.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, _sel.w, _sel.h));
+    if (_hist.length > MAX_HIST) _hist.shift();
+}
+
+/// Volta a máscara um passo. Devolve quantos passos ainda dá para desfazer.
+export function desfazerSelecao() {
+    if (!_sel || _hist.length === 0) return 0;
+    _sel.mask.getContext('2d').putImageData(_hist.pop(), 0, 0);
+    if (_tela && _vista) desenhar(_tela, _vista);
+    return _hist.length;
+}
+
+export function podeDesfazer() { return _hist.length; }
 
 // foto recortada pela máscara, no tamanho natural
 function recorteCompleto() {
@@ -137,6 +163,9 @@ export function desenhar(tela, v) {
     const K = 2;   // resolução interna 2x, para ficar nítido
     if (tela.width !== v.w * K || tela.height !== v.h * K) { tela.width = v.w * K; tela.height = v.h * K; }
     if (!tela._pronto) { tela._pronto = true; ligarPincel(tela); }
+
+    _tela = tela;
+    atualizarBotaoDesfazer(tela);
 
     const ctx = tela.getContext('2d');
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -173,9 +202,61 @@ export function desenhar(tela, v) {
 
 // Pincel: pinta na máscara em coordenadas da foto. Só age com ferramenta "add" ou "apagar";
 // com "mover" deixa o evento passar para o arrastar/zoom do Blazor.
+const pintando = () => _sel && _vista && !_vista.resultado && (_vista.ferramenta === 'add' || _vista.ferramenta === 'apagar');
+
+// Botão ↶ dentro do quadro: só aparece enquanto pinta (Adicionar/Apagar) e há algo para desfazer
+function atualizarBotaoDesfazer(tela) {
+    const b = tela._desfazer;
+    if (!b) return;
+    b.style.display = pintando() && _hist.length > 0 ? 'flex' : 'none';
+}
+
 function ligarPincel(tela) {
     const quadro = tela.parentElement;
     let ativo = false, ult = null;
+    if (getComputedStyle(quadro).position === 'static') quadro.style.position = 'relative';
+
+    // anel do pincel (mostra o tamanho e onde vai pintar)
+    const anel = document.createElement('div');
+    anel.style.cssText = 'position:absolute;border:2px solid #fff;border-radius:50%;pointer-events:none;display:none;' +
+        'box-shadow:0 0 0 1px rgba(0,0,0,.6);z-index:3;';
+    quadro.appendChild(anel);
+    const mostrarAnel = e => {
+        if (!pintando() || e.target === tela._desfazer) { anel.style.display = 'none'; return; }   // não cobre o botão desfazer
+        const r = quadro.getBoundingClientRect();
+        const tr = tela.getBoundingClientRect();
+        const d = _vista.pincel * 2 * (tr.width / _vista.w);   // pincel = raio em px do quadro
+        anel.style.display = 'block';
+        anel.style.width = anel.style.height = d + 'px';
+        anel.style.left = (e.clientX - r.left - d / 2) + 'px';
+        anel.style.top = (e.clientY - r.top - d / 2) + 'px';
+    };
+    quadro.addEventListener('pointerleave', () => { if (!ativo) anel.style.display = 'none'; });
+
+    // botão desfazer
+    const bt = document.createElement('button');
+    bt.type = 'button';
+    bt.title = 'Desfazer (Ctrl+Z)';
+    bt.setAttribute('aria-label', 'Desfazer');
+    bt.textContent = '↶';
+    bt.style.cssText = 'position:absolute;left:8px;top:8px;z-index:4;width:40px;height:40px;border-radius:50%;border:2px solid #fff;' +
+        'background:rgba(20,22,28,.85);color:#fff;font:700 22px system-ui,sans-serif;display:none;align-items:center;' +
+        'justify-content:center;cursor:pointer;padding:0;line-height:1;';
+    bt.addEventListener('pointerdown', e => e.stopPropagation());
+    bt.addEventListener('click', e => { e.stopPropagation(); desfazerSelecao(); atualizarBotaoDesfazer(tela); });
+    quadro.appendChild(bt);
+    tela._desfazer = bt;
+
+    // Ctrl+Z / Cmd+Z enquanto o editor está aberto
+    const tecla = e => {
+        if (!tela.isConnected) { document.removeEventListener('keydown', tecla); return; }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && pintando()) {
+            e.preventDefault();
+            desfazerSelecao();
+            atualizarBotaoDesfazer(tela);
+        }
+    };
+    document.addEventListener('keydown', tecla);
 
     const ponto = e => {
         const r = tela.getBoundingClientRect();
@@ -201,10 +282,13 @@ function ligarPincel(tela) {
         if (!_sel || !_vista || _vista.resultado || _vista.ferramenta === 'mover' || e.button !== 0) return;
         e.preventDefault(); e.stopPropagation();
         quadro.setPointerCapture(e.pointerId);
+        guardarHistorico();
+        mostrarAnel(e);
         ativo = true; ult = ponto(e);
         riscar(ult, ult); desenhar(tela, _vista);
     });
     quadro.addEventListener('pointermove', e => {
+        mostrarAnel(e);
         if (!ativo) return;
         e.stopPropagation();
         const p = ponto(e);

@@ -25,8 +25,15 @@ export async function gerarTop3(dados) {
         // escudo do time em que cada atleta jogou (aparece embaixo da posição)
         escudosAtletas: await Promise.all(dados.atletas.map(a => (a.escudo ? carregar(a.escudo) : null)))
     };
-    desenhar(canvas.getContext("2d"), dados, imagens);
-    await entregar(canvas, dados.arquivo || "top3-rodada.png");
+    // prévia antes de baixar: dá para editar a foto de cada atleta (as fotos editadas entram em imagens.fotos)
+    await revisarCard({
+        canvas,
+        redesenhar: () => desenhar(canvas.getContext("2d"), dados, imagens),
+        fotos: imagens.fotos,
+        nomes: dados.atletas.map(a => a.nome),
+        arquivo: dados.arquivo || "top3-rodada.png",
+        titulo: "Top 3 da rodada"
+    });
 }
 
 function carregar(src) {
@@ -74,31 +81,113 @@ export function temTransparencia(img) {
     }
 }
 
-// Foto que já está sem fundo: só recorta o canvas na caixa do atleta (mesmo formato que recortarFundo devolve).
+// Foto que já está sem fundo: limpa pedaços soltos e recorta o canvas na caixa do atleta (mesmo formato que recortarFundo devolve).
 export function recortarPorAlfa(img) {
     try {
-        const { cv, w, h, px } = lerPixels(img, 768);
-        let x0 = w, y0 = h, x1 = -1, y1 = -1;
-        for (let y = 0; y < h; y++) {
-            for (let x = 0; x < w; x++) {
-                if (px[(y * w + x) * 4 + 3] > 128) {
-                    if (x < x0) x0 = x;
-                    if (x > x1) x1 = x;
-                    if (y < y0) y0 = y;
-                    if (y > y1) y1 = y;
-                }
-            }
-        }
-        if (x1 < 0) return null;
-        const out = document.createElement("canvas");
-        out.width = x1 - x0 + 1;
-        out.height = y1 - y0 + 1;
-        out.getContext("2d").drawImage(cv, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
-        out.isRecorte = true;
-        return out;
+        const { cv } = lerPixels(img, 768);
+        const orig = clonar(cv);
+        limparIlhas(cv.getContext("2d", { willReadFrequently: true }), cv.width, cv.height);
+        return cortarNoAlfa(cv, orig);
     } catch {
         return null;
     }
+}
+
+function clonar(cv) {
+    const c = document.createElement("canvas");
+    c.width = cv.width;
+    c.height = cv.height;
+    c.getContext("2d", { willReadFrequently: true }).drawImage(cv, 0, 0);   // o editor lê os pixels várias vezes
+    return c;
+}
+
+// Recorta o canvas na caixa do que é opaco. O resultado guarda o original (_orig) e o recorte sem cortar (_cheio),
+// que o editor de foto usa para apagar/restaurar. Null se não sobrou nada.
+function cortarNoAlfa(cv, orig) {
+    const w = cv.width, h = cv.height;
+    const px = cv.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            if (px[(y * w + x) * 4 + 3] > 128) {
+                if (x < x0) x0 = x;
+                if (x > x1) x1 = x;
+                if (y < y0) y0 = y;
+                if (y > y1) y1 = y;
+            }
+        }
+    }
+    if (x1 < 0) return null;
+    const out = document.createElement("canvas");
+    out.width = x1 - x0 + 1;
+    out.height = y1 - y0 + 1;
+    out.getContext("2d").drawImage(cv, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+    out.isRecorte = true;
+    out._orig = orig;
+    out._cheio = cv;
+    return out;
+}
+
+// Limpeza automática do recorte: fica só a figura principal (e pedaços grandes, ≥ 25% dela, ex.: braço separado).
+// Apaga as "ilhas" que o removedor de fundo deixa (manchas no canto, pedaços do fundo) e o semitransparente solto em volta delas.
+export function limparIlhas(cx, w, h) {
+    const img = cx.getImageData(0, 0, w, h), d = img.data, n = w * h;
+    const SOLIDO = 128;
+    const rot = new Int32Array(n);      // componente de cada pixel sólido (0 = nenhum)
+    const pilha = new Int32Array(n);
+    const tam = [0];
+    let id = 0;
+    for (let p = 0; p < n; p++) {
+        if (rot[p] || d[p * 4 + 3] <= SOLIDO) continue;
+        id++;
+        let topo = 0, cont = 0;
+        pilha[topo++] = p;
+        rot[p] = id;
+        while (topo) {
+            const q = pilha[--topo];
+            cont++;
+            const x = q % w, y = (q - x) / w;
+            for (let dy = -1; dy <= 1; dy++) {
+                const yy = y + dy;
+                if (yy < 0 || yy >= h) continue;
+                for (let dx = -1; dx <= 1; dx++) {
+                    const xx = x + dx;
+                    if (xx < 0 || xx >= w) continue;
+                    const r = yy * w + xx;
+                    if (!rot[r] && d[r * 4 + 3] > SOLIDO) { rot[r] = id; pilha[topo++] = r; }
+                }
+            }
+        }
+        tam.push(cont);
+    }
+    if (id <= 1) return;
+
+    let maior = 0;
+    for (let k = 1; k <= id; k++) if (tam[k] > maior) maior = tam[k];
+    const manter = tam.map(t => t >= maior * .25);
+
+    // sólidos de ilhas pequenas somem
+    for (let p = 0; p < n; p++) if (rot[p] && !manter[rot[p]]) { d[p * 4 + 3] = 0; rot[p] = 0; }
+    // semitransparente só fica se encostar (até 2 px) num sólido que ficou
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const p = y * w + x;
+            const a = d[p * 4 + 3];
+            if (a === 0 || a > SOLIDO) continue;
+            let perto = false;
+            for (let dy = -2; dy <= 2 && !perto; dy++) {
+                const yy = y + dy;
+                if (yy < 0 || yy >= h) continue;
+                for (let dx = -2; dx <= 2; dx++) {
+                    const xx = x + dx;
+                    if (xx < 0 || xx >= w) continue;
+                    if (rot[yy * w + xx]) { perto = true; break; }
+                }
+            }
+            if (!perto) d[p * 4 + 3] = 0;
+        }
+    }
+    cx.putImageData(img, 0, 0);
 }
 
 // ----- Remoção de fundo -----
@@ -177,7 +266,7 @@ export function aplicarMascara(cx, cv, conf, mw, mh, talvezInvertida) {
         invertida = borda / nb > centro / nc;
     }
 
-    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    const orig = clonar(cv);   // foto sem máscara: o editor usa para "restaurar"
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
             let m = valor(x, y);
@@ -185,23 +274,11 @@ export function aplicarMascara(cx, cv, conf, mw, mh, talvezInvertida) {
             const a = Math.min(1, Math.max(0, (m - .35) / .3));   // borda suave entre 0,35 e 0,65
             const i = (y * w + x) * 4 + 3;
             px.data[i] = Math.round(px.data[i] * a);
-            if (a > .5) {
-                if (x < x0) x0 = x;
-                if (x > x1) x1 = x;
-                if (y < y0) y0 = y;
-                if (y > y1) y1 = y;
-            }
         }
     }
-    if (x1 < 0) return null;   // nenhuma pessoa encontrada
-
     cx.putImageData(px, 0, 0);
-    const out = document.createElement("canvas");
-    out.width = x1 - x0 + 1;
-    out.height = y1 - y0 + 1;
-    out.getContext("2d").drawImage(cv, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
-    out.isRecorte = true;
-    return out;
+    limparIlhas(cx, w, h);    // tira os pedaços soltos que o removedor de fundo deixa
+    return cortarNoAlfa(cv, orig);   // null = nenhuma pessoa encontrada
 }
 
 export function desenhar(ctx, dados, imagens) {
@@ -721,10 +798,21 @@ export async function gerarCardJogador(dados) {
         dados.escudo ? carregar(dados.escudo) : null,
         prepararFoto(dados.foto)   // detecta se já está sem fundo antes de tentar remover
     ]);
-    const ctx = canvas.getContext("2d");
-    ctx.scale(CARD_K, CARD_K);
-    desenharCardJogador(ctx, dados, { moldura, escudo: escudoImg, foto });
-    await entregar(canvas, `${dados.arquivo || "card"}-${slugNome(dados.nome)}.png`, dados.nome);
+    const fotos = [foto];
+    await revisarCard({
+        canvas,
+        redesenhar: () => {
+            const ctx = canvas.getContext("2d");
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.scale(CARD_K, CARD_K);
+            desenharCardJogador(ctx, dados, { moldura, escudo: escudoImg, foto: fotos[0] });
+        },
+        fotos,
+        nomes: [dados.nome],
+        arquivo: `${dados.arquivo || "card"}-${slugNome(dados.nome)}.png`,
+        titulo: dados.nome
+    });
 }
 
 // ----- Moldura do card individual (vetorizada da arte: coroa no topo, ombros arredondados,
@@ -1081,4 +1169,269 @@ function desenharCardJogador(ctx, d, im) {
     ctx.fillText("ÚLTIMA PARTIDA" + (d.data ? "  ·  " + d.data : ""), W / 2, 720);   // acima da ponta da moldura
 
     assinatura(ctx, 14, H - 12, 15, true);   // canto inferior esquerdo (fora da moldura, com contorno para ler em qualquer fundo)
+}
+
+// ----- Prévia do card e editor de foto (antes de baixar) -----
+// Abre por cima da tela: mostra o card pronto, com "Editar foto" para cada atleta com foto, "Baixar" e "Cancelar".
+// O editor apaga sobras do recorte ou restaura partes do atleta. Vale só para este card: a foto salva não muda.
+
+const ESTILO_BOTAO = "border:0;border-radius:10px;padding:.65rem 1rem;font:700 .95rem system-ui,sans-serif;cursor:pointer;";
+function botao(texto, tipo = "sec") {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = texto;
+    b.style.cssText = ESTILO_BOTAO + (tipo === "pri"
+        ? "background:#ffc928;color:#1b1404;"
+        : tipo === "on" ? "background:#ffffff;color:#111;" : "background:#2a2d35;color:#f1f1f1;");
+    return b;
+}
+
+function sobreposicao() {
+    const ov = document.createElement("div");
+    ov.setAttribute("role", "dialog");
+    ov.setAttribute("aria-modal", "true");
+    ov.style.cssText = "position:fixed;inset:0;z-index:12000;background:rgba(5,6,8,.92);display:flex;flex-direction:column;" +
+        "align-items:center;justify-content:center;gap:.8rem;padding:1rem;box-sizing:border-box;overflow:auto;color:#eee;" +
+        "font:500 .95rem system-ui,sans-serif;";
+    document.body.appendChild(ov);
+    return ov;
+}
+
+function linhaBotoes() {
+    const l = document.createElement("div");
+    l.style.cssText = "display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;";
+    return l;
+}
+
+// op = { canvas, redesenhar(), fotos[], nomes[], arquivo, titulo }. Resolve quando a pessoa baixa ou cancela.
+function revisarCard(op) {
+    return new Promise(resolve => {
+        const ov = sobreposicao();
+        const titulo = document.createElement("strong");
+        titulo.textContent = "Prévia do card";
+        titulo.style.cssText = "font-size:1.05rem;";
+        const area = document.createElement("div");
+        area.style.cssText = "display:flex;justify-content:center;max-width:100%;";
+        op.canvas.style.cssText = "max-width:min(94vw, " + (op.canvas.width > op.canvas.height ? "1100px" : "440px") + ");" +
+            "max-height:68vh;width:auto;height:auto;border-radius:8px;";
+        area.appendChild(op.canvas);
+        const msg = document.createElement("p");
+        msg.style.cssText = "margin:0;min-height:1.2em;color:#ffb4b4;text-align:center;";
+        const edicao = linhaBotoes();
+        const acoes = linhaBotoes();
+        ov.append(titulo, area, edicao, msg, acoes);
+
+        const fechar = () => {
+            document.removeEventListener("keydown", tecla);
+            ov.remove();
+            resolve();
+        };
+        const tecla = e => { if (e.key === "Escape" && ov.style.display !== "none") fechar(); };
+        document.addEventListener("keydown", tecla);
+
+        const montarEdicao = () => {
+            edicao.replaceChildren();
+            op.fotos.forEach((f, i) => {
+                if (!f) return;
+                const nome = op.fotos.length > 1 ? " · " + (op.nomes[i] || i + 1) : "";
+                const b = botao("✏️ Editar foto" + nome);
+                b.onclick = async () => {
+                    msg.textContent = "";
+                    ov.style.display = "none";
+                    const novo = await editarFoto(f, op.nomes[i]);
+                    ov.style.display = "flex";
+                    if (novo === undefined) return;   // cancelou
+                    op.fotos[i] = novo;               // null = apagou tudo: o card usa a silhueta
+                    op.redesenhar();
+                    montarEdicao();
+                };
+                edicao.appendChild(b);
+            });
+        };
+
+        const celular = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const baixar = botao(celular ? "Compartilhar" : "Baixar", "pri");
+        const cancelar = botao("Cancelar");
+        baixar.onclick = async () => {
+            baixar.disabled = true;
+            msg.textContent = "";
+            try {
+                await entregar(op.canvas, op.arquivo, op.titulo);
+                fechar();
+            } catch (e) {
+                msg.textContent = "Não consegui gerar a imagem: " + (e && e.message ? e.message : e);
+                baixar.disabled = false;
+            }
+        };
+        cancelar.onclick = fechar;
+        acoes.append(cancelar, baixar);
+
+        op.redesenhar();
+        montarEdicao();
+    });
+}
+
+// Editor: a foto inteira (sem cortar) por cima de um xadrez, com o original apagadinho por baixo
+// (mostra o que dá para restaurar). Resolve com a foto nova (ou null se ficou vazia), ou undefined se cancelou.
+function editarFoto(foto, nome) {
+    return new Promise(resolve => {
+        // prepara: recorte cheio + original. Foto que não é recorte (o removedor de fundo falhou) começa inteira.
+        let base, orig;
+        try {
+            if (foto._cheio) {
+                base = clonar(foto._cheio);
+                orig = foto._orig || clonar(foto._cheio);
+            } else {
+                base = lerPixels(foto, 768).cv;
+                orig = clonar(base);
+            }
+            base.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, 1, 1);   // falha aqui se a foto não deixa editar (CORS)
+        } catch {
+            const ov = sobreposicao();
+            const p = document.createElement("p");
+            p.textContent = "Não dá para editar essa foto (o servidor da imagem não permite).";
+            const ok = botao("Voltar", "pri");
+            ok.onclick = () => { ov.remove(); resolve(undefined); };
+            ov.append(p, ok);
+            return;
+        }
+
+        const W = base.width, H = base.height;
+        const ctx = base.getContext("2d", { willReadFrequently: true });
+        const ov = sobreposicao();
+        ov.style.touchAction = "none";
+
+        const titulo = document.createElement("strong");
+        titulo.textContent = "Editar foto" + (nome ? " · " + nome : "");
+        const dica = document.createElement("p");
+        dica.style.cssText = "margin:0;color:#aaa;text-align:center;max-width:32rem;font-size:.85rem;";
+        dica.textContent = "Passe o dedo/mouse por cima. Apagar tira sobras do fundo; Restaurar traz de volta partes do atleta (a foto original aparece apagadinha por baixo).";
+
+        // tamanho na tela
+        const maxW = Math.min(window.innerWidth - 32, 560), maxH = window.innerHeight * .58;
+        const esc = Math.min(maxW / W, maxH / H, 2);
+        const dw = Math.round(W * esc), dh = Math.round(H * esc);
+
+        const pilha = document.createElement("div");
+        pilha.style.cssText = `position:relative;width:${dw}px;height:${dh}px;border-radius:8px;overflow:hidden;flex:none;` +
+            "background:repeating-conic-gradient(#3b3b3b 0% 25%, #262626 0% 50%) 50% / 18px 18px;";
+        const fundo = clonar(orig);
+        fundo.style.cssText = `position:absolute;inset:0;width:${dw}px;height:${dh}px;opacity:.28;`;
+        base.style.cssText = `position:absolute;inset:0;width:${dw}px;height:${dh}px;cursor:none;touch-action:none;`;
+        const anel = document.createElement("div");
+        anel.style.cssText = "position:absolute;border:2px solid #fff;border-radius:50%;pointer-events:none;display:none;" +
+            "box-shadow:0 0 0 1px rgba(0,0,0,.6);";
+        pilha.append(fundo, base, anel);
+
+        // ferramentas
+        let modo = "apagar";
+        const bApagar = botao("Apagar", "on"), bRestaurar = botao("Restaurar");
+        const marcar = () => {
+            bApagar.style.cssText = ESTILO_BOTAO + (modo === "apagar" ? "background:#fff;color:#111;" : "background:#2a2d35;color:#f1f1f1;");
+            bRestaurar.style.cssText = ESTILO_BOTAO + (modo === "restaurar" ? "background:#fff;color:#111;" : "background:#2a2d35;color:#f1f1f1;");
+        };
+        bApagar.onclick = () => { modo = "apagar"; marcar(); };
+        bRestaurar.onclick = () => { modo = "restaurar"; marcar(); };
+
+        const rotTam = document.createElement("label");
+        rotTam.style.cssText = "display:flex;align-items:center;gap:.5rem;";
+        const tam = document.createElement("input");
+        tam.type = "range";
+        tam.min = "6";
+        tam.max = "90";
+        tam.value = "28";
+        rotTam.append("Pincel", tam);
+
+        const historico = [];
+        const bDesfazer = botao("↶ Desfazer");
+        bDesfazer.disabled = true;
+        bDesfazer.onclick = () => {
+            const ultimo = historico.pop();
+            if (ultimo) ctx.putImageData(ultimo, 0, 0);
+            bDesfazer.disabled = historico.length === 0;
+        };
+
+        const ferramentas = linhaBotoes();
+        ferramentas.style.alignItems = "center";
+        ferramentas.append(bApagar, bRestaurar, rotTam, bDesfazer);
+
+        const acoes = linhaBotoes();
+        const bCancelar = botao("Cancelar"), bPronto = botao("Concluir", "pri");
+        acoes.append(bCancelar, bPronto);
+
+        ov.append(titulo, pilha, ferramentas, dica, acoes);
+
+        // pintura
+        const raio = () => (+tam.value / 2) / esc;   // raio em pixels da foto
+        const ponto = e => {
+            const r = base.getBoundingClientRect();
+            return { x: (e.clientX - r.left) / esc, y: (e.clientY - r.top) / esc, sx: e.clientX - r.left, sy: e.clientY - r.top };
+        };
+        const carimbo = (x, y) => {
+            const r = raio();
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            if (modo === "apagar") {
+                ctx.globalCompositeOperation = "destination-out";
+                ctx.fill();
+            } else {
+                ctx.clip();
+                ctx.clearRect(x - r - 1, y - r - 1, r * 2 + 2, r * 2 + 2);
+                ctx.drawImage(orig, 0, 0);
+            }
+            ctx.restore();
+        };
+        let ultimo = null;
+        const traco = (a, b) => {
+            const passo = Math.max(1, raio() / 3);
+            const dist = Math.hypot(b.x - a.x, b.y - a.y);
+            const n = Math.max(1, Math.ceil(dist / passo));
+            for (let k = 1; k <= n; k++) carimbo(a.x + (b.x - a.x) * k / n, a.y + (b.y - a.y) * k / n);
+        };
+        const mostrarAnel = p => {
+            const d = +tam.value;
+            anel.style.display = "block";
+            anel.style.width = anel.style.height = d + "px";
+            anel.style.left = (p.sx - d / 2) + "px";
+            anel.style.top = (p.sy - d / 2) + "px";
+        };
+        base.addEventListener("pointerdown", e => {
+            e.preventDefault();
+            base.setPointerCapture(e.pointerId);
+            historico.push(ctx.getImageData(0, 0, W, H));
+            if (historico.length > 20) historico.shift();
+            bDesfazer.disabled = false;
+            ultimo = ponto(e);
+            carimbo(ultimo.x, ultimo.y);
+            mostrarAnel(ultimo);
+        });
+        base.addEventListener("pointermove", e => {
+            const p = ponto(e);
+            mostrarAnel(p);
+            if (!ultimo) return;
+            traco(ultimo, p);
+            ultimo = p;
+        });
+        const soltar = () => { ultimo = null; };
+        base.addEventListener("pointerup", soltar);
+        base.addEventListener("pointercancel", soltar);
+        base.addEventListener("pointerleave", () => { if (!ultimo) anel.style.display = "none"; });
+
+        const fechar = valor => {
+            document.removeEventListener("keydown", tecla);
+            ov.remove();
+            resolve(valor);
+        };
+        const tecla = e => {
+            if (e.key === "Escape") fechar(undefined);
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); bDesfazer.click(); }
+        };
+        document.addEventListener("keydown", tecla);
+        bCancelar.onclick = () => fechar(undefined);
+        bPronto.onclick = () => {
+            base.style.cssText = "";
+            fechar(cortarNoAlfa(base, orig));   // null se apagou tudo
+        };
+    });
 }
