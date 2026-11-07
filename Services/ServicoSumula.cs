@@ -130,7 +130,10 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
                 PassesCertos2T = Inteiro(t["passes_certos_2t"]) ?? 0,
                 FaltasCometidas = Inteiro(t["faltas_cometidas"]) ?? 0,
                 FaltasCometidas1T = Inteiro(t["faltas_cometidas_1t"]) ?? 0,
-                FaltasCometidas2T = Inteiro(t["faltas_cometidas_2t"]) ?? 0
+                FaltasCometidas2T = Inteiro(t["faltas_cometidas_2t"]) ?? 0,
+                Desarmes = Inteiro(t["desarmes"]) ?? 0,
+                Desarmes1T = Inteiro(t["desarmes_1t"]) ?? 0,
+                Desarmes2T = Inteiro(t["desarmes_2t"]) ?? 0
             }).ToList();
 
     // ----- Partidas -----
@@ -274,7 +277,10 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
                 ["passes_certos_2t"] = l.PassesCertos2T,
                 ["faltas_cometidas"] = l.FaltasCometidas,
                 ["faltas_cometidas_1t"] = l.FaltasCometidas1T,
-                ["faltas_cometidas_2t"] = l.FaltasCometidas2T
+                ["faltas_cometidas_2t"] = l.FaltasCometidas2T,
+                ["desarmes"] = l.Desarmes,
+                ["desarmes_1t"] = l.Desarmes1T,
+                ["desarmes_2t"] = l.Desarmes2T
             }).ToList()
         };
         if (status is not null) p["p_status"] = status;

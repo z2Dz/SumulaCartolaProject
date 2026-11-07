@@ -624,7 +624,7 @@
     private AtletaResumo? editando;
 
     // ----- Linha do tempo / popup de lance -----
-    private enum TipoLance { Gol, GolContra, Assistencia, ChuteGol, Defesa, PenaltiCometido, PenaltiPerdido, Amarelo, Azul, Vermelho, PasseCerto, FaltaCometida }
+    private enum TipoLance { Gol, GolContra, Assistencia, ChuteGol, Defesa, PenaltiCometido, PenaltiPerdido, Amarelo, Azul, Vermelho, PasseCerto, FaltaCometida, Desarme }
 
     /// <summary>Um lance da linha do tempo. Tempo 0 = sem tempo gravado (o banco só guarda por tempo gols, gols contra e cartões).</summary>
     private class Lance
@@ -649,7 +649,7 @@
         TipoLance.Gol, TipoLance.ChuteGol, TipoLance.Defesa,
         TipoLance.Amarelo, TipoLance.Azul, TipoLance.Vermelho,
         TipoLance.GolContra, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido,
-        TipoLance.PasseCerto, TipoLance.FaltaCometida
+        TipoLance.PasseCerto, TipoLance.FaltaCometida, TipoLance.Desarme
     };
 
     private static string ClasseAcao(TipoLance t) => t switch
@@ -660,6 +660,7 @@
         TipoLance.PenaltiPerdido => "pen-perd",
         TipoLance.PasseCerto => "passe",
         TipoLance.FaltaCometida => "falta",
+        TipoLance.Desarme => "desarme",
         TipoLance.Gol => "gol",
         TipoLance.GolContra => "gol-contra",
         TipoLance.Amarelo => "cartao-am",
@@ -679,6 +680,7 @@
         TipoLance.PenaltiPerdido => "penalti-perdido.png",
         TipoLance.PasseCerto => "passe-certo.png",
         TipoLance.FaltaCometida => "falta-cometida.png",
+        TipoLance.Desarme => "desarme.png",
         TipoLance.Amarelo => "cartao-amarelo.png",
         TipoLance.Azul => "cartao-azul.png",
         TipoLance.Vermelho => "cartao-vermelho.png",
@@ -687,7 +689,7 @@
 
     private static string CaminhoIcone(TipoLance t) => $"img/acoes/{ArquivoIcone(t)}";
 
-    private static readonly TipoLance[] OutrasAcoes = { TipoLance.Assistencia, TipoLance.ChuteGol, TipoLance.Defesa, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido, TipoLance.PasseCerto, TipoLance.FaltaCometida };
+    private static readonly TipoLance[] OutrasAcoes = { TipoLance.Assistencia, TipoLance.ChuteGol, TipoLance.Defesa, TipoLance.PenaltiCometido, TipoLance.PenaltiPerdido, TipoLance.PasseCerto, TipoLance.FaltaCometida, TipoLance.Desarme };
 
     private readonly List<Lance> lances = new();
     private bool modalLance, abaLista;
@@ -734,6 +736,7 @@
         TipoLance.PenaltiPerdido => "Pênalti perdido",
         TipoLance.PasseCerto => "Passe certo",
         TipoLance.FaltaCometida => "Falta cometida",
+        TipoLance.Desarme => "Desarme",
         TipoLance.Amarelo => "Cartão amarelo",
         TipoLance.Azul => "Cartão azul",
         _ => "Cartão vermelho"
@@ -748,6 +751,7 @@
         TipoLance.PenaltiPerdido => "P.P.",
         TipoLance.PasseCerto => "PAS",
         TipoLance.FaltaCometida => "FAL",
+        TipoLance.Desarme => "DES",
         _ => ""
     };
 
@@ -778,6 +782,7 @@
         TipoLance.PenaltiCometido => l.PenaltisCometidos,
         TipoLance.PasseCerto => l.PassesCertos,
         TipoLance.FaltaCometida => l.FaltasCometidas,
+        TipoLance.Desarme => l.Desarmes,
         _ => l.PenaltisPerdidos
     };
 
@@ -801,6 +806,7 @@
             case TipoLance.PenaltiCometido: l.PenaltisCometidos = v; break;
             case TipoLance.PasseCerto: l.PassesCertos = v; break;
             case TipoLance.FaltaCometida: l.FaltasCometidas = v; break;
+            case TipoLance.Desarme: l.Desarmes = v; break;
             default: l.PenaltisPerdidos = v; break;
         }
 
@@ -826,6 +832,8 @@
         (TipoLance.PasseCerto, 2) => l.PassesCertos2T,
         (TipoLance.FaltaCometida, 1) => l.FaltasCometidas1T,
         (TipoLance.FaltaCometida, 2) => l.FaltasCometidas2T,
+        (TipoLance.Desarme, 1) => l.Desarmes1T,
+        (TipoLance.Desarme, 2) => l.Desarmes2T,
         _ => 0
     };
 
@@ -848,6 +856,8 @@
             case (TipoLance.PasseCerto, 2): l.PassesCertos2T = v; break;
             case (TipoLance.FaltaCometida, 1): l.FaltasCometidas1T = v; break;
             case (TipoLance.FaltaCometida, 2): l.FaltasCometidas2T = v; break;
+            case (TipoLance.Desarme, 1): l.Desarmes1T = v; break;
+            case (TipoLance.Desarme, 2): l.Desarmes2T = v; break;
         }
     }
 

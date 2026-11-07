@@ -1024,6 +1024,11 @@
         height: 26px;
     }
 
+.sm2-acao.desarme {
+    --acao-rgb: 45, 212, 191;
+}
+/* turquesa: desarme */
+
 .sm2-acao.gol {
     --acao-rgb: 34, 197, 94;
 }
