@@ -21,7 +21,7 @@
         else if (Molde)
         {
             @* Molde 1 (padrão): etiqueta de pontuação, foto redonda, escudo do time e nome em pílula (molde-redondo.css) *@
-            <span class="molde-pontos @ClassePontos" aria-hidden="true">@Pontos</span>
+            <span class="molde-pontos @ClasseTopo" aria-hidden="true">@TextoTopo</span>
             @if (!string.IsNullOrWhiteSpace(Atleta.FotoUrl))
             {
                 <img class="molde-foto" src="@Atleta.FotoUrl" alt="" draggable="false" />
@@ -300,6 +300,11 @@
         : Atleta?.UltimaPontuacao;
     private string Pontos => PontosExibidos is { } p ? p.ToString("0.00", Br) : "—";
     private string ClassePontos => PontosExibidos switch { > 0 => "pos", < 0 => "neg", _ => "zero" };
+
+    /// <summary>Nota da partida no lugar da pontuação na etiqueta (imagem "Time da rodada" por nota). Null = pontuação.</summary>
+    [Parameter] public double? NotaTopo { get; set; }
+    private string TextoTopo => NotaTopo is { } n ? n.ToString("0.0", Br) : Pontos;
+    private string ClasseTopo => NotaTopo is { } n ? "nota " + NotaJogador.Classe(n) : ClassePontos;
 
     // Evolução do cartão: todo atleta começa de bronze.
     //   Bronze: ainda sem jogos, ou média abaixo da base da posição.

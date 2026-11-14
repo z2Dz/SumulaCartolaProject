@@ -187,3 +187,145 @@
     margin-bottom: .5rem;
     text-align: center;
 }
+
+/* Ranking: botão "Gerar imagem da escalação" embaixo do campo aberto */
+.rk-esc-acoes {
+    display: flex;
+    justify-content: center;
+    margin-top: .8rem;
+}
+
+    .rk-esc-acoes .rk-top3-btn {
+        min-height: 2.4rem;
+    }
+
+/* =====================================================================
+   Pôster das imagens do campo (escalação do time e "Time da rodada").
+   Fica fora da área visível só enquanto a imagem é gerada (js/top3.js gerarImagemElemento).
+   ===================================================================== */
+.img-poster-host {
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    width: 460px;
+    pointer-events: none;
+}
+
+.img-poster {
+    width: 460px;
+    box-sizing: border-box;
+    padding: 1.1rem .8rem .8rem;
+    background: radial-gradient(ellipse 90% 45% at 50% 0%, rgba(46,140,100,.55) 0%, transparent 70%), linear-gradient(180deg, #0d2b20 0%, #06110c 100%);
+    color: #fff;
+    font-family: system-ui, "Segoe UI", Arial, sans-serif;
+}
+
+.img-poster-topo {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: 0 .3rem .5rem;
+}
+
+.img-poster-ico {
+    flex: 0 0 auto;
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+}
+
+.img-poster-trofeu {
+    font-size: 2.4rem;
+    line-height: 1;
+}
+
+/* ícone do app no lugar do troféu (imagem do Time da rodada) */
+.img-poster-logo {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+.img-poster-txt {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+    .img-poster-txt strong {
+        font-size: 1.3rem;
+        font-weight: 900;
+        line-height: 1.1;
+        text-transform: uppercase;
+        letter-spacing: .02em;
+        overflow-wrap: anywhere;
+    }
+
+    .img-poster-txt small {
+        margin-top: .2rem;
+        font-size: .8rem;
+        color: rgba(255,255,255,.72);
+    }
+
+.img-poster-pts {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+}
+
+    .img-poster-pts strong {
+        font-size: 1.7rem;
+        font-weight: 900;
+        line-height: 1;
+        color: #ffd54a;
+    }
+
+    .img-poster-pts small {
+        margin-top: .2rem;
+        font-size: .66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: rgba(255,255,255,.7);
+    }
+
+.img-poster-rodape {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    padding: .6rem .3rem 0;
+    font-size: .72rem;
+    font-weight: 700;
+    color: rgba(255,255,255,.6);
+}
+
+/* sem o zoom do computador (a imagem sai sempre do mesmo tamanho) e sem vagas vazias na imagem */
+.img-poster .rk-campo {
+    zoom: 1;
+}
+
+.img-poster .slot-btn.vazia,
+.img-poster .slot-rotulo.vazio {
+    visibility: hidden;
+}
+
+/* Etiqueta de cima do cartão mostrando a nota (imagem "Time da rodada" por nota): cor da faixa da nota */
+.molde-pontos.nota { color: #08140e; }
+.molde-pontos.nota-azul { background: #3b82f6; color: #fff; }
+.molde-pontos.nota-verde { background: #22c55e; }
+.molde-pontos.nota-amarela { background: #a3e635; }
+.molde-pontos.nota-laranja { background: #fb923c; }
+.molde-pontos.nota-vermelha { background: #ef4444; color: #fff; }
+.molde-pontos.nota-azul::after { border-top-color: #3b82f6; }
+.molde-pontos.nota-verde::after { border-top-color: #22c55e; }
+.molde-pontos.nota-amarela::after { border-top-color: #a3e635; }
+.molde-pontos.nota-laranja::after { border-top-color: #fb923c; }
+.molde-pontos.nota-vermelha::after { border-top-color: #ef4444; }

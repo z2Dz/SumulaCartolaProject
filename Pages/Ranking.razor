@@ -21,11 +21,29 @@
 
         @if (aba == AbaRanking.PontosAtletas)
         {
-            <button type="button" class="rk-top3-btn" disabled="@(gerandoTop3 || atletasRodada is null || atletasRodada.Atletas.Count < 3)" @onclick="() => GerarTop3(false)">
-                @(gerandoTop3 && !top3Nota ? "Gerando…" : "Top 3 pontuação")
+            if (atletasRodada is { Atletas.Count: > 0 })
+            {
+                <select class="rk-filtro" aria-label="Filtrar por posição" value="@(filtroPos ?? "")" @onchange="TrocarFiltroPos">
+                    <option value="">Todas</option>
+                    @foreach (var sigla in PosicoesDaRodada())
+                    {
+                        <option value="@sigla">@NomePosicao(sigla)</option>
+                    }
+                </select>
+            }
+            @* Um botão só: a prévia traz as duas imagens (pontuação e notas) e a pessoa arrasta para o lado para trocar *@
+            <button type="button" class="rk-top3-btn" disabled="@(gerandoImagem || atletasRodada is null || atletasRodada.Atletas.Count < 3)" @onclick="GerarTop3">
+                @(gerandoTop3 ? "Gerando…" : "Top 3")
             </button>
-            <button type="button" class="rk-top3-btn" disabled="@(gerandoTop3 || atletasRodada is null || atletasRodada.Atletas.Count(x => x.Nota is not null) < 3)" @onclick="() => GerarTop3(true)">
-                @(gerandoTop3 && top3Nota ? "Gerando…" : "Top 3 notas")
+            <button type="button" class="rk-top3-btn" disabled="@(gerandoImagem || atletasRodada is null || atletasRodada.Atletas.Count == 0)" @onclick="GerarTimeDaRodada">
+                @(gerandoTime ? "Gerando…" : "Time da rodada")
+            </button>
+        }
+
+        @if (aba == AbaRanking.PontosTime && linhas.FirstOrDefault(x => x.EhVoce) is { } minhaLinha)
+        {
+            <button type="button" class="rk-top3-btn" disabled="@(gerandoImagem || carregando)" @onclick="() => GerarImagemEscalacao(minhaLinha)">
+                @(gerandoEscalacaoId == minhaLinha.Id ? "Gerando…" : "Exportar meu time")
             </button>
         }
 
@@ -44,6 +62,11 @@
     @if (!string.IsNullOrEmpty(erroTop3))
     {
         <p class="erro" role="alert">@erroTop3</p>
+    }
+
+    @if (!string.IsNullOrEmpty(erroEscalacao))
+    {
+        <p class="erro" role="alert">@erroEscalacao</p>
     }
 
     @if (!string.IsNullOrEmpty(avisoSync))
@@ -75,12 +98,17 @@
         }
         else
         {
+            var listaAtletas = AtletasFiltrados().OrderByDescending(x => x.Pontos).ToList();
             <div class="rk-rolagem">
                 <p class="suave rk-at-resumo">
-                    Última partida@(atletasRodada.Data is { } d ? " · " + d.ToString("dd/MM") : "") · @atletasRodada.Atletas.Count atletas
+                    Última partida@(atletasRodada.Data is { } d ? " · " + d.ToString("dd/MM") : "") · @listaAtletas.Count @(listaAtletas.Count == 1 ? "atleta" : "atletas")@(filtroPos is null ? "" : " · " + NomePosicao(filtroPos))
                 </p>
+                @if (listaAtletas.Count == 0)
+                {
+                    <div class="cartao"><p class="suave">Nenhum atleta dessa posição jogou a última partida.</p></div>
+                }
                 <ol class="rk-at-lista">
-                    @foreach (var a in atletasRodada.Atletas.OrderByDescending(x => x.Pontos))
+                    @foreach (var a in listaAtletas)
                     {
                         var aberto = extratoAbertoId == a.Id;
                         <li class="rk-at-item">
@@ -146,17 +174,10 @@
                                             <strong class="@(extrato.Total < 0 ? "neg" : "")">@Fmt2(extrato.Total)</strong>
                                         </div>
                                         <div class="rk-ext-acoes" style="margin-top:.85rem;display:flex;flex-direction:column;align-items:center;gap:.4rem">
-                                            <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem">
-                                                <button type="button" class="rk-top3-btn" disabled="@(gerandoCardId is not null)" @onclick="() => GerarCardJogador(a)">
-                                                    @(gerandoCardId == a.Id && !cardComNota ? "Gerando…" : "Gerar card de pontuação")
-                                                </button>
-                                                @if (a.Nota is not null)
-                                                {
-                                                    <button type="button" class="rk-top3-btn" disabled="@(gerandoCardId is not null)" @onclick="() => GerarCardJogador(a, true)">
-                                                        @(gerandoCardId == a.Id && cardComNota ? "Gerando…" : "Gerar card com nota")
-                                                    </button>
-                                                }
-                                            </div>
+                                            @* Um botão só: a prévia traz o card de pontuação e o card com nota (arrasta para o lado para trocar) *@
+                                            <button type="button" class="rk-top3-btn" style="min-height:2.2rem" disabled="@(gerandoCardId is not null)" @onclick="() => GerarCard(a)">
+                                                @(gerandoCardId == a.Id ? "Gerando…" : "Gerar card")
+                                            </button>
                                             @if (!string.IsNullOrEmpty(erroCard) && erroCardId == a.Id)
                                             {
                                                 <p class="erro" role="alert">@erroCard</p>
@@ -264,6 +285,11 @@
                                         }
                                     </div>
                                 }
+                                <div class="rk-esc-acoes">
+                                    <button type="button" class="rk-top3-btn" disabled="@gerandoImagem" @onclick="() => GerarImagemEscalacao(l)" @onclick:stopPropagation="true">
+                                        @(gerandoEscalacaoId == l.Id ? "Gerando…" : (l.EhVoce ? "Exportar meu time" : "Exportar time"))
+                                    </button>
+                                </div>
                             }
                             else
                             {
@@ -278,6 +304,63 @@
     </div>
 }
 </div>
+
+@* Pôster desenhado fora da área visível só enquanto a imagem é gerada (js/top3.js gerarImagemElemento).
+   Usa o mesmo campo das escalações (CampoTatico), com a pontuação de cada atleta em cima do cartão. *@
+@for (var pIdx = 0; pIdx < posters.Count; pIdx++)
+{
+    var poster = posters[pIdx];
+    var refIdx = pIdx;
+    var pc = poster.Pz.Clube;
+    var pl = poster.Linha;
+    var pFaixa = false;   // imagem no visual padrão: sem faixas laterais
+    <div class="img-poster-host" aria-hidden="true">
+        <div class="img-poster" @ref="posterRefs[refIdx]">
+            <div class="img-poster-topo">
+                <span class="img-poster-ico">
+                    @if (pl?.Escudo is not null)
+                    {
+                        <Escudo Config="pl.Escudo" Tamanho="54" />
+                    }
+                    else
+                    {
+                        <img class="img-poster-logo" src="img/iconeApp.png" alt="" />
+                    }
+                </span>
+                <div class="img-poster-txt">
+                    <strong>@poster.Titulo</strong>
+                    <small>@poster.Subtitulo</small>
+                </div>
+                @if (poster.Pontos is not null)
+                {
+                    <div class="img-poster-pts">
+                        <strong>@poster.Pontos</strong>
+                        <small>@poster.PontosRotulo</small>
+                    </div>
+                }
+            </div>
+            <div class="rk-campo-faixas">
+                @if (pFaixa)
+                {
+                    <FaixaLateral Modelo="@pc.Esquerda()" Cor1="@pc.FaixaCor1" Cor2="@pc.FaixaCor2" Escudo="pl!.Escudo" />
+                }
+                <div class="rk-campo">
+                    <CampoTatico Escalacao="poster.Esc" Cards="poster.Pz.Cards" Estilo="@pc.Campo" Moldura="@pc.Moldura" LinhasCor="@pc.CampoLinhas" Estadio="@pc.EstadioModelo"
+                                 CorGrama1="@pc.CampoCor1" CorGrama2="@pc.CampoCor2" CorMoldura="@pc.MolduraCor"
+                                 CorEstadio1="@pc.EstadioCor1" CorEstadio2="@pc.EstadioCor2" EscudoCard="pl?.Escudo" Notas="poster.Notas" />
+                </div>
+                @if (pFaixa)
+                {
+                    <FaixaLateral Modelo="@pc.Direita()" Cor1="@pc.FaixaCor1" Cor2="@pc.FaixaCor2" Escudo="pl!.Escudo" />
+                }
+            </div>
+            <div class="img-poster-rodape">
+                <span>Rivvals App - AFC</span>
+                <span>@poster.Rodape</span>
+            </div>
+        </div>
+    </div>
+}
 
 @* Foto ampliada enquanto o dedo/mouse está segurando a foto do atleta (classe .foto-zoom já existe no CSS) *@
 @if (zoomAtleta is not null && fotos.TryGetValue(zoomAtleta.Id, out var fotoZoom))
@@ -332,6 +415,12 @@
     {
         if (abertoId == l.Id) { abertoId = null; return; }
         abertoId = l.Id;
+        await GarantirEscalacao(l);
+    }
+
+    // Carrega (uma vez) a escalação e a personalização do time; usada ao abrir o time e ao gerar a imagem
+    private async Task GarantirEscalacao(LinhaRankingClube l)
+    {
         if (cache.ContainsKey(l.Id)) return;
 
         carregandoId = l.Id;
@@ -425,117 +514,337 @@
     }
 
     // ----- Imagem "Top 3 da rodada" (js/top3.js desenha num canvas e baixa/compartilha o PNG) -----
-    private bool gerandoTop3;
+    // Um botão só: a prévia abre com as duas imagens (pontuação e notas) e a pessoa arrasta para o lado para trocar.
+    private bool gerandoTop3, gerandoTime;
     private string? erroTop3;
+    private bool gerandoImagem => gerandoTop3 || gerandoTime || gerandoEscalacaoId is not null;
 
-    // porNota = false: os 3 que mais pontuaram, cada carta com a lista de pontos (como o card de pontuação).
-    // porNota = true: as 3 maiores notas, cada carta com a lista da nota (como o card com nota).
-    private bool top3Nota;
-
-    private async Task GerarTop3(bool porNota)
+    private async Task GerarTop3()
     {
         if (atletasRodada is null) return;
         erroTop3 = null;
-        top3Nota = porNota;
         gerandoTop3 = true;
         try
         {
-            var escolhidos = porNota
-                ? atletasRodada.Atletas.Where(a => a.Nota is not null).OrderByDescending(a => a.Nota).ThenByDescending(a => a.Pontos).Take(3).ToList()
-                : atletasRodada.Atletas.OrderByDescending(a => a.Pontos).Take(3).ToList();
-            if (escolhidos.Count < 3)
+            var porPontos = atletasRodada.Atletas.OrderByDescending(a => a.Pontos).Take(3).ToList();
+            var porNota = atletasRodada.Atletas.Where(a => a.Nota is not null).OrderByDescending(a => a.Nota).ThenByDescending(a => a.Pontos).Take(3).ToList();
+            if (porPontos.Count < 3)
             {
-                erroTop3 = porNota ? "Precisa de pelo menos 3 atletas com nota na partida." : "Precisa de pelo menos 3 atletas na partida.";
+                erroTop3 = "Precisa de pelo menos 3 atletas na partida.";
                 return;
             }
 
             // a lista de pontos vem do extrato: busca o de quem ainda não foi aberto (sem extrato, a carta sai sem os pontos de cada ação)
-            if (!porNota)
+            foreach (var a in porPontos.Where(a => !extratos.ContainsKey(a.Id)))
             {
-                foreach (var a in escolhidos.Where(a => !extratos.ContainsKey(a.Id)))
-                {
-                    try { extratos[a.Id] = await Mercado.ObterExtratoAsync(a.Id); }
-                    catch (ErroMercadoException) { }
-                }
+                try { extratos[a.Id] = await Mercado.ObterExtratoAsync(a.Id); }
+                catch (ErroMercadoException) { }
             }
 
-            var top = escolhidos
-                .Select(a => new
-                {
-                    nome = a.Nome,
-                    pos = PrimeiraSigla(a.Posicao),
-                    pontos = Fmt2(a.Pontos),
-                    // canto da carta: pontuação (Top 3 pontuação) ou nota na cor da faixa (Top 3 notas)
-                    topo = porNota ? Fmt1(a.Nota!.Value) : Fmt2(a.Pontos),
-                    topoCor = porNota ? NotaJogador.Classe(a.Nota!.Value) : null,
-                    topoNeg = !porNota && a.Pontos < 0,
-                    acoes = porNota ? ItensNotaDoCard(a) : AcoesDoCard(a, extratos.GetValueOrDefault(a.Id)),
-                    foto = fotos.TryGetValue(a.Id, out var f) ? f : null,
-                    silhueta = SilhuetasAtleta.Caminho(PrimeiraSigla(a.Posicao), a.Nome),   // usada quando o atleta não tem foto
-                    time = a.TimeNome,   // define a cor do contorno do atleta (Vermelho / Amarelo)
-                    escudo = string.IsNullOrWhiteSpace(a.TimeNome) ? null : $"img/time-{SlugTime(a.TimeNome)}.png"
-                })
-                .ToList();
+            var paginas = new List<object> { DadosTop3(porPontos, false) };
+            // a imagem das notas só entra quando há 3 atletas com nota
+            if (porNota.Count == 3) paginas.Add(DadosTop3(porNota, true));
 
-            var dados = new
-            {
-                data = atletasRodada.Data?.ToString("dd/MM"),
-                atletas = top,
-                subtitulo = porNota ? "MELHORES NOTAS DA RODADA" : "MELHORES DA RODADA",
-                arquivo = porNota ? "top3-notas.png" : "top3-pontuacao.png"
-            };
             await using var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/top3.js");
-            // sem limite de tempo: a prévia fica aberta até a pessoa baixar ou cancelar (o padrão do Blazor Server é 1 minuto)
-            await modulo.InvokeVoidAsync("gerarTop3", CancellationToken.None, dados);
+            // sem limite de tempo: a prévia fica aberta até a pessoa baixar ou cancelar
+            await modulo.InvokeVoidAsync("gerarTop3Paginas", CancellationToken.None, paginas);
         }
         catch (JSDisconnectedException) { }
         catch (JSException ex) { erroTop3 = "Não consegui gerar a imagem: " + ex.Message; }
         finally { gerandoTop3 = false; }
     }
 
-    // ----- Card de um jogador só (js/top3.js, moldura wwwroot/img/moldura-card.png) -----
-    private string? gerandoCardId, erroCardId, erroCard;
-    private bool cardComNota;
-
-    // comNota = false: "card de pontuação" (pontos de cada ação + total). comNota = true: quanto cada ação somou na nota + a nota.
-    private async Task GerarCardJogador(AtletaRodada a, bool comNota = false)
+    // porNota = false: os 3 que mais pontuaram, cada carta com a lista de pontos (como o card de pontuação).
+    // porNota = true: as 3 maiores notas, cada carta com a lista da nota (como o card com nota).
+    private object DadosTop3(List<AtletaRodada> escolhidos, bool porNota) => new
     {
-        cardComNota = comNota;
+        data = atletasRodada?.Data?.ToString("dd/MM"),
+        atletas = escolhidos
+            .Select(a => new
+            {
+                nome = a.Nome,
+                pos = PrimeiraSigla(a.Posicao),
+                pontos = Fmt2(a.Pontos),
+                // canto da carta: pontuação (Top 3 pontuação) ou nota na cor da faixa (Top 3 notas)
+                topo = porNota ? Fmt1(a.Nota!.Value) : Fmt2(a.Pontos),
+                topoCor = porNota ? NotaJogador.Classe(a.Nota!.Value) : null,
+                topoNeg = !porNota && a.Pontos < 0,
+                acoes = porNota ? ItensNotaDoCard(a) : AcoesDoCard(a, extratos.GetValueOrDefault(a.Id)),
+                foto = fotos.TryGetValue(a.Id, out var f) ? f : null,
+                silhueta = SilhuetasAtleta.Caminho(PrimeiraSigla(a.Posicao), a.Nome),   // usada quando o atleta não tem foto
+                time = a.TimeNome,   // define a cor do contorno do atleta (Vermelho / Amarelo)
+                escudo = string.IsNullOrWhiteSpace(a.TimeNome) ? null : $"img/time-{SlugTime(a.TimeNome)}.png"
+            })
+            .ToList(),
+        subtitulo = porNota ? "MELHORES NOTAS DA RODADA" : "MELHORES DA RODADA",
+        arquivo = porNota ? "top3-notas.png" : "top3-pontuacao.png",
+        rotulo = porNota ? "Notas" : "Pontuação"
+    };
+
+    // ----- Imagens do campo: escalação de um time e "Time da rodada" -----
+    // O pôster (markup no topo da página) é desenhado fora da tela com o mesmo campo das escalações
+    // e o js/top3.js transforma esse pedaço da página em imagem.
+    private record PosterInfo(string Titulo, string Subtitulo, string? Pontos, string PontosRotulo, string Rodape,
+                              EscalacaoMontada Esc, PersonalizacaoClube Pz, LinhaRankingClube? Linha,
+                              IReadOnlyDictionary<string, double>? Notas = null);
+    private readonly List<PosterInfo> posters = new();
+    private readonly ElementReference[] posterRefs = new ElementReference[2];
+    private string? gerandoEscalacaoId, erroEscalacao;
+
+    private async Task GerarImagemEscalacao(LinhaRankingClube l)
+    {
+        if (gerandoImagem) return;
+        erroEscalacao = null;
+        gerandoEscalacaoId = l.Id;
+        try
+        {
+            await GarantirEscalacao(l);
+            if (!cache.TryGetValue(l.Id, out var m) || m is null)
+            {
+                erroEscalacao = erros.TryGetValue(l.Id, out var msg) ? msg : $"{l.NomeTime} ainda não salvou uma escalação.";
+                return;
+            }
+            // imagem sempre no visual padrão: sem gramado, molduras, estádio ou faixas personalizados
+            var pz = new PersonalizacaoClube(new ClubeConfig(), new CardsConfig());
+            posters.Clear();
+            posters.Add(new PosterInfo(
+                l.NomeTime,
+                $"@{l.NomeUsuario} · {m.Tatica.Nome}",
+                Formato.Pontos(l.Pontos),
+                rodadaSel is null ? "pts no geral" : $"pts · rodada {rodadaSel}",
+                rodadaSel is null ? "Ranking geral" : $"Rodada {rodadaSel}",
+                m, pz, l));
+            await CapturarPosters(new List<object> { new { arquivo = $"escalacao-{SlugTime(l.NomeTime)}.png", titulo = $"Escalação · {l.NomeTime}" } });
+        }
+        catch (JSDisconnectedException) { }
+        catch (JSException ex) { erroEscalacao = "Não consegui gerar a imagem: " + ex.Message; }
+        finally { gerandoEscalacaoId = null; }
+    }
+
+    // Time da rodada: duas imagens na mesma prévia (arrasta para o lado), como no Top 3:
+    // os de maior pontuação por posição e os de maior nota por posição (essa só se houver atletas com nota).
+    private async Task GerarTimeDaRodada()
+    {
+        if (atletasRodada is null || gerandoImagem) return;
+        erroTop3 = null;
+        gerandoTime = true;
+        try
+        {
+            // as fotos dos cartões vêm do elenco
+            if (elenco is null)
+            {
+                try { elenco = await Mercado.ObterElencoAsync(); }
+                catch (ErroMercadoException) { }
+            }
+            var data = atletasRodada.Data is { } d ? d.ToString("dd/MM") : null;
+            var rodape = data is null ? "Última partida" : $"Partida de {data}";
+            var vazio = new PersonalizacaoClube(new ClubeConfig(), new CardsConfig());
+            var infos = new List<object>();
+            posters.Clear();
+
+            var porPontos = MontarMelhorTime(a => a.Pontos);
+            if (porPontos.Qtd == 0)
+            {
+                erroTop3 = "Nenhum atleta com posição para montar o time da rodada.";
+                return;
+            }
+            posters.Add(new PosterInfo("Time da rodada", $"Maiores pontuações por posição · {porPontos.Esc.Tatica.Nome}",
+                Fmt2(porPontos.Total), "pts somados", rodape, porPontos.Esc, vazio, null));
+            infos.Add(new { arquivo = "time-da-rodada-pontuacao.png", titulo = "Time da rodada", rotulo = "Pontuação" });
+
+            var porNota = MontarMelhorTime(a => a.Nota is { } n ? (decimal)n : null);
+            if (porNota.Qtd > 0)
+            {
+                var notas = atletasRodada.Atletas.Where(a => a.Nota is not null).GroupBy(a => a.Id).ToDictionary(g => g.Key, g => g.First().Nota!.Value);
+                posters.Add(new PosterInfo("Time da rodada", $"Maiores notas por posição · {porNota.Esc.Tatica.Nome}",
+                    Fmt1((double)(porNota.Total / porNota.Qtd)), "nota média", rodape, porNota.Esc, vazio, null, notas));
+                infos.Add(new { arquivo = "time-da-rodada-notas.png", titulo = "Time da rodada", rotulo = "Notas" });
+            }
+
+            await CapturarPosters(infos, "Prévia do Time da rodada");
+        }
+        catch (JSDisconnectedException) { }
+        catch (JSException ex) { erroTop3 = "Não consegui gerar a imagem: " + ex.Message; }
+        finally { gerandoTime = false; }
+    }
+
+    // Desenha os pôsteres, espera o Blazor colocar na página e pede ao JS as imagens (a prévia fica aberta até baixar/cancelar)
+    private async Task CapturarPosters(List<object> infos, string? previa = null)
+    {
+        try
+        {
+            StateHasChanged();
+            await Task.Delay(80);
+            await using var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/top3.js");
+            var refs = posterRefs.Take(posters.Count).ToArray();
+            await modulo.InvokeVoidAsync("gerarImagemElementos", CancellationToken.None, refs, infos, previa ?? "Prévia da imagem");
+        }
+        finally { posters.Clear(); }
+    }
+
+    // Melhor time da rodada pelo critério "valor" (pontos ou nota; null = atleta fica de fora).
+    // Vale TODA posição do atleta (ex.: "ATA/MEI/ZAG" pode entrar de zagueiro). Para cada esquema tático, os atletas entram
+    // do maior valor para o menor e cada um só fica se ainda couber numa vaga de alguma das posições dele
+    // (remanejando quem já entrou, se preciso). Isso dá o time de maior soma possível para o esquema.
+    // Fica o esquema que completa mais vagas e, empatando, soma mais. O técnico fica de fora (ele não joga).
+    // Cada cartão mostra os pontos da partida em cima (UltimaPontuacao), como no campo das escalações.
+    private (EscalacaoMontada Esc, decimal Total, int Qtd) MontarMelhorTime(Func<AtletaRodada, decimal?> valor)
+    {
+        var porId = (elenco ?? new()).GroupBy(a => a.Id).ToDictionary(g => g.Key, g => g.First());
+        var candidatos = atletasRodada!.Atletas
+            .Select(a => (A: a, V: valor(a), Pos: SiglasDe(a.Posicao)
+                .Select(ParaPosicao)
+                .Where(p => p is not null && p != PosicaoCampo.Tecnico)
+                .Select(p => p!.Value)
+                .Distinct()
+                .ToList()))
+            .Where(x => x.V is not null && x.Pos.Count > 0)
+            .OrderByDescending(x => x.V)
+            .ThenByDescending(x => x.A.Pontos)
+            .ToList();
+
+        var posicoesCampo = new[] { PosicaoCampo.Goleiro, PosicaoCampo.Lateral, PosicaoCampo.Zagueiro, PosicaoCampo.Meia, PosicaoCampo.Atacante };
+        EscalacaoMontada melhor = new();
+        decimal melhorTotal = 0;
+        var melhorQtd = -1;
+        foreach (var t in Tatica.Todas)
+        {
+            var vagas = posicoesCampo.SelectMany(p => Enumerable.Repeat(p, t.Qtd(p))).ToList();
+            var dono = Enumerable.Repeat(-1, vagas.Count).ToArray();   // índice do candidato em cada vaga
+
+            // procura vaga para o candidato c; se a vaga estiver ocupada, tenta mudar o dono dela de lugar
+            bool Encaixar(int c, bool[] visto)
+            {
+                for (var v = 0; v < vagas.Count; v++)
+                {
+                    if (visto[v] || !candidatos[c].Pos.Contains(vagas[v])) continue;
+                    visto[v] = true;
+                    if (dono[v] < 0 || Encaixar(dono[v], visto)) { dono[v] = c; return true; }
+                }
+                return false;
+            }
+
+            var qtd = 0;
+            decimal total = 0;
+            for (var c = 0; c < candidatos.Count && qtd < vagas.Count; c++)
+            {
+                if (!Encaixar(c, new bool[vagas.Count])) continue;
+                qtd++;
+                total += candidatos[c].V!.Value;
+            }
+            if (qtd < melhorQtd || (qtd == melhorQtd && total <= melhorTotal)) continue;
+
+            var m = new EscalacaoMontada();
+            m.AplicarTatica(t);
+            var indice = posicoesCampo.ToDictionary(p => p, _ => 0);
+            // dentro de cada posição, o de maior valor primeiro
+            foreach (var v in Enumerable.Range(0, vagas.Count).Where(k => dono[k] >= 0).OrderBy(k => dono[k]))
+            {
+                var c = candidatos[dono[v]];
+                var p = vagas[v];
+                var atleta = porId.TryGetValue(c.A.Id, out var e)
+                    ? e
+                    : new AtletaEscalavel(c.A.Id, c.A.Nome, new[] { p }, FotoUrl: fotos.TryGetValue(c.A.Id, out var f) ? f : null);
+                m.Definir(p, indice[p]++, atleta with { UltimaPontuacao = c.A.Pontos });
+            }
+            melhor = m;
+            melhorTotal = total;
+            melhorQtd = qtd;
+        }
+        return (melhor, melhorTotal, Math.Max(melhorQtd, 0));
+    }
+
+    private static PosicaoCampo? ParaPosicao(string sigla) => sigla.ToUpperInvariant() switch
+    {
+        "GOL" => PosicaoCampo.Goleiro,
+        "LAT" => PosicaoCampo.Lateral,
+        "ZAG" => PosicaoCampo.Zagueiro,
+        "MEI" => PosicaoCampo.Meia,
+        "ATA" => PosicaoCampo.Atacante,
+        "TEC" => PosicaoCampo.Tecnico,
+        _ => null
+    };
+
+    // ----- Filtro por posição na aba "Pontos Atletas" -----
+    // Atleta com mais de uma posição (ex.: "MEI/ZAG") aparece no filtro de cada uma delas.
+    private string? filtroPos;
+    private static readonly string[] OrdemPosicoes = { "GOL", "LAT", "ZAG", "MEI", "ATA", "TEC" };
+
+    private static IEnumerable<string> SiglasDe(string? posicao) =>
+        (posicao ?? "").Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => x.ToUpperInvariant());
+
+    private IEnumerable<string> PosicoesDaRodada() => (atletasRodada?.Atletas ?? new())
+        .SelectMany(a => SiglasDe(a.Posicao))
+        .Distinct()
+        .OrderBy(x => { var i = Array.IndexOf(OrdemPosicoes, x); return i < 0 ? 99 : i; })
+        .ThenBy(x => x);
+
+    private IEnumerable<AtletaRodada> AtletasFiltrados() => (atletasRodada?.Atletas ?? new())
+        .Where(a => filtroPos is null || SiglasDe(a.Posicao).Contains(filtroPos));
+
+    private static string NomePosicao(string sigla) => sigla switch
+    {
+        "GOL" => "Goleiros",
+        "LAT" => "Laterais",
+        "ZAG" => "Zagueiros",
+        "MEI" => "Meias",
+        "ATA" => "Atacantes",
+        "TEC" => "Técnicos",
+        _ => sigla
+    };
+
+    private void TrocarFiltroPos(ChangeEventArgs e)
+    {
+        var v = e.Value?.ToString();
+        filtroPos = string.IsNullOrEmpty(v) ? null : v;
+        extratoAbertoId = null;
+    }
+
+    // ----- Card de um jogador só (js/top3.js gerarCardJogadorPaginas) -----
+    // Um botão só: a prévia abre com o card de pontuação e, se o atleta tem nota, o card com nota (arrasta para o lado para trocar).
+    private string? gerandoCardId, erroCardId, erroCard;
+
+    private async Task GerarCard(AtletaRodada a)
+    {
         erroCard = null;
         erroCardId = a.Id;
         gerandoCardId = a.Id;
         try
         {
-            var extratoCard = extratos.TryGetValue(a.Id, out var extAt) ? extAt : null;
-            var totalPontos = extratoCard?.Total ?? a.Pontos;
-            var dados = new
-            {
-                nome = a.Nome,
-                pos = PrimeiraSigla(a.Posicao),
-                pontos = Fmt2(a.Pontos),
-                data = atletasRodada?.Data?.ToString("dd/MM"),
-                foto = fotos.TryGetValue(a.Id, out var f) ? f : null,
-                silhueta = SilhuetasAtleta.Caminho(PrimeiraSigla(a.Posicao), a.Nome),
-                time = a.TimeNome,
-                escudo = string.IsNullOrWhiteSpace(a.TimeNome) ? null : $"img/time-{SlugTime(a.TimeNome)}.png",
-                // canto superior esquerdo: no card de pontuação, a pontuação total; no card com nota, a nota
-                // (só o número, sem moldura; no card com nota ele vem na cor da faixa da nota)
-                pontosTopo = comNota ? (a.Nota is { } n ? Fmt1(n) : "-") : Fmt2(totalPontos),
-                pontosNeg = !comNota && totalPontos < 0,
-                topoCor = comNota && a.Nota is { } n2 ? NotaJogador.Classe(n2) : null,
-                // pontuação: cada ação com os pontos dela (extrato) e o total de pontos.
-                // com nota: cada ação com quanto somou na nota e, no fim, a nota.
-                acoes = comNota ? ItensNotaDoCard(a) : AcoesDoCard(a, extratoCard),
-                // sem total embaixo da lista nos dois cards: pontuação / nota já aparecem no canto superior esquerdo
-                arquivo = comNota ? "card-nota" : "card-pontuacao"
-            };
+            var paginas = new List<object> { DadosCard(a, false) };
+            if (a.Nota is not null) paginas.Add(DadosCard(a, true));
             await using var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/top3.js");
-            // sem limite de tempo: a prévia fica aberta até a pessoa baixar ou cancelar (o padrão do Blazor Server é 1 minuto)
-            await modulo.InvokeVoidAsync("gerarCardJogador", CancellationToken.None, dados);
+            // sem limite de tempo: a prévia fica aberta até a pessoa baixar ou cancelar
+            await modulo.InvokeVoidAsync("gerarCardJogadorPaginas", CancellationToken.None, paginas);
         }
         catch (JSDisconnectedException) { }
         catch (JSException ex) { erroCard = "Não consegui gerar o card: " + ex.Message; }
         finally { gerandoCardId = null; }
+    }
+
+    // comNota = false: "card de pontuação" (pontos de cada ação + total). comNota = true: quanto cada ação somou na nota + a nota.
+    private object DadosCard(AtletaRodada a, bool comNota)
+    {
+        var extratoCard = extratos.TryGetValue(a.Id, out var extAt) ? extAt : null;
+        var totalPontos = extratoCard?.Total ?? a.Pontos;
+        return new
+        {
+            nome = a.Nome,
+            pos = PrimeiraSigla(a.Posicao),
+            pontos = Fmt2(a.Pontos),
+            data = atletasRodada?.Data?.ToString("dd/MM"),
+            foto = fotos.TryGetValue(a.Id, out var f) ? f : null,
+            silhueta = SilhuetasAtleta.Caminho(PrimeiraSigla(a.Posicao), a.Nome),
+            time = a.TimeNome,
+            escudo = string.IsNullOrWhiteSpace(a.TimeNome) ? null : $"img/time-{SlugTime(a.TimeNome)}.png",
+            // canto superior esquerdo: no card de pontuação, a pontuação total; no card com nota, a nota (na cor da faixa da nota)
+            pontosTopo = comNota ? (a.Nota is { } n ? Fmt1(n) : "-") : Fmt2(totalPontos),
+            pontosNeg = !comNota && totalPontos < 0,
+            topoCor = comNota && a.Nota is { } n2 ? NotaJogador.Classe(n2) : null,
+            acoes = comNota ? ItensNotaDoCard(a) : AcoesDoCard(a, extratoCard),
+            arquivo = comNota ? "card-nota" : "card-pontuacao",
+            rotulo = comNota ? "Com nota" : "Pontuação"
+        };
     }
 
     // ----- Lista do card de pontuação: mesmos grupos do card com nota, com os pontos de cada grupo -----
@@ -703,6 +1012,7 @@
         {
             atletasRodada = await Mercado.ObterRodadaAsync();
             atletasCarregados = true;
+            if (filtroPos is not null && !PosicoesDaRodada().Contains(filtroPos)) filtroPos = null;
 
             // fotos vêm do elenco; se falhar, a lista aparece sem foto
             try

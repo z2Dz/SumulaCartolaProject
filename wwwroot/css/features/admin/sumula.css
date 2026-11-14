@@ -1326,6 +1326,74 @@
     font-size: 1rem;
 }
 
+/* "Notas da partida": título vira botão que abre e fecha a área expandindo */
+.sm2-notas-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    width: 100%;
+    padding: .55rem .2rem;
+    border: 0;
+    border-bottom: 1px solid rgba(255,255,255,.12);
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+
+    .sm2-notas-toggle:focus-visible {
+        outline: 2px solid var(--acento, #19c98a);
+        outline-offset: 2px;
+        border-radius: 6px;
+    }
+
+.sm2-notas-seta {
+    width: 1.2rem;
+    height: 1.2rem;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform .35s ease;
+}
+
+.sm2-notas.aberta .sm2-notas-seta {
+    transform: rotate(180deg);
+}
+
+.sm2-notas-corpo {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows .35s ease, opacity .3s ease;
+}
+
+.sm2-notas.aberta .sm2-notas-corpo {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+.sm2-notas-dentro {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.sm2-notas.aberta .sm2-notas-dentro {
+    padding-top: .5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sm2-notas-corpo,
+    .sm2-notas-seta {
+        transition: none;
+    }
+}
+
 .sm2-notas-cols {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -1114,25 +1114,24 @@ function desenharCardJogador(ctx, d, im) {
     if (d.pontosTopo) {
         // pontuação total (card de pontuação) ou nota (card com nota): só o número, sem moldura nem fundo;
         // embaixo, posição e escudo empilhados ao lado da foto
-        ctx.save();
-        ctx.fillStyle = d.topoCor ? (COR_NOTA[d.topoCor] || OURO) : (d.pontosNeg ? "#ef4444" : "#ffffff");
-        ctx.shadowColor = "rgba(0,0,0,.6)";
-        ctx.shadowBlur = 8;
         // coluna em x = 124: à direita dos raios dourados da moldura (eles ocupam a borda até x ~107)
         const cx = 124;
-        ajustar(ctx, d.pontosTopo, 100, 44, 900);
-        ctx.fillText(d.pontosTopo, cx, 192);
-        ctx.restore();
-        ctx.textAlign = "center";
+        // número com a mesma "borda tripla" da moldura (dourado por fora, escuro por dentro) para fazer parte da arte:
+        // pontuação em dourado metálico (vermelho se negativa); nota na cor da faixa dela
+        const corNum = d.topoCor ? (COR_NOTA[d.topoCor] || OURO) : (d.pontosNeg ? "#ef4444" : null);
+        numeroTopo(ctx, d.pontosTopo, cx, 196, corNum);
+
         ctx.save();
+        ctx.textAlign = "center";
         ctx.fillStyle = OURO;
         ctx.shadowColor = "rgba(0,0,0,.6)";
         ctx.shadowBlur = 6;
         ajustar(ctx, d.pos || "", 90, 40, 900);
-        ctx.fillText(d.pos || "", cx + 6, 254);
-        ctx.fillRect(cx - 18, 265, 48, 4);
+        ctx.fillText(d.pos || "", cx, 258);
+        ctx.shadowBlur = 0;
+        ctx.fillRect(cx - 24, 268, 48, 4);
         ctx.restore();
-        blocoTime(ctx, im.escudo, d.time, cx + 4, 352, 80);
+        blocoTime(ctx, im.escudo, d.time, cx, 352, 80);
     } else {
         ctx.fillStyle = OURO;
         ajustar(ctx, d.pos || "", 100, 50, 900);
@@ -1171,6 +1170,48 @@ function desenharCardJogador(ctx, d, im) {
     assinatura(ctx, 14, H - 12, 15, true);   // canto inferior esquerdo (fora da moldura, com contorno para ler em qualquer fundo)
 }
 
+// Número do topo do card (pontuação ou nota) com contorno dourado + escuro, como a borda da moldura.
+// cor = null: dourado metálico; senão a cor sólida com um brilho claro em cima.
+function numeroTopo(ctx, txt, cx, y, cor) {
+    if (!txt) return;
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.lineJoin = "round";
+    ajustar(ctx, txt, 104, 50, 900);
+    const tam = parseFloat(/(\d+(\.\d+)?)px/.exec(ctx.font)?.[1] || "50");
+    const topo = y - tam * .78;
+
+    const ouro = ctx.createLinearGradient(0, topo, 0, y + 4);
+    ouro.addColorStop(0, "#fff1a6");
+    ouro.addColorStop(.45, "#e2ad1a");
+    ouro.addColorStop(.7, "#fbe07a");
+    ouro.addColorStop(1, "#b8800a");
+
+    // borda de fora (dourada, com sombra) e de dentro (escura)
+    ctx.shadowColor = "rgba(0,0,0,.65)";
+    ctx.shadowBlur = 10;
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = ouro;
+    ctx.strokeText(txt, cx, y);
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 4.5;
+    ctx.strokeStyle = MIOLO_SOLIDO;
+    ctx.strokeText(txt, cx, y);
+
+    // miolo do número
+    ctx.fillStyle = cor || ouro;
+    ctx.fillText(txt, cx, y);
+    if (cor) {
+        const brilho = ctx.createLinearGradient(0, topo, 0, y);
+        brilho.addColorStop(0, "rgba(255,255,255,.55)");
+        brilho.addColorStop(.55, "rgba(255,255,255,0)");
+        ctx.fillStyle = brilho;
+        ctx.fillText(txt, cx, y);
+    }
+    ctx.restore();
+}
+
 // ----- Prévia do card e editor de foto (antes de baixar) -----
 // Abre por cima da tela: mostra o card pronto, com "Editar foto" para cada atleta com foto, "Baixar" e "Cancelar".
 // O editor apaga sobras do recorte ou restaura partes do atleta. Vale só para este card: a foto salva não muda.
@@ -1205,33 +1246,83 @@ function linhaBotoes() {
 
 // op = { canvas, redesenhar(), fotos[], nomes[], arquivo, titulo }. Resolve quando a pessoa baixa ou cancela.
 function revisarCard(op) {
+    return revisarCards([op]);
+}
+
+// Prévia com uma ou mais imagens. paginas = [{ canvas, redesenhar(), fotos[], nomes[], arquivo, titulo, rotulo }].
+// Com mais de uma página, a pessoa arrasta para o lado (ou toca nas abas / setas do teclado) para trocar de imagem;
+// "Baixar" / "Compartilhar" entrega a imagem que está na tela.
+function revisarCards(paginas, tituloPrevia = "Prévia do card") {
     return new Promise(resolve => {
         const ov = sobreposicao();
+        const varias = paginas.length > 1;
+        let atual = 0;
+
         const titulo = document.createElement("strong");
-        titulo.textContent = "Prévia do card";
+        titulo.textContent = tituloPrevia;
         titulo.style.cssText = "font-size:1.05rem;";
-        const area = document.createElement("div");
-        area.style.cssText = "display:flex;justify-content:center;max-width:100%;";
-        op.canvas.style.cssText = "max-width:min(94vw, " + (op.canvas.width > op.canvas.height ? "1100px" : "440px") + ");" +
-            "max-height:68vh;width:auto;height:auto;border-radius:8px;";
-        area.appendChild(op.canvas);
+
+        // abas (uma por imagem) e bolinhas embaixo
+        const abas = linhaBotoes();
+        const botoesAba = paginas.map((p, i) => {
+            const b = botao(p.rotulo || "Imagem " + (i + 1));
+            b.onclick = () => ir(i);
+            abas.appendChild(b);
+            return b;
+        });
+
+        const paisagem = paginas.some(p => p.canvas.width > p.canvas.height);
+        const janela = document.createElement("div");
+        janela.style.cssText = "width:min(94vw, " + (paisagem ? "1100px" : "440px") + ");max-width:100%;overflow:hidden;" +
+            "touch-action:pan-y;user-select:none;-webkit-user-select:none;" + (varias ? "cursor:grab;" : "");
+        const trilho = document.createElement("div");
+        trilho.style.cssText = "display:flex;transition:transform .3s ease;will-change:transform;";
+        paginas.forEach(p => {
+            const slide = document.createElement("div");
+            slide.style.cssText = "flex:0 0 100%;min-width:0;display:flex;justify-content:center;align-items:center;";
+            p.canvas.style.cssText = "max-width:100%;max-height:" + (varias ? "62vh" : "68vh") + ";width:auto;height:auto;border-radius:8px;" +
+                "pointer-events:none;-webkit-user-drag:none;";
+            slide.appendChild(p.canvas);
+            trilho.appendChild(slide);
+        });
+        janela.appendChild(trilho);
+
+        const bolinhas = document.createElement("div");
+        bolinhas.style.cssText = "display:flex;justify-content:center;gap:.4rem;";
+        const pontos = paginas.map(() => {
+            const s = document.createElement("span");
+            s.style.cssText = "width:8px;height:8px;border-radius:50%;transition:background .2s;";
+            bolinhas.appendChild(s);
+            return s;
+        });
+        const dica = document.createElement("small");
+        dica.textContent = "Arraste para o lado para trocar a imagem";
+        dica.style.cssText = "color:#9aa0a6;";
+
         const msg = document.createElement("p");
         msg.style.cssText = "margin:0;min-height:1.2em;color:#ffb4b4;text-align:center;";
         const edicao = linhaBotoes();
         const acoes = linhaBotoes();
-        ov.append(titulo, area, edicao, msg, acoes);
+        if (varias) ov.append(titulo, abas, janela, bolinhas, dica, edicao, msg, acoes);
+        else ov.append(titulo, janela, edicao, msg, acoes);
 
         const fechar = () => {
             document.removeEventListener("keydown", tecla);
             ov.remove();
             resolve();
         };
-        const tecla = e => { if (e.key === "Escape" && ov.style.display !== "none") fechar(); };
+        const tecla = e => {
+            if (ov.style.display === "none") return;
+            if (e.key === "Escape") fechar();
+            else if (varias && e.key === "ArrowRight") ir(atual + 1);
+            else if (varias && e.key === "ArrowLeft") ir(atual - 1);
+        };
         document.addEventListener("keydown", tecla);
 
         const montarEdicao = () => {
             edicao.replaceChildren();
-            op.fotos.forEach((f, i) => {
+            const op = paginas[atual];
+            (op.fotos || []).forEach((f, i) => {
                 if (!f) return;
                 const nome = op.fotos.length > 1 ? " · " + (op.nomes[i] || i + 1) : "";
                 const b = botao("✏️ Editar foto" + nome);
@@ -1242,12 +1333,58 @@ function revisarCard(op) {
                     ov.style.display = "flex";
                     if (novo === undefined) return;   // cancelou
                     op.fotos[i] = novo;               // null = apagou tudo: o card usa a silhueta
-                    op.redesenhar();
+                    paginas.forEach(p => p.redesenhar());   // páginas que dividem a mesma foto (card de pontuação e com nota) mudam juntas
                     montarEdicao();
                 };
                 edicao.appendChild(b);
             });
         };
+
+        const ESTILO_SEC = "background:#2a2d35;color:#f1f1f1;", ESTILO_ON = "background:#ffffff;color:#111;";
+        function ir(i) {
+            atual = Math.max(0, Math.min(paginas.length - 1, i));
+            trilho.style.transition = "transform .3s ease";
+            trilho.style.transform = "translateX(" + (-atual * 100) + "%)";
+            botoesAba.forEach((b, k) => { b.style.cssText = ESTILO_BOTAO + (k === atual ? ESTILO_ON : ESTILO_SEC); });
+            pontos.forEach((s, k) => { s.style.background = k === atual ? "#ffc928" : "rgba(255,255,255,.3)"; });
+            msg.textContent = "";
+            montarEdicao();
+        }
+
+        // arrastar para o lado (dedo ou mouse)
+        if (varias) {
+            let x0 = null, y0 = 0, dx = 0, arrastando = false;
+            janela.addEventListener("pointerdown", e => {
+                if (e.button !== undefined && e.button !== 0) return;
+                x0 = e.clientX; y0 = e.clientY; dx = 0; arrastando = false;
+            });
+            janela.addEventListener("pointermove", e => {
+                if (x0 === null) return;
+                dx = e.clientX - x0;
+                const dy = e.clientY - y0;
+                if (!arrastando && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
+                    arrastando = true;
+                    try { janela.setPointerCapture(e.pointerId); } catch { }
+                    trilho.style.transition = "none";
+                    janela.style.cursor = "grabbing";
+                }
+                if (arrastando) {
+                    // nas pontas o arraste "pesa" (efeito elástico)
+                    const ponta = (atual === 0 && dx > 0) || (atual === paginas.length - 1 && dx < 0);
+                    trilho.style.transform = "translateX(calc(" + (-atual * 100) + "% + " + (ponta ? dx / 3 : dx) + "px))";
+                }
+            });
+            const soltar = () => {
+                if (x0 === null) return;
+                x0 = null;
+                janela.style.cursor = "grab";
+                if (arrastando && Math.abs(dx) > janela.clientWidth * .15) ir(atual + (dx < 0 ? 1 : -1));
+                else ir(atual);
+                arrastando = false;
+            };
+            janela.addEventListener("pointerup", soltar);
+            janela.addEventListener("pointercancel", soltar);
+        }
 
         const celular = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         const baixar = botao(celular ? "Compartilhar" : "Baixar", "pri");
@@ -1255,6 +1392,7 @@ function revisarCard(op) {
         baixar.onclick = async () => {
             baixar.disabled = true;
             msg.textContent = "";
+            const op = paginas[atual];
             try {
                 await entregar(op.canvas, op.arquivo, op.titulo);
                 fechar();
@@ -1266,8 +1404,8 @@ function revisarCard(op) {
         cancelar.onclick = fechar;
         acoes.append(cancelar, baixar);
 
-        op.redesenhar();
-        montarEdicao();
+        paginas.forEach(p => p.redesenhar());
+        ir(0);
     });
 }
 
@@ -1434,4 +1572,148 @@ function editarFoto(foto, nome) {
             fechar(cortarNoAlfa(base, orig));   // null se apagou tudo
         };
     });
+}
+
+// ----- Top 3 com as duas imagens (pontuação e notas) na mesma prévia -----
+// lista = [dados do gerarTop3 + rotulo]. A pessoa arrasta para o lado para trocar entre as imagens.
+export async function gerarTop3Paginas(lista) {
+    const [vermelho, amarelo] = await Promise.all([carregar("img/time-vermelho.png"), carregar("img/time-amarelo.png")]);
+    // o mesmo atleta pode estar nas duas imagens: prepara (remove o fundo de) cada foto uma vez só
+    const fotosProntas = new Map(), escudos = new Map();
+    const foto = src => {
+        if (!src) return Promise.resolve(null);
+        if (!fotosProntas.has(src)) fotosProntas.set(src, prepararFoto(src));
+        return fotosProntas.get(src);
+    };
+    const escudoDe = src => {
+        if (!src) return Promise.resolve(null);
+        if (!escudos.has(src)) escudos.set(src, carregar(src));
+        return escudos.get(src);
+    };
+
+    const paginas = [];
+    for (const dados of lista) {
+        const canvas = document.createElement("canvas");
+        canvas.width = L;
+        canvas.height = A;
+        const imagens = {
+            vermelho,
+            amarelo,
+            fotos: await Promise.all(dados.atletas.map(a => foto(a.foto))),
+            escudosAtletas: await Promise.all(dados.atletas.map(a => escudoDe(a.escudo)))
+        };
+        paginas.push({
+            canvas,
+            redesenhar: () => desenhar(canvas.getContext("2d"), dados, imagens),
+            fotos: imagens.fotos,
+            nomes: dados.atletas.map(a => a.nome),
+            arquivo: dados.arquivo || "top3-rodada.png",
+            titulo: "Top 3 da rodada",
+            rotulo: dados.rotulo
+        });
+    }
+    await revisarCards(paginas, "Prévia do Top 3");
+}
+
+// ----- Card do jogador com as duas versões (pontuação e nota) na mesma prévia -----
+// lista = [dados do gerarCardJogador + rotulo], todos do mesmo atleta: a foto é preparada uma vez e editar vale para os dois.
+export async function gerarCardJogadorPaginas(lista) {
+    const base = lista[0];
+    const [escudoImg, foto] = await Promise.all([
+        base.escudo ? carregar(base.escudo) : null,
+        prepararFoto(base.foto)
+    ]);
+    const fotos = [foto];
+    const paginas = lista.map(dados => {
+        const canvas = document.createElement("canvas");
+        canvas.width = CARD_W * CARD_K;
+        canvas.height = CARD_H * CARD_K;
+        return {
+            canvas,
+            redesenhar: () => {
+                const ctx = canvas.getContext("2d");
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.scale(CARD_K, CARD_K);
+                desenharCardJogador(ctx, dados, { moldura: null, escudo: escudoImg, foto: fotos[0] });
+            },
+            fotos,
+            nomes: [dados.nome],
+            arquivo: `${dados.arquivo || "card"}-${slugNome(dados.nome)}.png`,
+            titulo: dados.nome,
+            rotulo: dados.rotulo
+        };
+    });
+    await revisarCards(paginas, "Prévia do card");
+}
+
+// ----- Imagem de um pedaço da tela (escalação do time, time da rodada) -----
+// O Ranking desenha um "pôster" fora da área visível com o mesmo campo das escalações (CampoTatico);
+// aqui ele vira imagem (biblioteca html-to-image, carregada só quando precisa) e abre na mesma prévia dos cards.
+const HTML_PARA_IMAGEM = "https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm";
+const PIXEL_VAZIO = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+let htmlParaImagem = null;
+
+function esperarImagens(el, limiteMs = 6000) {
+    const imgs = [...el.querySelectorAll("img")].filter(i => !i.complete);
+    if (imgs.length === 0) return Promise.resolve();
+    const todas = Promise.all(imgs.map(i => new Promise(r => {
+        i.addEventListener("load", r, { once: true });
+        i.addEventListener("error", r, { once: true });
+    })));
+    return Promise.race([todas, new Promise(r => setTimeout(r, limiteMs))]);
+}
+
+// Várias imagens na mesma prévia (ex.: Time da rodada por pontuação e por nota): arrasta para o lado para trocar.
+// els = elementos na ordem; lista = [{ arquivo, titulo, rotulo }]
+export async function gerarImagemElementos(els, lista, previa) {
+    const paginas = [];
+    for (let i = 0; i < els.length; i++) {
+        const dados = lista[i] || {};
+        paginas.push({
+            canvas: await capturarElemento(els[i]),
+            redesenhar: () => { },
+            fotos: [],
+            nomes: [],
+            arquivo: dados.arquivo || "imagem.png",
+            titulo: dados.titulo || "Imagem",
+            rotulo: dados.rotulo
+        });
+    }
+    await revisarCards(paginas, previa || "Prévia da imagem");
+}
+
+// dados = { arquivo, titulo, previa }
+export async function gerarImagemElemento(el, dados) {
+    const canvas = await capturarElemento(el);
+    await revisarCards([{
+        canvas,
+        redesenhar: () => { },
+        fotos: [],
+        nomes: [],
+        arquivo: dados.arquivo || "escalacao.png",
+        titulo: dados.titulo || "Escalação"
+    }], dados.previa || "Prévia da imagem");
+}
+
+async function capturarElemento(el) {
+    if (!el) throw new Error("não encontrei o campo para gerar a imagem");
+    if (!htmlParaImagem) {
+        try { htmlParaImagem = await import(HTML_PARA_IMAGEM); }
+        catch { throw new Error("sem conexão para carregar o gerador de imagem"); }
+    }
+    await esperarImagens(el);
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+
+    const largura = el.offsetWidth || 460;
+    const opcoes = {
+        pixelRatio: Math.max(2, Math.min(3, 1320 / largura)),
+        skipFonts: true,              // o app só usa fontes do sistema
+        cacheBust: false,
+        imagePlaceholder: PIXEL_VAZIO // foto que não carregar não derruba a imagem toda
+    };
+    // Safari às vezes desenha as fotos vazias na primeira passada: a primeira só "aquece"
+    const safari = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+    if (safari) { try { await htmlParaImagem.toCanvas(el, opcoes); } catch { } }
+    return await htmlParaImagem.toCanvas(el, opcoes);
 }

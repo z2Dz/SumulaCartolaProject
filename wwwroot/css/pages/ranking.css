@@ -37,14 +37,45 @@
             }
 }
 
-/* Linha de cima: abas Pontos/Torcida + seletor de rodada (mesma altura, quebra no celular) */
+/* Linha de cima: abas, filtros e botões numa linha só (mesma altura).
+   Se não couber (celular), a linha rola para o lado em vez de quebrar. */
 .rk-topo {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: stretch;
-    gap: .6rem;
+    gap: .5rem;
     margin-bottom: .8rem;
+    overflow-x: auto;
+    padding: 3px 2px;   /* espaço para o contorno de foco não ser cortado pela rolagem */
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
+
+    .rk-topo::-webkit-scrollbar {
+        display: none;
+    }
+
+    .rk-topo > * {
+        flex: 0 0 auto;
+    }
+
+    /* tamanhos um pouco menores para abas, filtro e botões caberem juntos na largura do conteúdo */
+    .rk-topo .rk-abas button {
+        padding: .4rem .85rem;
+        font-size: .9rem;
+        white-space: nowrap;
+    }
+
+    .rk-topo .rk-filtro {
+        padding: .35rem 2rem .35rem .9rem;
+        background-position: right .8rem center;
+        font-size: .9rem;
+    }
+
+    .rk-topo .rk-top3-btn {
+        padding: 0 .9rem;
+        font-size: .9rem;
+    }
 
 .rk-abas {
     display: inline-flex;

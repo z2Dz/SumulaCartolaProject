@@ -26,7 +26,7 @@
                     {
                         var (pos, i) = linha.Vagas[k];
                         <SlotCampo EscudoTime="EscudoCard" UsaMolde="!EhGala" Arco="@Tatica.ArcoCss(linha.Tipo, linha.Vagas.Count, k)"
-                                   Ornado="@(Ef(pos, i) == "ornado")" Rubro="@(Ef(pos, i) == "rubro")" Tema="@TemaDe(pos, i)" Posicao="pos" Atleta="Escalacao.Obter(pos, i)" Ativo="@(Selecionado == new SlotRef(pos, i))"
+                                   Ornado="@(Ef(pos, i) == "ornado")" Rubro="@(Ef(pos, i) == "rubro")" Tema="@TemaDe(pos, i)" Posicao="pos" Atleta="Escalacao.Obter(pos, i)" NotaTopo="@NotaDe(pos, i)" Ativo="@(Selecionado == new SlotRef(pos, i))"
                                    EhCapitao="@EhCapitao(pos, i)"
                                    OnClick="() => OnSlot.InvokeAsync(new SlotRef(pos, i))" />
                     }
@@ -39,7 +39,7 @@
                                OnClick="() => OnSlot.InvokeAsync(new SlotRef(PosicaoCampo.Tecnico, 0))" />
                 </div>
                 <div class="base-gol">
-                    <SlotCampo EscudoTime="EscudoCard" UsaMolde="!EhGala" Ornado="@(Ef(PosicaoCampo.Goleiro, 0) == "ornado")" Rubro="@(Ef(PosicaoCampo.Goleiro, 0) == "rubro")" Tema="@TemaDe(PosicaoCampo.Goleiro, 0)" Posicao="PosicaoCampo.Goleiro" Atleta="Escalacao.Obter(PosicaoCampo.Goleiro, 0)" Ativo="@(Selecionado == new SlotRef(PosicaoCampo.Goleiro, 0))"
+                    <SlotCampo EscudoTime="EscudoCard" UsaMolde="!EhGala" Ornado="@(Ef(PosicaoCampo.Goleiro, 0) == "ornado")" Rubro="@(Ef(PosicaoCampo.Goleiro, 0) == "rubro")" Tema="@TemaDe(PosicaoCampo.Goleiro, 0)" Posicao="PosicaoCampo.Goleiro" Atleta="Escalacao.Obter(PosicaoCampo.Goleiro, 0)" NotaTopo="@NotaDe(PosicaoCampo.Goleiro, 0)" Ativo="@(Selecionado == new SlotRef(PosicaoCampo.Goleiro, 0))"
                                EhCapitao="@EhCapitao(PosicaoCampo.Goleiro, 0)"
                                OnClick="() => OnSlot.InvokeAsync(new SlotRef(PosicaoCampo.Goleiro, 0))" />
                 </div>
@@ -119,6 +119,12 @@
 
     /// <summary>Escudo do time que aparece como selo ao lado da foto de cada cartão (molde padrão). Vazio = sem selo.</summary>
     [Parameter] public EscudoConfig? EscudoCard { get; set; }
+
+    /// <summary>Notas por id do atleta: com isso a etiqueta de cima do cartão mostra a nota em vez da pontuação.</summary>
+    [Parameter] public IReadOnlyDictionary<string, double>? Notas { get; set; }
+
+    private double? NotaDe(PosicaoCampo p, int i) =>
+        Notas is not null && Escalacao.Obter(p, i) is { } a && Notas.TryGetValue(a.Id, out var n) ? n : null;
 
     private bool TemFaixas => FaixasLaterais.Achar(FaixaEsq) is not null || FaixasLaterais.Achar(FaixaDir) is not null;
 

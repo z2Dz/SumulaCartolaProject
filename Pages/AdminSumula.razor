@@ -153,8 +153,17 @@
         @if (linhas.Count > 0)
         {
             var melhor = lances.Count > 0 ? linhas.OrderByDescending(x => NotaDe(x)).ThenBy(x => x.Nome).First() : null;
-            <div class="sm2-notas" aria-label="Notas dos jogadores">
-                <h2 class="sm2-notas-tit">Notas da partida</h2>
+            <div class="sm2-notas @(notasAbertas ? "aberta" : "")" aria-label="Notas dos jogadores">
+                <h2 class="sm2-notas-tit">
+                    <button type="button" class="sm2-notas-toggle" aria-expanded="@(notasAbertas ? "true" : "false")" aria-controls="sm2-notas-corpo"
+                            @onclick="() => notasAbertas = !notasAbertas">
+                        <span>Notas da partida</span>
+                        <svg class="sm2-notas-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                    </button>
+                </h2>
+                @* abre e fecha expandindo (grid 0fr -> 1fr); o conteúdo fica sempre na página para a animação funcionar *@
+                <div class="sm2-notas-corpo" id="sm2-notas-corpo" inert="@(!notasAbertas)">
+                <div class="sm2-notas-dentro">
                 <div class="sm2-notas-cols">
                     @foreach (var ld in new[] { LinhaSumula.Casa, LinhaSumula.Visitante })
                     {
@@ -176,6 +185,8 @@
                             </ul>
                         </div>
                     }
+                </div>
+                </div>
                 </div>
             </div>
         }
@@ -633,6 +644,9 @@
 </div>
 
 @code {
+    // "Notas da partida": começa fechada e abre/fecha expandindo
+    private bool notasAbertas;
+
     [SupplyParameterFromQuery(Name = "partida")] public Guid? PartidaInicial { get; set; }
 
     private List<PartidaResumo> partidas = new();
