@@ -234,7 +234,8 @@
             if (!porId.TryGetValue(s.AtletaId, out var a) || s.Indice is < 0 or > 5) continue;
             m.Definir(s.Pos, s.Indice, a);
 
-            if (a.UltimaPontuacao is { } p) somaPontos = (somaPontos ?? 0) + p * (a.Id == salva.CapitaoId ? MultCapitao : 1m);
+            // o técnico entra no fim pela regra dele (PontosDoTecnico), não aqui
+            if (s.Pos != PosicaoCampo.Tecnico && a.UltimaPontuacao is { } p) somaPontos = (somaPontos ?? 0) + p * (a.Id == salva.CapitaoId ? MultCapitao : 1m);
             variacao += a.Valor - (a.ValorAntesUltimo ?? a.Valor);
             patrimonio += a.Valor - s.Valor;     // quanto o time valorizou desde que foi salvo
         }

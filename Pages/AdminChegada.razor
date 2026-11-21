@@ -72,7 +72,7 @@
                         <IconeUi Nome="lupa" Tamanho="20" />
                         <input type="search" placeholder="Buscar pelo nome ou posição…" @bind="busca" @bind:event="oninput" />
                     </div>
-                    <p class="chg2-dica">Toque no atleta para marcar a chegada: ele já entra num time (o que tem menos gente) e é salvo na hora. Para trocar de time, use a lista ao lado ou a prévia.</p>
+                    <p class="chg2-dica">Toque no atleta para marcar a chegada: ele entra sem time. Escolha Verm. ou Amar. na lista ao lado ou na prévia para salvá-lo na súmula.</p>
                     <ul class="chg-nomes">
                         @foreach (var a in Faltando)
                         {
@@ -112,6 +112,21 @@
                                 </button>
                             }
                         </div>
+
+                        @if (novasPosicoes.Contains("TEC"))
+                        {
+                            <div class="cartola-status adm-topo-gap">
+                                <div class="cartola-status-info">
+                                    <strong>Time do técnico</strong>
+                                    <small>@(novoTimeTecnico is null ? "Sem time: o técnico não pontua." : $"Pontua pela média dos atletas do {TimePelada.Rotulo(novoTimeTecnico)} na partida.")</small>
+                                </div>
+                                <div class="cartola-seg" role="radiogroup" aria-label="Time do técnico">
+                                    <button type="button" role="radio" aria-checked="@(novoTimeTecnico == TimePelada.Vermelho)" class="@(novoTimeTecnico == TimePelada.Vermelho ? "sel" : "")" @onclick="() => novoTimeTecnico = TimePelada.Vermelho">Vermelho</button>
+                                    <button type="button" role="radio" aria-checked="@(novoTimeTecnico == TimePelada.Amarelo)" class="@(novoTimeTecnico == TimePelada.Amarelo ? "sel" : "")" @onclick="() => novoTimeTecnico = TimePelada.Amarelo">Amarelo</button>
+                                    <button type="button" role="radio" aria-checked="@(novoTimeTecnico is null)" class="@(novoTimeTecnico is null ? "sel" : "")" @onclick="() => novoTimeTecnico = null">Sem time</button>
+                                </div>
+                            </div>
+                        }
 
                         <span class="adm-rotulo">Foto</span>
                         <SeletorFoto Nome="@novoNome" Posicoes="@novasPosicoes" Tamanho="64" @bind-Foto="fotoBytes" />
@@ -488,6 +503,7 @@
     private string novoNome = "";
     private HashSet<string> novasPosicoes = new();
     private bool novoAtivo;   // padrão: fora do mercado do Cartola
+    private string? novoTimeTecnico;   // time do técnico novo (só quando marcou TEC)
     private byte[]? fotoBytes;
 
     private bool Finalizada => partidas.FirstOrDefault(p => p.Id == partidaId)?.Finalizada == true;
@@ -502,9 +518,13 @@
         PlanoTempos.Montar(DoLado(lado).Where(j => !AnaliseTime.EhSoGoleiro(j)));
     private string? PapelNoJogo(ChegadaItem a) => AnaliseTime.EhSoGoleiro(a) ? "Goleiro" : PlanoDe(a.Lado).Papel(a.Id);
 
-    // Técnicos permanentes: Eduardo no Vermelho e Nilson no Amarelo
+    // Técnico de cada time: o definido no cadastro do atleta (Atletas > editar > Time do técnico).
+    // Sem nenhum definido, valem os antigos fixos: Eduardo no Vermelho e Nilson no Amarelo.
+    private Dictionary<Guid, string> timesTecnicos = new();
     private AtletaResumo TecnicoFixo(string lado)
     {
+        var definido = atletas.FirstOrDefault(a => timesTecnicos.TryGetValue(a.Id, out var l) && l == lado);
+        if (definido is not null) return definido;
         var nome = lado == TimePelada.Vermelho ? "Eduardo" : "Nilson";
         return atletas.FirstOrDefault(a => a.Nome.Equals(nome, StringComparison.OrdinalIgnoreCase)
                                            && a.Posicoes.Any(x => AnaliseTime.Normalizar(x) == "TEC"))
@@ -554,6 +574,7 @@
         {
             partidas = await Servico.ListarPartidasAsync();
             atletas = await Servico.ListarAtletasAsync();
+            timesTecnicos = await Servico.ObterTimesTecnicosAsync();
             if (partidas.Count > 0)
             {
                 var alvo = partidas.FirstOrDefault(p => p.Id == PartidaInicial)
@@ -585,41 +606,14 @@
 
     private Task Descartar() => Carregar();
 
-    // Quem chega entra direto num time e a chegada já é gravada, sem precisar escolher nada.
-    // Para trocar de time: botões Verm./Amar. da lista, ou a aba "Ajustar times" da prévia.
-    private async Task Adicionar(AtletaResumo a)
+    // Quem chega entra sem time (neutro). O admin escolhe Verm. ou Amar. e só então ele é gravado na súmula.
+    // Não há regra de equilíbrio: cada time pode ter quantos atletas quiser (até LinhaSumula.MaxNumero).
+    private void Adicionar(AtletaResumo a)
     {
         if (Finalizada) return;
-        var lado = TimeAutomatico(a);
-        ordem.Add(Para(a, lado));
+        ordem.Add(Para(a, TimePelada.SemTime));
         Marcar();
-        if (lado == TimePelada.SemTime)
-        {
-            erro = $"Os dois times já têm {LinhaSumula.MaxNumero} atletas. {a.Nome} ficou sem time.";
-            return;
-        }
-        await AutoSalvar();
-        if (erro is null) aviso = $"{a.Nome} entrou no time {TimePelada.Rotulo(lado)} e já está salvo na súmula.";
-    }
-
-    // Regra do time automático: jogador de linha vai para o time com menos jogadores de linha; goleiro vai para o time
-    // que ainda não tem goleiro; em empate fica o Vermelho (então a chegada alterna Vermelho, Amarelo, Vermelho...).
-    // Time cheio (LinhaSumula.MaxNumero) não recebe mais ninguém.
-    private string TimeAutomatico(AtletaResumo a)
-    {
-        var abertos = new[] { TimePelada.Vermelho, TimePelada.Amarelo }.Where(l => Contar(l) < LinhaSumula.MaxNumero).ToList();
-        if (abertos.Count == 0) return TimePelada.SemTime;
-        if (abertos.Count == 1) return abertos[0];
-
-        if (AnaliseTime.EhSoGoleiro(a))
-        {
-            var semGoleiro = abertos.Where(l => GoleiroDe(l) is null).ToList();
-            if (semGoleiro.Count == 1) return semGoleiro[0];
-            return Contar(TimePelada.Vermelho) <= Contar(TimePelada.Amarelo) ? TimePelada.Vermelho : TimePelada.Amarelo;
-        }
-
-        int Linha(string l) => DoLado(l).Count(j => !AnaliseTime.EhSoGoleiro(j));
-        return Linha(TimePelada.Vermelho) <= Linha(TimePelada.Amarelo) ? TimePelada.Vermelho : TimePelada.Amarelo;
+        aviso = $"{a.Nome} entrou na chegada sem time. Marque Verm. ou Amar. para salvar na súmula.";
     }
 
     // Botões Verm./Amar. de um atleta (usados na aba "Ajustar times" da prévia)
@@ -788,25 +782,25 @@
             string? url = fotoBytes is null ? null : await Servico.EnviarFotoAsync(fotoBytes);
             var ordemPosicoes = PosicoesAtleta.Todas.Select(p => p.Sigla).Where(novasPosicoes.Contains);
             var novo = await Servico.RegistrarAtletaAsync(novoNome.Trim(), ordemPosicoes, url, novoAtivo);
+            if (novasPosicoes.Contains("TEC") && novoTimeTecnico is not null)
+            {
+                await Servico.DefinirTimeTecnicoAsync(novo.Id, novoTimeTecnico);
+                timesTecnicos[novo.Id] = novoTimeTecnico;
+            }
 
             atletas.Add(novo);
             atletas = atletas.OrderBy(a => a.Nome, StringComparer.CurrentCultureIgnoreCase).ToList();
-            var lado = TimeAutomatico(novo);
-            ordem.Add(Para(novo, lado));
+            ordem.Add(Para(novo, TimePelada.SemTime));
             Organizar();
             sujo = true;
 
             var situacao = novoAtivo ? "ativo" : "inativo";
-            novoNome = ""; novoAtivo = false; novasPosicoes = new(); fotoBytes = null;
+            novoNome = ""; novoAtivo = false; novasPosicoes = new(); fotoBytes = null; novoTimeTecnico = null;
             aba = "lista";
 
-            if (lado == TimePelada.SemTime)
-                aviso = $"{novo.Nome} registrado ({situacao} no Cartola), mas os dois times estão cheios: ele ficou sem time.";
-            else
-            {
-                await AutoSalvar();
-                if (erro is null) aviso = $"{novo.Nome} registrado ({situacao} no Cartola) e adicionado ao time {TimePelada.Rotulo(lado)}. Já está salvo na súmula.";
-            }
+            aviso = EhTecnico(novo)
+                ? $"Técnico {novo.Nome} registrado ({situacao} no Cartola){(timesTecnicos.TryGetValue(novo.Id, out var tt) ? $", time {TimePelada.Rotulo(tt)}" : ", sem time")}. Técnicos não entram na chegada."
+                : $"{novo.Nome} registrado ({situacao} no Cartola) e adicionado à chegada sem time. Marque Verm. ou Amar. para salvar na súmula.";
         }
         catch (ErroAdminException ex) { erro = ex.Message; }
         registrando = false;

@@ -17,6 +17,7 @@
             <button type="button" role="tab" class="@(aba == AbaRanking.PontosTime ? "sel" : "")" @onclick="() => TrocarAba(AbaRanking.PontosTime)">Pontos Time</button>
             <button type="button" role="tab" class="@(aba == AbaRanking.PontosAtletas ? "sel" : "")" @onclick="() => TrocarAba(AbaRanking.PontosAtletas)">Pontos Atletas</button>
             <button type="button" role="tab" class="@(aba == AbaRanking.Torcida ? "sel" : "")" @onclick="() => TrocarAba(AbaRanking.Torcida)">Torcida</button>
+            <button type="button" role="tab" class="@(aba == AbaRanking.Tecnicos ? "sel" : "")" @onclick="() => TrocarAba(AbaRanking.Tecnicos)">Técnicos</button>
         </div>
 
         @if (aba == AbaRanking.PontosAtletas)
@@ -47,7 +48,7 @@
             </button>
         }
 
-        @if (rodadas.Count > 0 && aba != AbaRanking.PontosAtletas)
+        @if (rodadas.Count > 0 && aba != AbaRanking.PontosAtletas && aba != AbaRanking.Tecnicos)
         {
             <select class="rk-filtro" aria-label="Filtrar por rodada" value="@(rodadaSel?.ToString() ?? "")" @onchange="TrocarRodada">
                 <option value="">Geral</option>
@@ -187,6 +188,112 @@
                                     else
                                     {
                                         <p class="suave centro">Sem extrato para esse atleta.</p>
+                                    }
+                                </div>
+                            }
+                        </li>
+                    }
+                </ol>
+            </div>
+        }
+    }
+    else if (aba == AbaRanking.Tecnicos)
+    {
+        if (carregandoTecnicos)
+        {
+            <p class="suave centro">Carregando pontuação dos técnicos…</p>
+        }
+        else if (erroTecnicos is not null)
+        {
+            <div class="erro" role="alert">@erroTecnicos <button type="button" class="botao-sec" @onclick="CarregarTecnicos">Tentar de novo</button></div>
+        }
+        else if (tecnicos.Count == 0)
+        {
+            <div class="cartao"><p class="suave">Nenhum técnico no mercado.</p></div>
+        }
+        else
+        {
+            <div class="rk-rolagem">
+                <p class="suave rk-at-resumo">
+                    Última partida@(tecnicosRodada?.Data is { } dt ? " · " + dt.ToString("dd/MM") : "") · pontos = média dos atletas do time do técnico
+                </p>
+                <ol class="rk-at-lista">
+                    @foreach (var t in tecnicos)
+                    {
+                        var abertoTec = tecnicoAbertoId == t.Id;
+                        <li class="rk-at-item">
+                            <div class="rk-at-linha @(abertoTec ? "aberto" : "")" role="button" tabindex="0" aria-expanded="@(abertoTec ? "true" : "false")"
+                                 @onclick="() => AlternarExtratoTecnico(t)">
+                                <div class="rk-at-esq">
+                                    @if (!string.IsNullOrWhiteSpace(t.FotoUrl))
+                                    {
+                                        <img class="foto-redonda" style="--d:2.2rem" src="@t.FotoUrl" alt="@t.Nome" loading="lazy" draggable="false" />
+                                    }
+                                    else
+                                    {
+                                        <span class="foto-redonda foto-redonda-sil" style="--d:2.2rem" aria-hidden="true">
+                                            <SilhuetaAtleta Sigla="TEC" Nome="@t.Nome" />
+                                        </span>
+                                    }
+                                    <span class="rk-at-nome">@t.Nome</span>
+                                </div>
+                                <span class="rk-at-time">
+                                    @if (t.Lado is not null)
+                                    {
+                                        <span class="adm-bolinha @TimePelada.Css(t.Lado)"></span>
+                                        <span class="rk-at-time-nome">@TimePelada.Rotulo(t.Lado)@(t.Jogou ? " · jogou a partida" : t.Atletas > 0 ? $" · {t.Atletas} atletas" : "")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="rk-at-time-nome suave">Sem time</span>
+                                    }
+                                </span>
+                                <div class="rk-at-dir">
+                                    <span class="rk-at-pos">TEC</span>
+                                    <span class="rk-at-pts @(t.Pontos < 0 ? "neg" : "")">@(t.Pontos is { } p ? Fmt2(p) : "–")</span>
+                                </div>
+                            </div>
+                            @if (abertoTec)
+                            {
+                                <div class="rk-at-extrato">
+                                    @if (carregandoExtratoTecnicoId == t.Id)
+                                    {
+                                        <p class="suave centro">Carregando extrato…</p>
+                                    }
+                                    else if (errosExtratoTecnico.TryGetValue(t.Id, out var msgTec))
+                                    {
+                                        <div class="erro" role="alert">@msgTec</div>
+                                    }
+                                    else if (extratosTecnico.TryGetValue(t.Id, out var extTec) && extTec is not null)
+                                    {
+                                        <p class="suave rk-ext-titulo">Última partida@(extTec.Data is { } dtTec ? " · " + dtTec.ToString("dd/MM") : "")</p>
+                                        @foreach (var lt in extTec.Linhas)
+                                        {
+                                            <div class="rk-ext-linha">
+                                                <span>@lt.Texto</span>
+                                                @if (lt.Pontua)
+                                                {
+                                                    <strong class="@(lt.Pontos < 0 ? "neg" : "")">@Fmt2(lt.Pontos)</strong>
+                                                }
+                                            </div>
+                                        }
+                                        <div class="rk-ext-linha total">
+                                            <span>Total</span>
+                                            <strong class="@(extTec.Total < 0 ? "neg" : "")">@Fmt2(extTec.Total)</strong>
+                                        </div>
+                                        <div class="rk-ext-acoes" style="margin-top:.85rem;display:flex;flex-direction:column;align-items:center;gap:.4rem">
+                                            <button type="button" class="rk-top3-btn" style="min-height:2.2rem" disabled="@(gerandoCardId is not null)" @onclick="() => GerarCardTecnico(t, extTec)">
+                                                @(gerandoCardId == t.Id ? "Gerando…" : "Gerar card")
+                                            </button>
+                                            @if (!string.IsNullOrEmpty(erroCard) && erroCardId == t.Id)
+                                            {
+                                                <p class="erro" role="alert">@erroCard</p>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="suave centro">Sem extrato para esse técnico.</p>
                                     }
                                 </div>
                             }
@@ -376,7 +483,28 @@
     private List<int> rodadas = new();
     private int? rodadaSel;   // null = geral; ao abrir a tela começa na última rodada
     private bool carregando = true, filtroInicial;
-    private enum AbaRanking { PontosTime, PontosAtletas, Torcida }
+    private enum AbaRanking { PontosTime, PontosAtletas, Torcida, Tecnicos }
+
+    // aba "Técnicos": pontos de cada técnico na última partida (média do time dele)
+    private List<TecnicoRodada> tecnicos = new();
+    private PontuacaoDaRodada? tecnicosRodada;
+    private bool carregandoTecnicos, tecnicosCarregados;
+    private string? erroTecnicos;
+    private string? tecnicoAbertoId, carregandoExtratoTecnicoId;
+    private readonly Dictionary<string, ExtratoJogo?> extratosTecnico = new();
+    private readonly Dictionary<string, string> errosExtratoTecnico = new();
+
+    private async Task AlternarExtratoTecnico(TecnicoRodada t)
+    {
+        if (tecnicoAbertoId == t.Id) { tecnicoAbertoId = null; return; }
+        tecnicoAbertoId = t.Id;
+        if (extratosTecnico.ContainsKey(t.Id)) return;
+        carregandoExtratoTecnicoId = t.Id;
+        errosExtratoTecnico.Remove(t.Id);
+        try { extratosTecnico[t.Id] = await Mercado.ObterExtratoTecnicoAsync(t.Id); }
+        catch (ErroMercadoException ex) { errosExtratoTecnico[t.Id] = ex.Message; }
+        finally { if (carregandoExtratoTecnicoId == t.Id) carregandoExtratoTecnicoId = null; }
+    }
     private AbaRanking aba = AbaRanking.PontosTime;
     private bool porTorcida => aba == AbaRanking.Torcida;
 
@@ -494,12 +622,15 @@
         finally { carregando = false; }
 
         if (aba == AbaRanking.PontosAtletas) await CarregarAtletas();
+        tecnicosCarregados = false;
+        if (aba == AbaRanking.Tecnicos) await CarregarTecnicos();
     }
 
     private async Task TrocarAba(AbaRanking nova)
     {
         aba = nova;
         if (nova == AbaRanking.PontosAtletas && !atletasCarregados) await CarregarAtletas();
+        if (nova == AbaRanking.Tecnicos && !tecnicosCarregados) await CarregarTecnicos();
     }
 
     // Trocar a rodada só relê o ranking; a sincronização já foi feita ao abrir a tela
@@ -822,6 +953,54 @@
         finally { gerandoCardId = null; }
     }
 
+    // Card do técnico: as mesmas linhas do extrato dele (Ataque, Meio-Campo, Defesa) e o total no topo
+    private async Task GerarCardTecnico(TecnicoRodada t, ExtratoJogo extrato)
+    {
+        erroCard = null;
+        erroCardId = t.Id;
+        gerandoCardId = t.Id;
+        try
+        {
+            var time = t.Lado is null ? null : TimePelada.Rotulo(t.Lado);
+            var pagina = new
+            {
+                nome = t.Nome,
+                pos = "TEC",
+                pontos = Fmt2(extrato.Total),
+                data = extrato.Data?.ToString("dd/MM"),
+                foto = t.FotoUrl,
+                silhueta = SilhuetasAtleta.Caminho("TEC", t.Nome),
+                time,
+                escudo = time is null ? null : $"img/time-{SlugTime(time)}.png",
+                pontosTopo = Fmt2(extrato.Total),
+                pontosNeg = extrato.Total < 0,
+                topoCor = (string?)null,
+                acoes = AcoesDoCardTecnico(extrato),
+                arquivo = "card-tecnico",
+                rotulo = "Pontuação"
+            };
+            await using var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/top3.js");
+            await modulo.InvokeVoidAsync("gerarCardJogadorPaginas", CancellationToken.None, new List<object> { pagina });
+        }
+        catch (JSDisconnectedException) { }
+        catch (JSException ex) { erroCard = "Não consegui gerar o card: " + ex.Message; }
+        finally { gerandoCardId = null; }
+    }
+
+    // "Ataque (ATA)" -> sigla ATA, com os pontos do setor no número grande; linha vazia no fim para alinhar as duas colunas
+    private static List<object> AcoesDoCardTecnico(ExtratoJogo extrato)
+    {
+        var lista = new List<object>();
+        foreach (var l in extrato.Linhas.Where(x => x.Pontua))
+        {
+            var abre = l.Texto.LastIndexOf('(');
+            var sigla = abre >= 0 ? l.Texto[(abre + 1)..].TrimEnd(')', ' ') : l.Texto;
+            lista.Add(new { rotulo = sigla, sigla, qtd = 0, num = Fmt2(l.Pontos), pontos = (string?)null, neg = l.Pontos < 0 });
+        }
+        if (lista.Count % 2 == 1) lista.Add(new { rotulo = "", sigla = "", qtd = 0, num = (string?)null, pontos = (string?)null, neg = false });
+        return lista;
+    }
+
     // comNota = false: "card de pontuação" (pontos de cada ação + total). comNota = true: quanto cada ação somou na nota + a nota.
     private object DadosCard(AtletaRodada a, bool comNota)
     {
@@ -1024,6 +1203,24 @@
         }
         catch (ErroMercadoException ex) { erroAtletas = ex.Message; }
         finally { carregandoAtletas = false; }
+    }
+
+    private async Task CarregarTecnicos()
+    {
+        carregandoTecnicos = true;
+        erroTecnicos = null;
+        try
+        {
+            tecnicosRodada = atletasRodada ?? await Mercado.ObterRodadaAsync();
+            elenco ??= await Mercado.ObterElencoAsync();
+            tecnicos = await Mercado.ObterTecnicosDaRodadaAsync(elenco, tecnicosRodada);
+            tecnicoAbertoId = null;
+            extratosTecnico.Clear();
+            errosExtratoTecnico.Clear();
+            tecnicosCarregados = true;
+        }
+        catch (ErroMercadoException ex) { erroTecnicos = ex.Message; }
+        finally { carregandoTecnicos = false; }
     }
 
     private IEnumerable<LinhaRankingClube> Ordenadas() => porTorcida

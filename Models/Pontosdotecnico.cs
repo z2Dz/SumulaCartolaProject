@@ -1,25 +1,17 @@
-﻿using SumulaCartolaProject.Models;
+using SumulaCartolaProject.Models;
 
 namespace SumulaCartolaProject.Servicos;
 
 /// <summary>
-/// Regra do técnico: ele não joga, então pontua pela média do time.
-/// Pontos do técnico = soma dos pontos dos jogadores escalados (sem o técnico e sem o bônus do capitão) ÷ 11.
-/// Sem técnico escalado, não há pontos. O banco (torcida_sincronizar) usa a mesma conta.
+/// Regra do técnico: ele não joga, então pontua pela média do time dele (Vermelho ou Amarelo) na partida:
+/// soma dos pontos de todos os atletas que jogaram nesse time ÷ quantidade de atletas desse time.
+/// Ex.: 14 jogaram no Vermelho e somaram 98 pontos -> técnico do Vermelho faz 7,00.
+/// A conta é feita ao carregar o mercado (ServicoMercado.AplicarPontosDosTecnicosAsync) e fica em PontosTecnico (UltimaPontuacao continua sendo a da posição em que ele jogou).
+/// Se o técnico jogou a partida, escalado como técnico ele faz 0.
+/// O técnico nunca recebe o bônus de capitão. O banco (torcida_sincronizar) precisa usar a mesma conta.
 /// </summary>
 public static class PontosDoTecnico
 {
-    public const int Divisor = 11;
-
-    public static decimal? Valor(EscalacaoMontada escalacao)
-    {
-        var tecnico = escalacao.Obter(PosicaoCampo.Tecnico, 0);
-        if (tecnico is null) return null;
-
-        var soma = escalacao.EmCampo()
-            .Where(a => a.Id != tecnico.Id && a.UltimaPontuacao.HasValue)
-            .Sum(a => a.UltimaPontuacao!.Value);
-
-        return Math.Round(soma / Divisor, 2, MidpointRounding.AwayFromZero);
-    }
+    public static decimal? Valor(EscalacaoMontada escalacao) =>
+        escalacao.Obter(PosicaoCampo.Tecnico, 0)?.PontosTecnico;
 }

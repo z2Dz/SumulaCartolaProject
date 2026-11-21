@@ -23,6 +23,9 @@ public record ItemNota(string Rotulo, int Qtd, double Valor);
 public record FeitoAtleta(string Rotulo, int Qtd);
 public record PontuacaoDaRodada(DateTimeOffset? Data, List<AtletaRodada> Atletas);
 
+/// <summary>Técnico na aba "Técnicos" do ranking: time dele (TimePelada) e pontos da última partida (média do time).</summary>
+public record TecnicoRodada(string Id, string Nome, string? Lado, decimal? Pontos, int Atletas, string? FotoUrl, bool Jogou = false);
+
 /// <summary>Falha ao carregar o mercado, com texto pronto para mostrar ao usuário.</summary>
 public class ErroMercadoException(string mensagem) : Exception(mensagem);
 
@@ -90,7 +93,133 @@ public class ServicoMercado(Supabase.Client supabase)
                 FotoUrl: t["foto_url"] is null || t["foto_url"]!.Type == JTokenType.Null ? null : (string?)t["foto_url"],
                 ValorAntesUltimo: valorAntes));
         }
+        await AplicarPontosDosTecnicosAsync(elenco);
         return elenco;
+    }
+
+    // ----- Técnico: pontua pela média do time dele (Vermelho ou Amarelo) na partida -----
+    /// <summary>
+    /// Pontos do técnico = soma dos pontos dos atletas que jogaram no time dele ÷ quantidade de atletas desse time,
+    /// separada em setores: Ataque (ATA), Meio-Campo (MEI) e Defesa (GOL, LAT, ZAG). Total = soma dos três.
+    /// O time de cada técnico é definido no admin (Atletas > editar técnico), função tecnicos_times (sql/tecnico_time.sql).
+    /// Se o técnico jogou a partida (estava na chegada/súmula), os pontos dele valem pela posição em que jogou
+    /// (UltimaPontuacao) e, escalado como técnico, ele faz 0. Técnico sem time definido fica sem pontos de técnico.
+    /// </summary>
+    private async Task AplicarPontosDosTecnicosAsync(List<AtletaEscalavel> elenco)
+    {
+        if (!elenco.Any(a => a.Posicoes.Contains(PosicaoCampo.Tecnico))) return;
+        var times = await TimesDosTecnicosAsync();
+        if (times.Count == 0) return;
+
+        PontuacaoDaRodada? rodada;
+        try { rodada = await ObterRodadaAsync(); }
+        catch (ErroMercadoException) { return; }
+        if (rodada is null || rodada.Atletas.Count == 0) return;
+
+        var porId = elenco.GroupBy(a => a.Id).ToDictionary(g => g.Key, g => g.First());
+        var rodadaAtual = rodada.Atletas.Any(a => porId.TryGetValue(a.Id, out var e) && e.UltimaPontuacao is not null);
+        if (!rodadaAtual) return;
+
+        for (var i = 0; i < elenco.Count; i++)
+        {
+            var a = elenco[i];
+            if (!a.Posicoes.Contains(PosicaoCampo.Tecnico)) continue;
+            elenco[i] = a with { PontosTecnico = CalcularTecnico(a.Id, times, rodada)?.Total };
+        }
+    }
+
+    /// <summary>Pontos de técnico separados por setor. Null = técnico sem time (ou time sem atletas na partida).</summary>
+    private record SetoresTecnico(string? Lado, bool Jogou, decimal Ataque, decimal Meio, decimal Defesa, int Atletas)
+    {
+        public decimal Total => Jogou ? 0m : Ataque + Meio + Defesa;
+    }
+
+    private static SetoresTecnico? CalcularTecnico(string tecnicoId, Dictionary<string, string> times, PontuacaoDaRodada rodada)
+    {
+        if (!times.TryGetValue(tecnicoId, out var lado)) return null;
+        if (rodada.Atletas.Any(x => x.Id == tecnicoId)) return new SetoresTecnico(lado, true, 0m, 0m, 0m, 0);   // jogou: como técnico é zero
+
+        var doTime = rodada.Atletas.Where(x => LadoDoTime(x.TimeNome) == lado).ToList();
+        if (doTime.Count == 0) return null;
+
+        decimal Parte(string setor) => Math.Round(doTime.Where(x => Setor(x.Posicao) == setor).Sum(x => x.Pontos) / doTime.Count,
+                                                  2, MidpointRounding.AwayFromZero);
+        return new SetoresTecnico(lado, false, Parte("ATA"), Parte("MC"), Parte("DF"), doTime.Count);
+    }
+
+    /// <summary>Setor da primeira posição do atleta na partida ("MEI/ZAG" -> MC).</summary>
+    private static string Setor(string? posicao)
+    {
+        var sigla = PosicoesAtleta.Sigla((posicao ?? "").Split('/', ',', ' ').FirstOrDefault(x => x.Length > 0));
+        return sigla switch { "ATA" => "ATA", "MEI" => "MC", _ => "DF" };
+    }
+
+    /// <summary>Extrato do técnico na última partida: Ataque, Meio-Campo e Defesa (o total é a soma).</summary>
+    public async Task<ExtratoJogo?> ObterExtratoTecnicoAsync(string tecnicoId)
+    {
+        var rodada = await ObterRodadaAsync();
+        if (rodada is null) return null;
+        var times = await TimesDosTecnicosAsync();
+        var s = CalcularTecnico(tecnicoId, times, rodada);
+
+        if (s is null)
+            return new ExtratoJogo(rodada.Data, 0m, new List<LinhaExtrato>
+            {
+                new(times.ContainsKey(tecnicoId) ? "O time do técnico não teve atletas na partida" : "Técnico sem time definido", 0m, false)
+            });
+
+        var linhas = new List<LinhaExtrato>
+        {
+            new("Ataque (ATA)", s.Jogou ? 0m : s.Ataque),
+            new("Meio-Campo (MC)", s.Jogou ? 0m : s.Meio),
+            new("Defesa (DF)", s.Jogou ? 0m : s.Defesa)
+        };
+        if (s.Jogou) linhas.Add(new LinhaExtrato("Jogou a partida: como técnico não pontua", 0m, false));
+        return new ExtratoJogo(rodada.Data, s.Total, linhas);
+    }
+
+    /// <summary>
+    /// Técnicos do elenco com a pontuação de técnico na última partida finalizada (mesma conta do extrato).
+    /// </summary>
+    public async Task<List<TecnicoRodada>> ObterTecnicosDaRodadaAsync(List<AtletaEscalavel> elenco, PontuacaoDaRodada? rodada)
+    {
+        var times = await TimesDosTecnicosAsync();
+        return elenco
+            .Where(a => a.Posicoes.Contains(PosicaoCampo.Tecnico))
+            .GroupBy(a => a.Id).Select(g => g.First())
+            .Select(a =>
+            {
+                var lado = times.TryGetValue(a.Id, out var l) ? l : null;
+                var s = rodada is null ? null : CalcularTecnico(a.Id, times, rodada);
+                return new TecnicoRodada(a.Id, a.Nome, lado, s?.Total, s?.Atletas ?? 0, a.FotoUrl, s?.Jogou ?? false);
+            })
+            .OrderByDescending(t => t.Pontos ?? decimal.MinValue).ThenBy(t => t.Nome)
+            .ToList();
+    }
+
+    /// <summary>"Vermelho" -> TimePelada.Vermelho, "Amarelo" -> TimePelada.Amarelo (nome do time vindo de pontuacao_ultima_rodada).</summary>
+    private static string? LadoDoTime(string? nome)
+    {
+        var n = (nome ?? "").Trim().ToLowerInvariant();
+        if (n.Contains("vermelh") || n == TimePelada.Vermelho) return TimePelada.Vermelho;
+        if (n.Contains("amarel") || n == TimePelada.Amarelo) return TimePelada.Amarelo;
+        return null;
+    }
+
+    /// <summary>Id do técnico -> lado (TimePelada). Sem a função no banco, vazio.</summary>
+    private async Task<Dictionary<string, string>> TimesDosTecnicosAsync()
+    {
+        var times = new Dictionary<string, string>();
+        try
+        {
+            var resp = await supabase.Rpc("tecnicos_times", new Dictionary<string, object>());
+            if (string.IsNullOrWhiteSpace(resp?.Content)) return times;
+            foreach (var t in JToken.Parse(resp.Content) as JArray ?? new JArray())
+                if ((string?)t["id"] is { Length: > 0 } id && (string?)t["time_tecnico"] is { Length: > 0 } lado)
+                    times[id] = lado;
+        }
+        catch { }
+        return times;
     }
 
 

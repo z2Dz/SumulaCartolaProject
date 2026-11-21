@@ -91,6 +91,7 @@ public record Tatica(string Nome, int Laterais, int Zagueiros, int[] LinhasMeio,
 public record AtletaEscalavel(
     string Id, string Nome, IReadOnlyList<PosicaoCampo> Posicoes,
     decimal Valor = 8m, decimal Media = 0m, decimal? UltimaPontuacao = null, int Jogos = 0, string? FotoUrl = null,
-    decimal? ValorAntesUltimo = null);
+    decimal? ValorAntesUltimo = null,
+    decimal? PontosTecnico = null);   // pontos quando escalado como técnico (média do time; 0 se ele jogou a partida)
 
 public record SlotRef(PosicaoCampo Pos, int Indice);

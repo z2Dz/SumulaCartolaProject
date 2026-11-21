@@ -223,7 +223,7 @@
                 <h4>Pontos de cada jogo</h4>
                 <ul>
                     <li>Todos começam com <strong>4 pontos</strong>. O goleiro começa com <strong>8</strong>.</li>
-                    <li><strong>Técnico:</strong> pontua pela média do time, a soma dos pontos dos seus 11 jogadores dividida por 11.</li>
+                    <li><strong>Técnico:</strong> pontua pela média do time dele na partida (Vermelho ou Amarelo): a soma dos pontos de todos os atletas desse time dividida por quantos jogaram nele.</li>
                     <li><strong>Time fez gol:</strong> jogadores de linha ganham +0,5 por gol. O goleiro não ganha.</li>
                     <li><strong>Time tomou gol:</strong> jogadores de linha perdem 0,5 por gol e o goleiro perde 1.</li>
                     <li><strong>Gol:</strong> quem fez o gol ganha +5.</li>
@@ -401,7 +401,8 @@
         carregandoExtrato = true;
         try
         {
-            var resultado = await Mercado.ObterExtratoAsync(a.Id);
+            // técnico: extrato por setor (Ataque, Meio-Campo, Defesa) da média do time dele
+            var resultado = s.Pos == PosicaoCampo.Tecnico ? await Mercado.ObterExtratoTecnicoAsync(a.Id) : await Mercado.ObterExtratoAsync(a.Id);
             if (extratoSlot == s) extrato = resultado;   // ignora resposta de um atleta já trocado
         }
         catch (ErroMercadoException ex) { if (extratoSlot == s) erroExtrato = ex.Message; }

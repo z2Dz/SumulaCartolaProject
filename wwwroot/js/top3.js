@@ -23,7 +23,7 @@ export async function gerarTop3(dados) {
         // foto sem fundo: se já veio sem fundo usa direto; se tem fundo, remove (e se falhar usa a original)
         fotos: await Promise.all(dados.atletas.map(a => prepararFoto(a.foto))),
         // escudo do time em que cada atleta jogou (aparece embaixo da posição)
-        escudosAtletas: await Promise.all(dados.atletas.map(a => (a.escudo ? carregar(a.escudo) : null)))
+        escudosAtletas: await Promise.all(dados.atletas.map(a => carregarEscudo(a.escudo, a.time)))
     };
     // prévia antes de baixar: dá para editar a foto de cada atleta (as fotos editadas entram em imagens.fotos)
     await revisarCard({
@@ -701,6 +701,29 @@ function corDoTime(nome) {
     return "#ffffff";
 }
 
+// Ícone do time (wwwroot/img/time-vermelho.png / time-amarelo.png). Tenta o caminho que veio do Ranking e,
+// se falhar, o arquivo pelo nome do time (Vermelho / Amarelo) e por fim o mesmo arquivo sem cache
+// (uma cópia ruim guardada pelo service worker não pode trocar o ícone pelo nome escrito).
+const ESCUDOS_TIME = { vermelho: "img/time-vermelho.png", amarelo: "img/time-amarelo.png" };
+const escudosCarregados = new Map();
+function carregarEscudo(src, nomeTime) {
+    const n = (nomeTime || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const doTime = n.includes("vermelh") ? ESCUDOS_TIME.vermelho : n.includes("amarel") ? ESCUDOS_TIME.amarelo : null;
+    const chave = (src || "") + "|" + (doTime || "");
+    if (!escudosCarregados.has(chave)) {
+        escudosCarregados.set(chave, (async () => {
+            const tentativas = [src, doTime, doTime && doTime + "?v=" + Date.now()].filter(Boolean);
+            for (const t of [...new Set(tentativas)]) {
+                const img = await carregar(t);
+                if (img && img.naturalWidth > 0) return img;
+            }
+            escudosCarregados.delete(chave);   // falhou: tenta de novo no próximo card
+            return null;
+        })());
+    }
+    return escudosCarregados.get(chave);
+}
+
 // Escudo do time centrado em (cx, cy); se a imagem não carregar, escreve o nome do time no lugar.
 function blocoTime(ctx, img, nome, cx, cy, tam) {
     if (img) { escudo(ctx, img, cx, cy, tam); return; }
@@ -795,7 +818,7 @@ export async function gerarCardJogador(dados) {
     canvas.height = CARD_H * CARD_K;
     const [moldura, escudoImg, foto] = await Promise.all([
         null,   // a moldura agora é desenhada (molduraPadrao); img/moldura-card.png não é mais usada
-        dados.escudo ? carregar(dados.escudo) : null,
+        carregarEscudo(dados.escudo, dados.time),
         prepararFoto(dados.foto)   // detecta se já está sem fundo antes de tentar remover
     ]);
     const fotos = [foto];
@@ -1585,10 +1608,10 @@ export async function gerarTop3Paginas(lista) {
         if (!fotosProntas.has(src)) fotosProntas.set(src, prepararFoto(src));
         return fotosProntas.get(src);
     };
-    const escudoDe = src => {
-        if (!src) return Promise.resolve(null);
-        if (!escudos.has(src)) escudos.set(src, carregar(src));
-        return escudos.get(src);
+    const escudoDe = (src, time) => {
+        const chave = (src || "") + "|" + (time || "");
+        if (!escudos.has(chave)) escudos.set(chave, carregarEscudo(src, time));
+        return escudos.get(chave);
     };
 
     const paginas = [];
@@ -1600,7 +1623,7 @@ export async function gerarTop3Paginas(lista) {
             vermelho,
             amarelo,
             fotos: await Promise.all(dados.atletas.map(a => foto(a.foto))),
-            escudosAtletas: await Promise.all(dados.atletas.map(a => escudoDe(a.escudo)))
+            escudosAtletas: await Promise.all(dados.atletas.map(a => escudoDe(a.escudo, a.time)))
         };
         paginas.push({
             canvas,
@@ -1620,7 +1643,7 @@ export async function gerarTop3Paginas(lista) {
 export async function gerarCardJogadorPaginas(lista) {
     const base = lista[0];
     const [escudoImg, foto] = await Promise.all([
-        base.escudo ? carregar(base.escudo) : null,
+        carregarEscudo(base.escudo, base.time),
         prepararFoto(base.foto)
     ]);
     const fotos = [foto];

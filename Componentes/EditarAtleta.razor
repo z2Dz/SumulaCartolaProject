@@ -25,6 +25,21 @@
                 }
             </div>
 
+            @if (posicoes.Contains("TEC"))
+            {
+                <div class="cartola-status adm-topo-gap">
+                    <div class="cartola-status-info">
+                        <strong>Time do técnico</strong>
+                        <small>@(timeTecnico is null ? "Sem time: o técnico não pontua." : $"Pontua pela média dos atletas do {TimePelada.Rotulo(timeTecnico)} na partida.")</small>
+                    </div>
+                    <div class="cartola-seg" role="radiogroup" aria-label="Time do técnico">
+                        <button type="button" role="radio" aria-checked="@(timeTecnico == TimePelada.Vermelho)" class="@(timeTecnico == TimePelada.Vermelho ? "sel" : "")" @onclick="() => timeTecnico = TimePelada.Vermelho">Vermelho</button>
+                        <button type="button" role="radio" aria-checked="@(timeTecnico == TimePelada.Amarelo)" class="@(timeTecnico == TimePelada.Amarelo ? "sel" : "")" @onclick="() => timeTecnico = TimePelada.Amarelo">Amarelo</button>
+                        <button type="button" role="radio" aria-checked="@(timeTecnico is null)" class="@(timeTecnico is null ? "sel" : "")" @onclick="() => timeTecnico = null">Sem time</button>
+                    </div>
+                </div>
+            }
+
             <span class="adm-rotulo">Foto</span>
             <SeletorFoto Nome="@nome" FotoUrlAtual="@Atleta?.FotoUrl" Posicoes="@posicoes" Tamanho="72"
                          @bind-Foto="fotoBytes" @bind-Removida="removerFoto" />
@@ -74,7 +89,10 @@
     private string? erro;
     private bool removerFoto, salvando, ativo = true;
 
-    private string? origemEdicao;   // foto sendo editada no recorte (URL da foto atual ou data URL da foto nova)
+    private string? origemEdicao;
+
+    // time do técnico (TimePelada.Vermelho / Amarelo); só aparece quando o atleta tem a posição TEC
+    private string? timeTecnico, timeTecnicoOriginal;   // foto sendo editada no recorte (URL da foto atual ou data URL da foto nova)
 
     private bool PodeEditarFoto => fotoBytes is not null || (!removerFoto && !string.IsNullOrWhiteSpace(Atleta?.FotoUrl));
 
@@ -96,12 +114,17 @@
 
     private string Titulo => Atleta is null ? "Novo atleta" : "Editar atleta";
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (Atleta is null) { ativo = false; return; }   // atleta novo começa fora do mercado
         nome = Atleta.Nome;
         posicoes = new HashSet<string>(Atleta.Posicoes);
         ativo = Atleta.Ativo;
+        if (posicoes.Contains("TEC"))
+        {
+            var times = await Servico.ObterTimesTecnicosAsync();
+            timeTecnico = timeTecnicoOriginal = times.TryGetValue(Atleta.Id, out var lado) ? lado : null;
+        }
     }
 
     private Task Fechar() => OnFechar.InvokeAsync();
@@ -127,6 +150,13 @@
                 ? await Servico.RegistrarAtletaAsync(nome.Trim(), ordenadas, url, ativo)
                 : await Servico.EditarAtletaAsync(Atleta.Id, nome.Trim(), ordenadas, url, removerFoto && url is null,
                                                   MostrarAtivo ? ativo : null);
+            // time do técnico: deixou de ser técnico = sem time
+            var timeFinal = posicoes.Contains("TEC") ? timeTecnico : null;
+            if (timeFinal != timeTecnicoOriginal)
+            {
+                await Servico.DefinirTimeTecnicoAsync(resultado.Id, timeFinal);
+                timeTecnicoOriginal = timeFinal;
+            }
             await OnSalvo.InvokeAsync(resultado);
         }
         catch (ErroAdminException ex) { erro = ex.Message; }

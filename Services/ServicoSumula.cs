@@ -79,6 +79,28 @@ public class ServicoSumula(Supabase.Client supabase, IJSRuntime js)
     public async Task<List<AtletaResumo>> ListarAtletasTodosAsync() =>
         (await ChamarArrayAsync("admin_atletas_todos")).Select(LerAtleta<AtletaResumo>).ToList();
 
+    /// <summary>Time de cada técnico (TimePelada.Vermelho / Amarelo), função tecnicos_times (sql/tecnico_time.sql).
+    /// Sem a função no banco devolve vazio (o app segue sem time definido).</summary>
+    public async Task<Dictionary<Guid, string>> ObterTimesTecnicosAsync()
+    {
+        var times = new Dictionary<Guid, string>();
+        JArray arr;
+        try { arr = await ChamarArrayAsync("tecnicos_times"); }
+        catch (ErroAdminException) { return times; }
+        foreach (var t in arr)
+            if (Guid.TryParse((string?)t["id"], out var id) && (string?)t["time_tecnico"] is { Length: > 0 } lado)
+                times[id] = lado;
+        return times;
+    }
+
+    /// <summary>Define o time do técnico (TimePelada.Vermelho / Amarelo); null tira o time.</summary>
+    public Task DefinirTimeTecnicoAsync(Guid id, string? lado)
+    {
+        var p = new Dictionary<string, object> { ["p_atleta"] = id };
+        if (!string.IsNullOrEmpty(lado)) p["p_time"] = lado;
+        return ChamarAsync("definir_time_tecnico", p);
+    }
+
     public Task DefinirAtletaAtivoAsync(Guid id, bool ativo) =>
         ChamarAsync("definir_atleta_ativo", new() { ["p_atleta"] = id, ["p_ativo"] = ativo });
 

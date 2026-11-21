@@ -55,7 +55,7 @@
                     <FotoAtleta Atleta="a" Posicao="Posicao" Tamanho="44" />
                     <span class="item-nome-col">
                         <span class="item-nome">@a.Nome</span>
-                        <span class="item-sub"><small>Última</small><b>@Formato.Pontos(a.UltimaPontuacao)</b></span>
+                        <span class="item-sub"><small>Última</small><b>@Formato.Pontos(Ultima(a))</b></span>
                     </span>
                     <span class="item-col"><small>Média</small><b>@(a.Jogos > 0 ? Formato.Media(a.Media) : "—")</b></span>
                     <span class="item-col valor"><small>@(semSaldo ? "Sem saldo" : "Valor")</small><b>@Formato.Moeda(a.Valor)</b></span>
@@ -94,7 +94,10 @@
     private IEnumerable<AtletaEscalavel> Ordenados() => ordem switch
     {
         "valor" => Disponiveis.OrderByDescending(a => a.Valor),
-        "ultima" => Disponiveis.OrderByDescending(a => a.UltimaPontuacao ?? decimal.MinValue),
+        "ultima" => Disponiveis.OrderByDescending(a => Ultima(a) ?? decimal.MinValue),
         _ => Disponiveis.OrderByDescending(a => a.Media)
     };
+
+    // na vaga de técnico vale a pontuação de técnico (média do time; 0 se ele jogou a partida)
+    private decimal? Ultima(AtletaEscalavel a) => Posicao == PosicaoCampo.Tecnico ? a.PontosTecnico : a.UltimaPontuacao;
 }
