@@ -7,7 +7,8 @@
 --   Meio-Campo (MC)  = soma dos pontos dos meias do time     ÷ atletas do time
 --   Defesa (DF)      = soma dos pontos de GOL/LAT/ZAG do time ÷ atletas do time
 --   Total            = Ataque + Meio-Campo + Defesa (cada parte com 2 casas)
--- O setor é a primeira posição do atleta (posicoes[1]).
+-- Cada atleta conta uma vez só, num setor só, pela ordem fixa Defesa > Meio-Campo > Ataque
+-- (ex.: ZAG + MEI conta só na Defesa; MEI + ATA conta só no Meio-Campo). TEC é ignorado.
 -- Se o técnico jogou a partida (tem pontos nela), na vaga de técnico ele faz 0.
 -- Escalado em outra vaga (ATA, MEI...), ele conta normalmente com os pontos do jogo.
 -- Técnico sem time definido faz 0. O técnico nunca recebe o bônus de capitão.
@@ -41,7 +42,11 @@ as $$
   ),
   doTime as (
     select x.pontos,
-           case upper(coalesce(at.posicoes[1], '')) when 'ATA' then 'ATA' when 'MEI' then 'MC' else 'DF' end as setor
+           -- cada atleta conta uma vez só, num setor só: Defesa > Meio-Campo > Ataque (ex.: ZAG + MEI = Defesa)
+           case when at.posicoes && array['GOL','LAT','ZAG']::text[] then 'DF'
+                when 'MEI'::text = any(at.posicoes) then 'MC'
+                when 'ATA'::text = any(at.posicoes) then 'ATA'
+                else 'DF' end as setor
       from torcida_pontos_base x
       join sumula s on s.partida_id = x.partida_id and s.atleta_id = x.atleta_id
       join atletas at on at.id = x.atleta_id

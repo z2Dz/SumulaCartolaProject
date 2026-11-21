@@ -147,11 +147,19 @@ public class ServicoMercado(Supabase.Client supabase)
         return new SetoresTecnico(lado, false, Parte("ATA"), Parte("MC"), Parte("DF"), doTime.Count);
     }
 
-    /// <summary>Setor da primeira posição do atleta na partida ("MEI/ZAG" -> MC).</summary>
+    /// <summary>
+    /// Setor do atleta no extrato do técnico. Cada atleta conta uma vez só, num setor só, pela ordem fixa:
+    /// Defesa (GOL, LAT, ZAG) > Meio-Campo (MEI) > Ataque (ATA). Ex.: ZAG + MEI -> Defesa. TEC é ignorado.
+    /// O banco (pontos_tecnico em sql/tecnico_pontos.sql) usa a mesma regra.
+    /// </summary>
     private static string Setor(string? posicao)
     {
-        var sigla = PosicoesAtleta.Sigla((posicao ?? "").Split('/', ',', ' ').FirstOrDefault(x => x.Length > 0));
-        return sigla switch { "ATA" => "ATA", "MEI" => "MC", _ => "DF" };
+        var siglas = (posicao ?? "").Split('/', ',', ' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => PosicoesAtleta.Sigla(x)).ToHashSet();
+        if (siglas.Overlaps(new[] { "GOL", "LAT", "ZAG" })) return "DF";
+        if (siglas.Contains("MEI")) return "MC";
+        if (siglas.Contains("ATA")) return "ATA";
+        return "DF";
     }
 
     /// <summary>Extrato do técnico na última partida: Ataque, Meio-Campo e Defesa (o total é a soma).</summary>
